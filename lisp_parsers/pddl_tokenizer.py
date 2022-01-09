@@ -1,0 +1,67 @@
+"""Module that contains the tokenization process of the PDDL files."""
+import re
+from pathlib import Path
+from typing import TextIO, List
+
+from lisp_parsers import Token, Expression
+
+
+class PDDLTokenizer:
+    """Class that tokenizes the content of a PDDL file according to the known PDDL scheme."""
+
+    pddl_file: TextIO
+
+    def __init__(self, file_path: Path):
+        with open(file_path, "rt", encoding="utf-8") as pddl_file:
+            self.pddl_file = pddl_file
+
+    def _is_comment_line(self, line: str) -> bool:
+        """Indicates whither or not a line is a comment line
+
+        :param line: the line to test.
+        :return: whether or not the line is indeed a comment line.
+        """
+        return line.strip().startswith(";")
+
+    def tokenize(self) -> List[Token]:
+        """Tokenize the PDDL file into tokens."""
+        tokens = []
+        for line in self.pddl_file.readlines():
+            if self._is_comment_line(line):
+                continue
+
+            no_comments_line = re.sub(r";.*", "", line)
+            line_tokens = no_comments_line.lower().replace("(", " ( ").replace(")", " ) ").split()
+            tokens.extend(line_tokens)
+
+        return tokens
+
+    def read_from_tokens(self, tokens: List[Token]) -> Expression:
+        """Extract concrete PDDL expressions from the tokens.
+
+        :param tokens: the list of tokens extracted from the PDDL file.
+        :return: concrete PDDL expressions that can be converted to objects.
+        """
+        if len(tokens) == 0:
+            raise SyntaxError("Unexpected EOF")
+
+        token = tokens.pop(0)
+        if token == "(":
+            expression = []
+            while token != ")":
+                expression.append(self.read_from_tokens(tokens))
+
+            tokens.pop(0)  # pop off ')'
+            return expression
+
+        if token == ")":
+            raise SyntaxError("Unexpected ) while parsing the expressions")
+
+        return token
+
+    def parse(self) -> Expression:
+        """Extracts the expressions from the PDDL file.
+
+        :return: the list of expressions that represent the PDDL file.
+        """
+        return self.read_from_tokens(self.tokenize())
