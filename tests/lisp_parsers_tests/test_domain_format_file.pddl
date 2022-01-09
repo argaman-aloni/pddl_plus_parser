@@ -2,8 +2,38 @@
     (domain ballphysics)
     (:requirements :time :typing)
     (:types
-        ball - object
+        acolour
+        awood
+        woodobj
+        machine
+        surface
+        treatmentstatus
+        aboardsize
+        apartsize - object
+        highspeed-saw
+        saw
+        glazer
+        grinder
+        immersion-varnisher
+        planer
+        spray-varnisher - machine
+        board
+        part - woodobj
     )
+    (:constants
+	small
+	medium
+	large - apartsize
+	varnished
+	glazed
+	untreated
+	colourfragments - treatmentstatus
+
+	natural - acolour
+	verysmooth
+	smooth
+	rough - surface
+	)
     (:predicates
         (held ?b - ball)
     )

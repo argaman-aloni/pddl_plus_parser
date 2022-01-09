@@ -1,7 +1,7 @@
 """Module that contains the tokenization process of the PDDL files."""
 import re
 from pathlib import Path
-from typing import TextIO, List
+from typing import List
 
 from lisp_parsers import Token, Expression
 
@@ -9,11 +9,11 @@ from lisp_parsers import Token, Expression
 class PDDLTokenizer:
     """Class that tokenizes the content of a PDDL file according to the known PDDL scheme."""
 
-    pddl_file: TextIO
+    pddl_file_content: List[str]
 
     def __init__(self, file_path: Path):
         with open(file_path, "rt", encoding="utf-8") as pddl_file:
-            self.pddl_file = pddl_file
+            self.pddl_file_content = pddl_file.readlines()
 
     def _is_comment_line(self, line: str) -> bool:
         """Indicates whither or not a line is a comment line
@@ -26,7 +26,7 @@ class PDDLTokenizer:
     def tokenize(self) -> List[Token]:
         """Tokenize the PDDL file into tokens."""
         tokens = []
-        for line in self.pddl_file.readlines():
+        for line in self.pddl_file_content:
             if self._is_comment_line(line):
                 continue
 
@@ -48,7 +48,7 @@ class PDDLTokenizer:
         token = tokens.pop(0)
         if token == "(":
             expression = []
-            while token != ")":
+            while tokens[0] != ")":
                 expression.append(self.read_from_tokens(tokens))
 
             tokens.pop(0)  # pop off ')'

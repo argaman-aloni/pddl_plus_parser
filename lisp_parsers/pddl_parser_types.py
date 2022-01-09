@@ -1,7 +1,6 @@
 """Module to contain all user defined types needed for the parsing process."""
-from types import Union
-from typing import List
+from typing import List, Union
 
 Token = str
 Number = Union[int, float]
-Expression = Union[Token, List['Expression']]
+Expression = Union[Token, List["Expression"]]
