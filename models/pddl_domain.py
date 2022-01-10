@@ -1,7 +1,11 @@
 """Module that represents a PDDL+ domain"""
 from typing import List, Dict
 
-from models import PDDLType, PDDLConstant, Predicate, PDDLFunction, Action
+from .pddl_action import Action
+from .pddl_function import PDDLFunction
+from .pddl_object import PDDLConstant
+from .pddl_predicate import Predicate
+from .pddl_type import PDDLType
 
 
 class Domain:
@@ -16,4 +20,3 @@ class Domain:
     actions: Dict[str, Action]
     # processes: Dict[str, Action] TBD
     # events: Dict[str, Action] TBD
-

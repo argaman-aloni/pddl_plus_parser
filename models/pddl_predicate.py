@@ -1,7 +1,7 @@
 """Module that represents a boolean predicate in a PDDL+ model."""
 from typing import Dict, Optional
 
-from models import PDDLType
+from .pddl_type import PDDLType
 
 SignatureType = Dict[str, PDDLType]
 

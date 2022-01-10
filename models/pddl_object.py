@@ -1,5 +1,5 @@
 """Module representing the objects and constants of PDDL files."""
-from models import PDDLType
+from .pddl_type import PDDLType
 
 
 class PDDLObject:

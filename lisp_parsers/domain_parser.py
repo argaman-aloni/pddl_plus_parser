@@ -1,11 +1,26 @@
 """Module that contains the parser for PDDL+ domain files."""
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Union, Iterator, NoReturn
 
 from lisp_parsers import PDDLTokenizer
-from models import Domain, PDDLType, Predicate, PDDLConstant, PDDLFunction
+from models import Domain, PDDLType, Predicate, PDDLConstant, PDDLFunction, Action, SignatureType
 
 ObjectType = PDDLType(name="object", parent=None)
+
+
+def parse_signature(parameters: Iterator[str], domain_types: Dict[str, PDDLType]) -> SignatureType:
+    """
+
+    :param parameters:
+    :param domain_types:
+    :return:
+    """
+    signature = {}
+    for parameter_name in parameters:
+        parameter_type = next(parameters)
+        signature[parameter_name] = domain_types[parameter_type]
+
+    return signature
 
 
 class DomainParser:
@@ -91,11 +106,7 @@ class DomainParser:
                 raise StopAsyncIteration(f"Received a predicate with a wrong signature - {predicate[1:]}")
 
             signature_items = iter(predicate[1:])
-            predicate_signature = {}
-            for parameter_name in signature_items:
-                parameter_type = next(signature_items)
-                predicate_signature[parameter_name] = domain_types[parameter_type]
-
+            predicate_signature = parse_signature(signature_items, domain_types)
             predicates[predicate_name] = Predicate(name=predicate_name, signature=predicate_signature)
 
         return predicates
@@ -112,18 +123,48 @@ class DomainParser:
         for function_items in functions_ast:
             function_name = function_items[0]
             if (len(function_items[1:]) % 2) != 0:
-                raise StopAsyncIteration(f"Received a function with a wrong signature - {function_items[1:]}")
+                raise SyntaxError(f"Received a function with a wrong signature - {function_items[1:]}")
 
             signature_items = iter(function_items[1:])
-            function_signature = {}
-            for parameter_name in signature_items:
-                parameter_type = next(signature_items)
-                function_signature[parameter_name] = domain_types[parameter_type]
-
+            function_signature = parse_signature(signature_items, domain_types)
             functions[function_name] = PDDLFunction(name=function_name, signature=function_signature)
 
         return functions
 
+    def parse_preconditions(self, preconditions_ast:  List[Union[str, List[str]]], new_action: Action,
+                            domain_types: Dict[str, PDDLType]) -> NoReturn:
+        """
+
+        :param preconditions_ast:
+        :param new_action:
+        :param domain_types:
+        """
+        if preconditions_ast[0] != "and":
+            raise SyntaxError(f"Only accepting disjunctive preconditions! Action - {new_action.name} does not conform!")
+
+        for precondition_node in preconditions_ast[1:]:
+            if
+
+    def parse_action(self, action_ast: List[Union[str, List[str]]], domain_types: Dict[str, PDDLType]) -> Action:
+        """
+
+        :param action_ast:
+        :param domain_types:
+        :return:
+        """
+        new_action = Action()
+        new_action.name = action_ast[0].lower()
+        if len(action_ast[1:]) != 6: # the number of different sections for the action.
+            raise SyntaxError(f"Received an Illegal action AST definition! The action given - {action_ast}")
+
+        action_section_iterator = iter(action_ast[1:])
+        for action_label_item in action_section_iterator:
+            if action_label_item == ":parameters":
+                new_action.signature = parse_signature(next(action_section_iterator), domain_types)
+                continue
+
+            if action_label_item == ":precondition":
+                self.parse_preconditions(next(action_section_iterator), new_action, domain_types)
 
     def parse_domain(self) -> Domain:
         """The main entry point that parses the domain file and returns the resulting Domain object.
@@ -146,13 +187,16 @@ class DomainParser:
                 domain.types = self.parse_types(expression[1:])
 
             elif expression[0] == ":constants":
-                domain.constants = self.parse_constants(expression[1:])
+                domain.constants = self.parse_constants(expression[1:], domain.types)
 
             elif expression[0] == ":predicates":
                 domain.predicates = self.parse_predicates(expression[1:], domain.types)
 
             elif expression[0] == ":functions":
                 domain.predicates = self.parse_functions(expression[1:], domain.types)
+
+            elif expression[0] == ":action":
+                new_action: Action = self.parse_action(expression[1:], domain.types)
         #         elif element[0] == ":process":
         #             process = self.parse_world_change(element, WorldChangeTypes.process)
         #             domain.processes.append(process)

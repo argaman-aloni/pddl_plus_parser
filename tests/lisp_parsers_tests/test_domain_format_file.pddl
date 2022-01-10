@@ -41,6 +41,15 @@
         (velocity ?b - ball)
         (distance-to-floor ?b - ball)
     )
+    (:action empty
+    :parameters (?jug1 - jug ?jug2 - jug)
+    :precondition (and (fluent-test) (>= (- (capacity ?jug2) (amount ?jug2)) (amount ?jug1))))
+    :effect (and (assign (amount ?jug1) 0) (assign (amount ?jug2) 10))
+    )
+    (:action do-spray-varnish
+	:parameters   (?m - spray-varnisher ?x - part ?newcolour - acolour ?surface - surface)
+	:precondition (and (available ?x) (has-colour ?m ?newcolour) (surface-condition ?x ?surface) (is-smooth ?surface) (treatment ?x untreated))
+	:effect       (and (treatment ?x varnished) (colour ?x ?newcolour) (not (treatment ?x untreated)) (not (colour ?x natural))))
     (:process FALLING
         :parameters (?b - ball)
         :precondition (and

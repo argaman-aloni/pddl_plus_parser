@@ -1,7 +1,7 @@
 """Module that represents a numerical in a PDDL+ model."""
 from typing import Optional, NoReturn
 
-from models import SignatureType
+from .pddl_predicate import SignatureType
 
 
 class PDDLFunction:
