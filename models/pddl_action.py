@@ -1,6 +1,7 @@
 """Module that represents a PDDL+ action."""
 from typing import Set, Callable, Union, NoReturn
 
+from .numerical_expression import NumericalExpressionTree
 from .pddl_function import PDDLFunction
 from .pddl_predicate import SignatureType, Predicate
 
@@ -96,7 +97,7 @@ class Action:
     signature: SignatureType
     positive_preconditions: Set[Predicate]
     negative_preconditions: Set[Predicate]
-    numeric_preconditions: Set[NumericPrecondition]
+    numeric_preconditions: Set[NumericalExpressionTree]
     add_effects: Set[Predicate]
     delete_effects: Set[Predicate]
     numeric_effects: Set[NumericEffect]

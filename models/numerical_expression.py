@@ -134,4 +134,12 @@ def evaluate_expression(expression_tree: AnyNode) -> Optional[bool]:
     evaluated_operand = calculate(expression_tree.children[1])
     return COMPARISON_OPERATORS[expression_tree.value](compared_operator.value, evaluated_operand)
 
-# class NumericalExpression:
+class NumericalExpressionTree:
+
+    root: AnyNode
+
+    def __init__(self, expression_tree: AnyNode):
+        self.root = expression_tree
+
+    def __str__(self):
+        
