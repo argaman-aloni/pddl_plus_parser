@@ -1,9 +1,9 @@
 """Class that represents a numerical expression that can be evaluated."""
 from typing import List, Union, Dict, Optional, NoReturn
 
-from anytree import AnyNode
+from anytree import AnyNode, RenderTree
 
-from models import PDDLFunction
+from .pddl_function import PDDLFunction
 
 LEGAL_NUMERICAL_EXPRESSIONS = ["=", "!=", "<=", ">=", ">", "<", "+", "-", "/", "*", "increase", "decrease", "assign"]
 
@@ -130,16 +130,16 @@ def evaluate_expression(expression_tree: AnyNode) -> Optional[bool]:
         ASSIGNMENT_EXPRESSIONS[expression_tree.value](assigned_variable, evaluated_operand)
         return
 
-    compared_operator: PDDLFunction = expression_tree.children[0].value
+    compared_operator = calculate(expression_tree.children[0])
     evaluated_operand = calculate(expression_tree.children[1])
-    return COMPARISON_OPERATORS[expression_tree.value](compared_operator.value, evaluated_operand)
+    return COMPARISON_OPERATORS[expression_tree.value](compared_operator, evaluated_operand)
+
 
 class NumericalExpressionTree:
-
     root: AnyNode
 
     def __init__(self, expression_tree: AnyNode):
         self.root = expression_tree
 
     def __str__(self):
-        
+        return "\n".join([f"{pre}{node.id}" for pre, _, node in RenderTree(self.root)])

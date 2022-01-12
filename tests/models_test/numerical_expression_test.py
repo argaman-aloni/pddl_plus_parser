@@ -68,3 +68,12 @@ def test_evaluate_expression_evaluates_another_simple_pddl_ast():
 
     result = evaluate_expression(root)
     assert result == False
+
+
+def test_evaluate_expression_evaluates_complex_pddl_ast():
+    test_expression = ['>=', ['/', ['+', ['amount', '?jug1'], '12'], ['+', ['amount', '?jug2'], '4']], '4.5']
+    root = construct_expression_tree(test_expression, TEST_DOMAIN_FUNCTIONS)
+    print(RenderTree(root))
+
+    result = evaluate_expression(root)
+    assert result == False

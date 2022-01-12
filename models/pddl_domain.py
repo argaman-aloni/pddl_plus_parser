@@ -18,5 +18,5 @@ class Domain:
     predicates: Dict[str, Predicate]
     functions: Dict[str, PDDLFunction]
     actions: Dict[str, Action]
-    # processes: Dict[str, Action] TBD
-    # events: Dict[str, Action] TBD
+    # processes: Dict[str, Action] - TBD
+    # events: Dict[str, Action] - TBD
