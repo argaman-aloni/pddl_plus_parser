@@ -50,3 +50,6 @@ class Predicate:
 
         signature_str = " ".join(signature_str_items)
         return f"({self.name} {signature_str})"
+
+    def __hash__(self):
+        return hash(self.__str__())

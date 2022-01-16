@@ -14,7 +14,7 @@ class Domain:
     name: str
     requirements: List[str]
     types: Dict[str, PDDLType]
-    constants: List[PDDLConstant]
+    constants: Dict[str, PDDLConstant]
     predicates: Dict[str, Predicate]
     functions: Dict[str, PDDLFunction]
     actions: Dict[str, Action]

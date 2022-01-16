@@ -1,13 +1,40 @@
-from pytest import fixture
-
 from lisp_parsers import PDDLTokenizer
-from tests.lisp_parsers_tests.consts import TEST_PARSING_FILE_PATH
 
 
-@fixture()
-def simple_lisp_parser() -> PDDLTokenizer:
-    return PDDLTokenizer(TEST_PARSING_FILE_PATH)
-
-def test_simple_parsing(simple_lisp_parser: PDDLTokenizer):
+def test_simple_parsing():
+    test_program = "(begin (define r 10) (* pi (* r r)))"
+    simple_lisp_parser = PDDLTokenizer(pddl_str=test_program)
     tokens = simple_lisp_parser.parse()
-    print(tokens)
+    assert tokens == ['begin', ['define', 'r', '10'], ['*', 'pi', ['*', 'r', 'r']]]
+
+
+def test_simple_predicate_tokenization():
+    test_predicate = "(available ?obj - woodobj)"
+    simple_lisp_parser = PDDLTokenizer(pddl_str=test_predicate)
+    tokens = simple_lisp_parser.parse()
+    assert tokens == ['available', '?obj', '-', 'woodobj']
+
+
+def test_multiple_predicates_tokenization():
+    test_predicates = """((available ?obj - woodobj)
+    (surface-condition ?obj - woodobj ?surface - surface))"""
+    multi_predicate_tokenizer = PDDLTokenizer(pddl_str=test_predicates)
+    tokens = multi_predicate_tokenizer.parse()
+    assert tokens == [['available', '?obj', '-', 'woodobj'],
+                      ['surface-condition', '?obj', '-', 'woodobj', '?surface', '-', 'surface']]
+
+
+def test_parse_action_yields_correct_action_ast():
+    test_action_str = """(do-spray-varnish
+    	:parameters   (?m - spray-varnisher ?x - part ?newcolour - acolour ?surface - surface)
+    	:precondition (and (available ?x) (has-colour ?m ?newcolour))
+    	:effect       (and (treatment ?x varnished) (colour ?x ?newcolour)))"""
+    multi_predicate_tokenizer = PDDLTokenizer(pddl_str=test_action_str)
+    tokens = multi_predicate_tokenizer.parse()
+    expected_tokens = ['do-spray-varnish',
+                       ':parameters',
+                       ['?m', '-', 'spray-varnisher', '?x', '-', 'part', '?newcolour', '-', 'acolour', '?surface', '-',
+                        'surface'],
+                       ':precondition', ['and', ['available', '?x'], ['has-colour', '?m', '?newcolour']],
+                       ':effect', ['and', ['treatment', '?x', 'varnished'], ['colour', '?x', '?newcolour']]]
+    assert tokens == expected_tokens

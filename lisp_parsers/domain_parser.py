@@ -14,11 +14,11 @@ ASSIGNMENT_OPS = ["assign", "increase", "decrease"]
 
 
 def parse_signature(parameters: Iterator[str], domain_types: Dict[str, PDDLType]) -> SignatureType:
-    """
+    """Parse the signature of a statement.
 
-    :param parameters:
-    :param domain_types:
-    :return:
+    :param parameters: the parameters that appear in the signature.
+    :param domain_types: the types that were extracted from the domain.
+    :return: the object representing the signature's data.
     """
     signature = {}
     for parameter_name in parameters:
@@ -81,7 +81,7 @@ class DomainParser:
         self.logger.debug(f"Extracted {len(pddl_types)} types while parsing the types AST.")
         return pddl_types
 
-    def parse_constants(self, constants_ast: List[str], domain_types: Dict[str, PDDLType]) -> List[PDDLConstant]:
+    def parse_constants(self, constants_ast: List[str], domain_types: Dict[str, PDDLType]) -> Dict[str, PDDLConstant]:
         """Parses the constants that appear in the constants part of the domain AST.
 
         :param constants_ast: the constants that were parsed in the domain AST.
@@ -89,7 +89,7 @@ class DomainParser:
         :return: a list containing all typed constants.
         """
         self.logger.info("Starting to parse the constants of the domain!")
-        constants = []
+        constants = {}
         same_type_constants = []
         type_marker_reached = False
         for constant_name in constants_ast:
@@ -98,7 +98,8 @@ class DomainParser:
                 if constant_name not in domain_types:
                     raise SyntaxError("Received invalid type for the constants!")
 
-                constants.extend([PDDLConstant(name, domain_types[constant_name]) for name in same_type_constants])
+                constants.update(
+                    {name: PDDLConstant(name, domain_types[constant_name]) for name in same_type_constants})
                 type_marker_reached = False
                 same_type_constants = []
                 continue
@@ -130,6 +131,28 @@ class DomainParser:
         self.logger.debug(f"Finished extracting the predicate - {extracted_predicate}")
         return extracted_predicate
 
+    def parse_untyped_predicate(self, untyped_predicate: List[str], action_signature: SignatureType,
+                                domain_constants: Dict[str, PDDLConstant] = {}) -> Predicate:
+        """Parse an untyped predicate that appears in actions.
+
+        :param untyped_predicate: the untyped predicate that needs to be matched to the typed predicate from the
+            predicates definitions.
+        :param action_signature: the signed signature of the action.
+        :return: the predicate including the relevant types.
+        :param domain_constants: the constants that are defined in the domain.
+        """
+        self.logger.info(f"Parsing the untyped action predicate represented by the AST - {untyped_predicate}")
+        predicate_name = untyped_predicate[0]
+        possible_signed_objects = {key: val for key, val in action_signature.items()}
+        possible_signed_objects.update({const_name: const.type for const_name, const in domain_constants.items()})
+        # Since we assume that the order in maintained in the predicates we can match the signatures.
+        signed_signature = {parameter_name: possible_signed_objects[parameter_name] for
+                            parameter_name in untyped_predicate[1:]}
+
+        signed_action_predicate = Predicate(name=predicate_name, signature=signed_signature)
+        self.logger.debug(f"Extracted the predicate - {signed_action_predicate}")
+        return signed_action_predicate
+
     def parse_predicates(self, predicates_ast: List[List[str]],
                          domain_types: Dict[str, PDDLType]) -> Dict[str, Predicate]:
         """Parses the predicates that appear in the predicates parsed AST.
@@ -156,7 +179,7 @@ class DomainParser:
         functions = {}
         for function_items in functions_ast:
             function_name = function_items[0]
-            if (len(function_items[1:]) % 2) != 0:
+            if (len(function_items[1:]) % 3) != 0:
                 raise SyntaxError(f"Received a function with a wrong signature - {function_items[1:]}")
 
             signature_items = iter(function_items[1:])
@@ -166,14 +189,15 @@ class DomainParser:
         return functions
 
     def parse_preconditions(self, preconditions_ast: List[Union[str, List[str]]], new_action: Action,
-                            domain_types: Dict[str, PDDLType], domain_functions: Dict[str, PDDLFunction],
-                            domain_predicates: Dict[str, Predicate]) -> NoReturn:
+                            domain_functions: Dict[str, PDDLFunction],
+                            domain_predicates: Dict[str, Predicate],
+                            domain_constants: Dict[str, PDDLConstant]) -> NoReturn:
         """Parse the preconditions of a single action.
 
         :param preconditions_ast: the AST representation of the action's preconditions.
         :param new_action: the action that is currently being parsed.
-        :param domain_types: the types that exist in the domain.
         :param domain_functions: the functions that exist in the domain.
+        :param domain_constants: the constants that might exist in the domain.
         """
         new_action.positive_preconditions = set()
         new_action.negative_preconditions = set()
@@ -183,11 +207,13 @@ class DomainParser:
 
         for precondition_node in preconditions_ast[1:]:
             if precondition_node[0] in domain_predicates:
-                new_action.positive_preconditions.add(self.parse_predicate(precondition_node, domain_types))
+                new_action.positive_preconditions.add(
+                    self.parse_untyped_predicate(precondition_node, new_action.signature, domain_constants))
                 continue
 
             if precondition_node[0] == "not":
-                new_action.negative_preconditions.add(self.parse_predicate(precondition_node[1:], domain_types))
+                new_action.negative_preconditions.add(
+                    self.parse_untyped_predicate(precondition_node[1:], new_action.signature, domain_constants))
                 continue
 
             if precondition_node[0] in COMPARISON_OPS:
@@ -197,28 +223,31 @@ class DomainParser:
                 continue
 
     def parse_effects(self, effects_ast: List[Union[str, List[str]]], new_action: Action,
-                      domain_types: Dict[str, PDDLType], domain_functions: Dict[str, PDDLFunction],
-                      domain_predicates: Dict[str, Predicate]) -> NoReturn:
+                      domain_functions: Dict[str, PDDLFunction],
+                      domain_predicates: Dict[str, Predicate],
+                      domain_constants: Dict[str, PDDLConstant]) -> NoReturn:
         """Parse the effects of a single action.
 
         :param effects_ast: the AST representation of the action's effects.
         :param new_action: the action that is currently being parsed.
-        :param domain_types: the types that exist in the domain.
         :param domain_functions: the functions that exist in the domain.
+        :param domain_constants: the domains that might exist in the domain.
         """
         new_action.add_effects = set()
         new_action.delete_effects = set()
         new_action.numeric_effects = set()
         if effects_ast[0] != "and":
-            raise SyntaxError(f"Only accepting conjunctive preconditions! Action - {new_action.name} does not conform!")
+            raise SyntaxError(f"Only accepting conjunctive effects! Action - {new_action.name} does not conform!")
 
         for effect_node in effects_ast[1:]:
             if effect_node[0] in domain_predicates:
-                new_action.add_effects.add(self.parse_predicate(effect_node, domain_types))
+                new_action.add_effects.add(
+                    self.parse_untyped_predicate(effect_node, new_action.signature, domain_constants))
                 continue
 
             if effect_node[0] == "not":
-                new_action.delete_effects.add(self.parse_predicate(effect_node[1:], domain_types))
+                new_action.delete_effects.add(
+                    self.parse_untyped_predicate(effect_node[1], new_action.signature, domain_constants))
                 continue
 
             if effect_node[0] in ASSIGNMENT_OPS:
@@ -228,15 +257,20 @@ class DomainParser:
                 continue
 
     def parse_action(self, action_ast: List[Union[str, List[str]]], domain_types: Dict[str, PDDLType],
-                     domain_functions: Dict[str, PDDLFunction], domain_predicates: Dict[str, Predicate]) -> Action:
+                     domain_functions: Dict[str, PDDLFunction],
+                     domain_predicates: Dict[str, Predicate],
+                     domain_constants: Dict[str, PDDLConstant] = {}) -> Action:
         """Parse a single action AST and returns the object that represent a single action.
 
         :param action_ast: the AST representation of the action.
         :param domain_types: the types that were extracted from the domain.
         :param domain_functions: the functions that were extracted from the AST.
         :param domain_predicates: the predicates that were extracted from the domain's AST.
+        :param domain_constants: the constants that might exist in the domain and might appear in the
+            preconditions / effects.
         :return: the action object that is generated using the data from the domain AST.
         """
+        self.logger.info("Starting to parse a new action!")
         new_action = Action()
         new_action.name = action_ast[0].lower()
         if len(action_ast[1:]) != 6:  # the number of different sections for the action.
@@ -245,17 +279,21 @@ class DomainParser:
         action_section_iterator = iter(action_ast[1:])
         for action_label_item in action_section_iterator:
             if action_label_item == ":parameters":
-                new_action.signature = parse_signature(next(action_section_iterator), domain_types)
+                self.logger.debug(f"Parsing the parameters of the action - {new_action.name}")
+                parameters_list = next(action_section_iterator)
+                new_action.signature = parse_signature(iter(parameters_list), domain_types)
                 continue
 
             if action_label_item == ":precondition":
-                self.parse_preconditions(next(action_section_iterator), new_action, domain_types,
-                                         domain_functions, domain_predicates)
+                self.logger.debug(f"Starting to parse the preconditions of the action - {new_action.name}")
+                self.parse_preconditions(next(action_section_iterator), new_action, domain_functions,
+                                         domain_predicates, domain_constants)
                 continue
 
             if action_label_item == ":effect":
-                self.parse_effects(next(action_section_iterator), new_action, domain_types,
-                                   domain_functions, domain_predicates)
+                self.logger.debug(f"Starting to parse the effects of the action - {new_action.name}")
+                self.parse_effects(next(action_section_iterator), new_action, domain_functions,
+                                   domain_predicates, domain_constants)
 
         return new_action
 
@@ -270,6 +308,7 @@ class DomainParser:
 
         domain = Domain()
         domain.actions = {}
+        domain.constants = {}
         for expression in domain_expressions[1:]:
             if expression[0] == "domain":
                 domain.name = expression[1]
@@ -291,7 +330,7 @@ class DomainParser:
 
             elif expression[0] == ":action":
                 new_action: Action = self.parse_action(expression[1:], domain.types, domain.functions,
-                                                       domain.predicates)
+                                                       domain.predicates, domain.constants)
                 domain.actions[new_action.name] = new_action
 
             elif expression[0] == ":process" or expression[0] == ":event":

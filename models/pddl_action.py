@@ -101,3 +101,6 @@ class Action:
     add_effects: Set[Predicate]
     delete_effects: Set[Predicate]
     numeric_effects: Set[NumericEffect]
+
+    def __str__(self):
+        return f"{self.name}: {self.signature}"
