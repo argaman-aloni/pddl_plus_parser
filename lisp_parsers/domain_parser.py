@@ -78,6 +78,7 @@ class DomainParser:
             pddl_types.update({type_name: PDDLType(name=type_name, parent=ObjectType)
                                for type_name in same_types_objects})
 
+        pddl_types["object"] = ObjectType
         self.logger.debug(f"Extracted {len(pddl_types)} types while parsing the types AST.")
         return pddl_types
 
@@ -307,8 +308,6 @@ class DomainParser:
             raise SyntaxError("Encountered a PDDL that does not start with 'define' statement!")
 
         domain = Domain()
-        domain.actions = {}
-        domain.constants = {}
         for expression in domain_expressions[1:]:
             if expression[0] == "domain":
                 domain.name = expression[1]
