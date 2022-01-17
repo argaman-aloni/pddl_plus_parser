@@ -53,3 +53,33 @@ class Predicate:
 
     def __hash__(self):
         return hash(self.__str__())
+
+
+class GroundedPredicate(Predicate):
+    """Class defining a grounded predicate."""
+    object_mapping: Dict[str, str]
+
+    def __init__(self, name: str, signature: SignatureType, object_mapping: Dict[str, str]):
+        super(GroundedPredicate, self).__init__(name=name, signature=signature)
+        self.object_mapping = object_mapping
+
+    def __eq__(self, other: "GroundedPredicate") -> bool:
+        """Checks whether or not two grounded predicates are considered equal.
+
+        Equality can be considered if a type inherits from another type as well.
+
+        :param other: the other predicate to compare.
+        :return: whether or not the predicates are equal.
+        """
+        if not super(GroundedPredicate, self).__eq__(other):
+            return False
+
+        return self.object_mapping == other.object_mapping
+
+    def __str__(self):
+        signature_str_items = []
+        for parameter_name, parameter_type in self.signature.items():
+            signature_str_items.append(f"{self.object_mapping[parameter_name]} - {str(parameter_type)}")
+
+        signature_str = " ".join(signature_str_items)
+        return f"({self.name} {signature_str})"

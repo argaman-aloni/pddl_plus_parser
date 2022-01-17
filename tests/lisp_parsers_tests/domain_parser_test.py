@@ -112,6 +112,15 @@ def test_parse_predicate_with_illegal_predicate_data_raises_error(domain_parser:
         domain_parser.parse_predicate(test_predicate, domain_types)
 
 
+def test_parse_predicate_with_no_parameters_returns_predicate_object_with_only_name_and_empty_signature(
+        domain_parser: DomainParser):
+    domain_types = domain_parser.parse_types(nested_types)
+    test_predicate_no_params_ast = ["ok"]
+    predicate = domain_parser.parse_predicate(test_predicate_no_params_ast, domain_types)
+    assert predicate is not None
+    assert predicate.name == "ok"
+    assert len(predicate.signature) == 0
+
 def test_parse_predicates_with_single_predicate_returns_predicates_dictionary_correctly(domain_parser: DomainParser):
     domain_types = domain_parser.parse_types(nested_types)
     test_predicates = [['available', '?obj', '-', 'woodobj']]
@@ -144,6 +153,16 @@ def test_parse_functions_with_multiple_functions_extract_functions_correctly(dom
     functions = domain_parser.parse_functions(tokenizer.parse(), domain_types)
     assert len(functions) == 2
 
+
+def test_parse_function_with_no_parameters_returns_function_object_with_only_name_and_empty_signature(
+        domain_parser: DomainParser):
+    test_function_no_params = "((total-cost))"
+    tokenizer = PDDLTokenizer(pddl_str=test_function_no_params)
+    domain_types = domain_parser.parse_types(nested_types)
+    functions = domain_parser.parse_functions(tokenizer.parse(), domain_types)
+    assert functions is not None
+    assert len(functions) == 1
+    assert "total-cost" in functions
 
 def test_parse_action_with_boolean_action_type_returns_action_data_correctly(domain_parser: DomainParser):
     test_action_str = """(do-spray-varnish

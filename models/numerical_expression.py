@@ -77,7 +77,6 @@ def assign(assigned_variable: PDDLFunction, value_to_assign: float) -> NoReturn:
 
 
 COMPARISON_OPERATORS = {
-    "=": lambda x, y: x == y,
     "!=": lambda x, y: x != y,
     "<=": lambda x, y: x <= y,
     ">=": lambda x, y: x >= y,
@@ -88,7 +87,8 @@ COMPARISON_OPERATORS = {
 ASSIGNMENT_EXPRESSIONS = {
     "increase": increase,
     "decrease": decrease,
-    "assign": assign
+    "assign": assign,
+    "=": assign
 }
 
 NUMERICAL_BINARY_OPERATORS = {

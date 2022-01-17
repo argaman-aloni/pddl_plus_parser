@@ -10,11 +10,8 @@ class PDDLObject:
         self.name = name
         self.type = type
 
+    def __str__(self):
+        return f"{self.name} - {self.type.name}"
 
-class PDDLConstant:
-    name: str
-    type: PDDLType
 
-    def __init__(self, name: str, type: PDDLType):
-        self.name = name
-        self.type = type
+PDDLConstant = PDDLObject

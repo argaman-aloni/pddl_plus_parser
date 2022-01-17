@@ -1,4 +1,5 @@
 from lisp_parsers import PDDLTokenizer
+from tests.lisp_parsers_tests.consts import TEST_NUMERIC_PROBLEM
 
 
 def test_simple_parsing():
@@ -38,3 +39,7 @@ def test_parse_action_yields_correct_action_ast():
                        ':precondition', ['and', ['available', '?x'], ['has-colour', '?m', '?newcolour']],
                        ':effect', ['and', ['treatment', '?x', 'varnished'], ['colour', '?x', '?newcolour']]]
     assert tokens == expected_tokens
+
+def test_parse_problem():
+    test_problem_tokenizer = PDDLTokenizer(file_path=TEST_NUMERIC_PROBLEM)
+    print(test_problem_tokenizer.parse())

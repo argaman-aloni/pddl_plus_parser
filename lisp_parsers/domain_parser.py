@@ -1,33 +1,17 @@
 """Module that contains the parser for PDDL+ domain files."""
 import logging
 from pathlib import Path
-from typing import List, Dict, Union, Iterator, NoReturn
+from typing import List, Dict, Union, NoReturn
 
-from lisp_parsers import PDDLTokenizer
 from models import Domain, PDDLType, Predicate, PDDLConstant, PDDLFunction, Action, SignatureType, \
     NumericalExpressionTree, construct_expression_tree
+from .parsing_utils import parse_signature
+from .pddl_tokenizer import PDDLTokenizer
 
 ObjectType = PDDLType(name="object", parent=None)
 
 COMPARISON_OPS = ["=", "!=", "<=", ">=", ">", "<"]
 ASSIGNMENT_OPS = ["assign", "increase", "decrease"]
-
-
-def parse_signature(parameters: Iterator[str], domain_types: Dict[str, PDDLType]) -> SignatureType:
-    """Parse the signature of a statement.
-
-    :param parameters: the parameters that appear in the signature.
-    :param domain_types: the types that were extracted from the domain.
-    :return: the object representing the signature's data.
-    """
-    signature = {}
-    for parameter_name in parameters:
-        # now the next item is the dash that we need to ignore
-        next(parameters)
-        parameter_type = next(parameters)
-        signature[parameter_name] = domain_types[parameter_type]
-
-    return signature
 
 
 class DomainParser:
@@ -36,7 +20,7 @@ class DomainParser:
     tokenizer: PDDLTokenizer
     logger: logging.Logger
 
-    def __init__(self, domain_path: Path):
+    def __init__(self, domain_path: Path) -> object:
         self.tokenizer = PDDLTokenizer(domain_path)
         self.logger = logging.getLogger(__name__)
 
@@ -49,30 +33,21 @@ class DomainParser:
         self.logger.info("Starting to parse the types in the domain!")
         pddl_types = {}
         same_types_objects = []
-        parent_types = {}
-        found_parent_type = False
-        for pddl_type in types:
-            if found_parent_type:
-                if pddl_type == "object":
-                    parent_type = ObjectType
-                elif pddl_type in parent_types:
-                    parent_type = parent_types[pddl_type]
-                else:
-                    parent_type = PDDLType(name=pddl_type, parent=ObjectType)
-
-                for descendant_type in same_types_objects:
-                    new_type = PDDLType(name=descendant_type, parent=parent_type)
-                    pddl_types[descendant_type] = new_type
-
-                same_types_objects = []
-                found_parent_type = False
-
-            elif pddl_type == "-":
-                found_parent_type = True
+        parent_types = {"object": ObjectType}
+        index = 0
+        while index < len(types):
+            if types[index] != "-":
+                same_types_objects.append(types[index])
+                index += 1
                 continue
 
-            else:
-                same_types_objects.append(pddl_type)
+            pddl_type = types[index + 1]
+            parent_type = parent_types.get(pddl_type, PDDLType(name=pddl_type, parent=ObjectType))
+            pddl_types.update({descendant_typ_name: PDDLType(name=descendant_typ_name, parent=parent_type)
+                               for descendant_typ_name in same_types_objects})
+            same_types_objects = []
+            index += 2
+            continue
 
         if len(same_types_objects) > 0:
             pddl_types.update({type_name: PDDLType(name=type_name, parent=ObjectType)
