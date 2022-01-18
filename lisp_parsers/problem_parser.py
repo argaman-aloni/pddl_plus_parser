@@ -30,7 +30,9 @@ class ProblemParser:
         optional_objects = {name: pddl_object for name, pddl_object in self.problem.objects.items()}
         optional_objects.update(self.domain.constants)
         objects_types = [optional_objects[obj_name].type for obj_name in predicate_signature_items]
-        assert list(objects_types) == list(lifted_predicate.signature.values())
+        lifted_predicate_types = list(lifted_predicate.signature.values())
+        for index, grounded_object_type in enumerate(objects_types):
+            assert grounded_object_type.is_sub_type(lifted_predicate_types[index])
 
     def parse_domain_name(self, domain_name: str) -> NoReturn:
         """Parse the domain name in the problem file and verifies that the name given matches the inner domain.
@@ -197,7 +199,7 @@ class ProblemParser:
                 continue
 
             elif macro_expression[0] == ":goal":
-                self.parse_goal_state(macro_expression[1:])
+                self.parse_goal_state(macro_expression[1])
                 continue
 
             elif macro_expression == ":metric":

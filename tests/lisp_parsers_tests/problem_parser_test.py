@@ -246,6 +246,7 @@ def test_parse_goal_state_with_legal_goal_state_extract_correct_number_of_ground
 
 def test_parse_problem_with_real_problem_data_does_not_fail(problem_parser: ProblemParser):
     try:
-        problem_parser.parse_problem()
+        problem = problem_parser.parse_problem()
+        print(problem)
     except Exception:
         fail()

@@ -49,6 +49,11 @@ class PDDLFunction:
         """
         self.stored_value = value
 
+    @property
+    def untyped_representation(self) -> str:
+        untyped_signature_str = " ".join(self.signature.keys())
+        return f"(= ({self.name} {untyped_signature_str}) {self.value})"
+
     def __str__(self):
         signature_str_items = []
         for parameter_name, parameter_type in self.signature.items():

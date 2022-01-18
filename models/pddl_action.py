@@ -100,7 +100,7 @@ class Action:
     numeric_preconditions: Set[NumericalExpressionTree]
     add_effects: Set[Predicate]
     delete_effects: Set[Predicate]
-    numeric_effects: Set[NumericEffect]
+    numeric_effects: Set[NumericalExpressionTree]
 
     def __str__(self):
         return f"{self.name}: {self.signature}"

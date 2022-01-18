@@ -35,3 +35,14 @@ class Problem:
         self.initial_state_fluents = {}
         self.goal_state_predicates = []
         self.metric = {}
+
+    def __str__(self):
+        grounded_predicates = []
+        for p in self.initial_state_predicates.values():
+            grounded_predicates.extend(p)
+
+        return f"<Problem - {self.name} of domain - {self.domain.name}.\n" \
+               f"Initial state predicates - {[str(p) for p in grounded_predicates]}\n" \
+               f"Initial state numeric fluents - {[f for f in self.initial_state_fluents]}\n" \
+               f"Goal state - {[str(p) for p in self.goal_state_predicates]}" \
+               ">"
