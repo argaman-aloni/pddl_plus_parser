@@ -43,6 +43,11 @@ class Predicate:
 
         return True
 
+    @property
+    def untyped_representation(self) -> str:
+        untyped_signature_str = " ".join(self.signature.keys())
+        return f"({self.name} {untyped_signature_str})"
+
     def __str__(self):
         signature_str_items = []
         for parameter_name, parameter_type in self.signature.items():
@@ -78,8 +83,8 @@ class GroundedPredicate(Predicate):
 
     @property
     def untyped_representation(self) -> str:
-        untyped_signature_str = " ".join(self.signature.keys())
-        return f"({self.name} {untyped_signature_str})"
+        untyped_grounded_signature_str = " ".join(self.object_mapping.values())
+        return f"({self.name} {untyped_grounded_signature_str})"
 
     def __str__(self):
         signature_str_items = []
@@ -88,3 +93,6 @@ class GroundedPredicate(Predicate):
 
         signature_str = " ".join(signature_str_items)
         return f"({self.name} {signature_str})"
+
+    def __hash__(self):
+        return hash(self.__str__())

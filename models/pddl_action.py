@@ -103,4 +103,9 @@ class Action:
     numeric_effects: Set[NumericalExpressionTree]
 
     def __str__(self):
-        return f"{self.name}: {self.signature}"
+        signature_str_items = []
+        for parameter_name, parameter_type in self.signature.items():
+            signature_str_items.append(f"{parameter_name} - {str(parameter_type)}")
+
+        signature_str = " ".join(signature_str_items)
+        return f"({self.name} {signature_str})"
