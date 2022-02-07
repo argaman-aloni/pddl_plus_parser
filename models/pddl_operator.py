@@ -1,4 +1,6 @@
 """module to represent an operator that can apply actions and change state objects."""
+import logging
+from collections import defaultdict
 from typing import List, Set, Dict, NoReturn
 
 from anytree import AnyNode
@@ -21,7 +23,7 @@ def set_expression_value(expression_node: AnyNode, state_fluents: Dict[str, PDDL
             return
 
         grounded_fluent: PDDLFunction = expression_node.value
-        grounded_fluent.set_value(state_fluents[str(grounded_fluent)].value)
+        grounded_fluent.set_value(state_fluents[grounded_fluent.untyped_representation].value)
         return
 
     set_expression_value(expression_node.children[0], state_fluents)
@@ -32,6 +34,8 @@ class Operator:
     action: Action
     domain: Domain
     grounded_call_objects: List[str]
+    grounded: bool
+    logger: logging.Logger
 
     # These fields are constructed after the grounding process.
     grounded_positive_preconditions: Set[GroundedPredicate]
@@ -45,6 +49,8 @@ class Operator:
         self.action = action
         self.domain = domain
         self.grounded_call_objects = grounded_action_call
+        self.grounded = False
+        self.logger = logging.getLogger(__name__)
 
     def ground_predicates(self, lifted_predicates: Set[Predicate],
                           parameters_map: Dict[str, str]) -> Set[GroundedPredicate]:
@@ -146,6 +152,50 @@ class Operator:
         self.grounded_numeric_preconditions = self.ground_numeric_expressions(self.action.numeric_preconditions,
                                                                               parameters_map)
         self.grounded_numeric_effects = self.ground_numeric_expressions(self.action.numeric_effects, parameters_map)
+        self.grounded = True
+
+    def _positive_preconditions_hold(self, state: State) -> bool:
+        """
+
+        :param state:
+        :return:
+        """
+        self.logger.info(
+            "Validating whether or not the positive state variables match the operator's grounded predicates.")
+        for positive_precondition in self.grounded_positive_preconditions:
+            try:
+                state_grounded_predicates = state.state_predicates[positive_precondition.lifted_typed_representation]
+                if not positive_precondition in state_grounded_predicates:
+                    self.logger.debug(f"Did not find the grounded predicate {str(positive_precondition)}")
+                    return False
+
+            except KeyError:
+                self.logger.debug(f"Did not find the predicate {positive_precondition.lifted_typed_representation}")
+                return False
+
+        self.logger.debug("All positive preconditions we found in the state.")
+        return True
+
+    def _negative_preconditions_hold(self, state: State) -> bool:
+        """
+
+        :param state:
+        :return:
+        """
+        self.logger.info("Validating that all of the negative preconditions don't exist in the state.")
+        for negative_precondition in self.grounded_negative_preconditions:
+            try:
+                state_grounded_predicates = state.state_predicates[negative_precondition.lifted_typed_representation]
+                if negative_precondition in state_grounded_predicates:
+                    self.logger.debug(
+                        f"Found the predicate {str(negative_precondition)} but it should not hold in the state!")
+                    return False
+
+            except KeyError:
+                continue
+
+        self.logger.debug("All negative preconditions do not hold in the state.")
+        return True
 
     def is_applicable(self, state: State) -> bool:
         """Checks if the action is applicable on the current state.
@@ -153,31 +203,20 @@ class Operator:
         :param state: the state prior to the action's execution.
         :return: whether or not the action is applicable.
         """
-        # Checking that the boolean preconditions hold.
-        for positive_precondition in self.grounded_positive_preconditions:
-            try:
-                state_grounded_predicates = state.state_predicates[str(positive_precondition)]
-                if not positive_precondition in state_grounded_predicates:
-                    return False
+        if not self.grounded:
+            self.ground()
 
-            except KeyError:
-                return False
-
-        # Checking that the negative preconditions do not exist in the state predicates.
-        for negative_precondition in self.grounded_negative_preconditions:
-            try:
-                state_grounded_predicates = state.state_predicates[str(negative_precondition)]
-                if negative_precondition in state_grounded_predicates:
-                    return False
-
-            except KeyError:
-                continue
+        if not self._positive_preconditions_hold(state) or not self._negative_preconditions_hold(state):
+            return False
 
         # Checking that the value of the numeric expression holds.
         for grounded_expression in self.grounded_numeric_preconditions:
             try:
+                self.logger.debug("Setting the values of the numeric state functions to the grounded operator")
                 set_expression_value(grounded_expression.root, state.state_fluents)
                 if not evaluate_expression(grounded_expression.root):
+                    self.logger.debug(f"The evaluation of the numeric state variable failed. "
+                                      f"The failed expression:\n{str(grounded_expression)}")
                     return False
 
             except KeyError:
@@ -185,3 +224,75 @@ class Operator:
 
         return True
 
+    def _group_effect_predicates(self, grounded_effects: Set[GroundedPredicate]) -> Dict[str, Set[GroundedPredicate]]:
+        """
+
+        :param grounded_effects:
+        :return:
+        """
+        grouped_effects = defaultdict(set)
+        for predicate in grounded_effects:
+            grouped_effects[predicate.lifted_typed_representation].add(predicate)
+
+        return grouped_effects
+
+    def update_state_predicates(self, previous_state: State) -> Dict[str, Set[GroundedPredicate]]:
+        """
+
+        :param previous_state:
+        :return:
+        """
+        self.logger.info("Applying the action on the state predicates.")
+        next_state_predicates = {**previous_state.state_predicates}
+        grouped_add_effects = self._group_effect_predicates(self.grounded_add_effects)
+        self.logger.debug("Adding the new predicates according to the add effects.")
+        for lifted_predicate_str, grounded_predicates in grouped_add_effects.items():
+            updated_predicates = next_state_predicates.get(lifted_predicate_str, set()).union(grounded_predicates)
+            next_state_predicates[lifted_predicate_str] = updated_predicates
+
+        grouped_delete_effects = self._group_effect_predicates(self.grounded_delete_effects)
+        self.logger.debug("Removing state predicates according to the delete effects.")
+        for lifted_predicate_str, grounded_predicates in grouped_delete_effects.items():
+            updated_predicates = next_state_predicates.get(lifted_predicate_str, set()).difference(grounded_predicates)
+            next_state_predicates[lifted_predicate_str] = updated_predicates
+
+        return next_state_predicates
+
+    def update_state_functions(self, previous_state: State) -> Dict[str, PDDLFunction]:
+        """
+
+        :param previous_state:
+        :return:
+        """
+        new_state_numeric_fluents = {**previous_state.state_fluents}
+        for grounded_expression in self.grounded_numeric_effects:
+            try:
+                self.logger.debug("First setting the values of the functions according to the stored state.")
+                set_expression_value(grounded_expression.root, previous_state.state_fluents)
+                new_grounded_function = evaluate_expression(grounded_expression.root)
+                new_state_numeric_fluents[new_grounded_function.untyped_representation] = new_grounded_function
+
+            except KeyError:
+                raise ValueError(f"There are missing fluents in the state! "
+                                 f"State fluents: {previous_state.state_fluents}\n"
+                                 f"Requested grounded expression:\n {str(grounded_expression)}")
+
+        return new_state_numeric_fluents
+
+    def apply(self, previous_state: State) -> State:
+        """Applies an action on a state and changes the state according to the action's effects.
+
+        :param previous_state: the state in which the operator is being applied on.
+        :return: the new state that was created by applying the operator.
+        """
+        # First need to apply the operator's discrete effects.
+        if not self.grounded:
+            self.ground()
+
+        if not self.is_applicable(previous_state):
+            self.logger.warning("Tried to apply an action to a state where the action's preconditions don't hold!")
+            raise ValueError()
+
+        next_state_predicates = self.update_state_predicates(previous_state)
+        next_state_numeric_fluents = self.update_state_functions(previous_state)
+        return State(predicates=next_state_predicates, fluents=next_state_numeric_fluents)

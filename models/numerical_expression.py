@@ -118,17 +118,17 @@ def calculate(expression_node: AnyNode) -> float:
     return NUMERICAL_BINARY_OPERATORS[numerical_operator](left_operand, right_operand)
 
 
-def evaluate_expression(expression_tree: AnyNode) -> Optional[bool]:
+def evaluate_expression(expression_tree: AnyNode) -> Optional[Union[bool, PDDLFunction]]:
     """Evaluates the value of a PDDL expression based on parsing the content of its AST.
 
     :param expression_tree: the PDDL expression to evaluate.
     :return: bool if the operand is a comparison operand, otherwise assign the calculated value to the function inline.
     """
     if expression_tree.value in ASSIGNMENT_EXPRESSIONS:
-        assigned_variable: PDDLFunction = expression_tree.children[0]
+        assigned_variable: PDDLFunction = expression_tree.children[0].value
         evaluated_operand = calculate(expression_tree.children[1])
         ASSIGNMENT_EXPRESSIONS[expression_tree.value](assigned_variable, evaluated_operand)
-        return
+        return assigned_variable
 
     compared_operator = calculate(expression_tree.children[0])
     evaluated_operand = calculate(expression_tree.children[1])
