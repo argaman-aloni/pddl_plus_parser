@@ -26,7 +26,7 @@ class State:
 
         :return: the string representing the assigned grounded fluents.
         """
-        return "\n".join(fluent.state_representation for fluent in self.state_fluents.values())
+        return " ".join(fluent.state_representation for fluent in self.state_fluents.values())
 
     def _serialize_predicates(self) -> str:
         """Serialize the predicates the constitute the state's facts.
@@ -35,12 +35,13 @@ class State:
         """
         predicates_str = ""
         for grounded_predicates in self.state_predicates.values():
-            predicates_str += "\n".join(predicate.untyped_representation for predicate in grounded_predicates)
+            predicates_str += " "
+            predicates_str += " ".join(predicate.untyped_representation for predicate in grounded_predicates)
 
         return predicates_str
 
     def serialize(self) -> str:
-        return f"({':init' if self.is_init else ':state'}\n" \
-               f"{self._serialize_numeric_fluents()}" \
+        return f"({':init' if self.is_init else ':state'}" \
+               f" {self._serialize_numeric_fluents()}" \
                f"{self._serialize_predicates()})"
 

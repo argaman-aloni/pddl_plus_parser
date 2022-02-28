@@ -52,6 +52,14 @@ class Operator:
         self.grounded = False
         self.logger = logging.getLogger(__name__)
 
+    @property
+    def name(self) -> str:
+        return self.action.name
+
+    def __str__(self):
+        called_objects = " ".join(self.grounded_call_objects)
+        return f"({self.name} {called_objects})"
+
     def ground_predicates(self, lifted_predicates: Set[Predicate],
                           parameters_map: Dict[str, str]) -> Set[GroundedPredicate]:
         """Grounds predicates that appear in the grounded operator.
