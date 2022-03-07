@@ -43,5 +43,5 @@ class State:
     def serialize(self) -> str:
         return f"({':init' if self.is_init else ':state'}" \
                f" {self._serialize_numeric_fluents()}" \
-               f"{self._serialize_predicates()})"
+               f"{self._serialize_predicates()})\n"
 

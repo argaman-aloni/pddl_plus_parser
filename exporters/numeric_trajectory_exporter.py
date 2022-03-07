@@ -110,7 +110,7 @@ class TrajectoryExporter:
         first_state = triplets[0].previous_state
         serialized_trajectory.append(first_state.serialize())
         for triplet in triplets:
-            serialized_trajectory.append(str(triplet.operator))
+            serialized_trajectory.append(f"(operator: {str(triplet.operator)})\n")
             serialized_trajectory.append(triplet.next_state.serialize())
 
         return serialized_trajectory

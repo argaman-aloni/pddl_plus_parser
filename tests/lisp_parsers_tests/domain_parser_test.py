@@ -56,6 +56,17 @@ def test_parse_types_with_object_parent_not_create_duplicates(domain_parser: Dom
         assert parsed_types[type_name].parent.name == "object"
 
 
+def test_parse_types_with_deep_type_hierarchy_recognizes_ancestors_correctly(domain_parser: DomainParser):
+    test_types_deep_hierarchy = ['place', 'locatable', '-', 'object', 'hoist', 'surface',
+                                 '-', 'locatable', 'pallet', '-', 'surface']
+
+    parsed_types = domain_parser.parse_types(test_types_deep_hierarchy)
+    assert "pallet" in parsed_types
+    assert parsed_types["pallet"].parent.name == "surface"
+    assert parsed_types["pallet"].parent.parent.name == "locatable"
+    assert parsed_types["pallet"].parent.parent.parent.name == "object"
+
+
 def test_parse_types_with_type_hierarchy_recognize_nested_types(domain_parser: DomainParser):
     parsed_types = domain_parser.parse_types(nested_types)
     for object_descendant in test_types_with_no_parent:
@@ -121,6 +132,7 @@ def test_parse_predicate_with_no_parameters_returns_predicate_object_with_only_n
     assert predicate.name == "ok"
     assert len(predicate.signature) == 0
 
+
 def test_parse_predicates_with_single_predicate_returns_predicates_dictionary_correctly(domain_parser: DomainParser):
     domain_types = domain_parser.parse_types(nested_types)
     test_predicates = [['available', '?obj', '-', 'woodobj']]
@@ -163,6 +175,7 @@ def test_parse_function_with_no_parameters_returns_function_object_with_only_nam
     assert functions is not None
     assert len(functions) == 1
     assert "total-cost" in functions
+
 
 def test_parse_action_with_boolean_action_type_returns_action_data_correctly(domain_parser: DomainParser):
     test_action_str = """(do-spray-varnish
@@ -281,13 +294,16 @@ def test_parse_simple_action_with_numeric_preconditions_and_effects_extracts_the
     assert effect_expression.root.id == "increase"
     assert effect_expression.root.height == 1
 
-def test_parse_simple_domain_with_only_boolean_actions_succeeds_in_parsing_all_domain_parts(domain_parser: DomainParser):
+
+def test_parse_simple_domain_with_only_boolean_actions_succeeds_in_parsing_all_domain_parts(
+        domain_parser: DomainParser):
     domain = domain_parser.parse_domain()
     assert domain is not None
     assert len(domain.requirements) == 2
     assert len(domain.types) == 8
     assert len(domain.predicates) == 3
     assert len(domain.actions) == 6
+
 
 def test_parse_woodworking_domain_with_boolean_actions_and_constants_succeeds_in_parsing_all_domain_parts():
     domain_parser = DomainParser(TEST_WOODWORKING_DOMAIN_PATH)
@@ -298,6 +314,7 @@ def test_parse_woodworking_domain_with_boolean_actions_and_constants_succeeds_in
     assert len(domain.constants) == 11
     assert len(domain.predicates) == 14
     assert len(domain.actions) == 13
+
 
 def test_parse_depot_domain_with_numric_actions_succeeds_in_parsing_all_domain_parts():
     domain_parser = DomainParser(TEST_NUMERIC_DEPOT_DOMAIN_PATH)

@@ -137,7 +137,7 @@ class ProblemParser:
             numeric_fluent = self.parse_grounded_numeric_fluent(function_data)
             self.logger.debug(f"Setting the fluent's value to - {assigned_value}")
             numeric_fluent.set_value(assigned_value)
-            self.problem.initial_state_fluents[str(numeric_fluent)] = numeric_fluent
+            self.problem.initial_state_fluents[numeric_fluent.untyped_representation] = numeric_fluent
             return
 
         if expression[0] in self.domain.predicates:

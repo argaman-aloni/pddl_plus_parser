@@ -33,7 +33,6 @@ class DomainParser:
         self.logger.info("Starting to parse the types in the domain!")
         pddl_types = {}
         same_types_objects = []
-        parent_types = {"object": ObjectType}
         index = 0
         while index < len(types):
             if types[index] != "-":
@@ -42,7 +41,7 @@ class DomainParser:
                 continue
 
             pddl_type = types[index + 1]
-            parent_type = parent_types.get(pddl_type, PDDLType(name=pddl_type, parent=ObjectType))
+            parent_type = pddl_types.get(pddl_type, PDDLType(name=pddl_type, parent=ObjectType))
             pddl_types.update({descendant_typ_name: PDDLType(name=descendant_typ_name, parent=parent_type)
                                for descendant_typ_name in same_types_objects})
             same_types_objects = []

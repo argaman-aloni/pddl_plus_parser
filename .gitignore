@@ -115,3 +115,5 @@ dmypy.json
 
 # Pycharm setting files.
 .idea/*
+/tests/exporters_tests/test_trajectory
+/tests/exporters_tests/test_numeric_trajectory

@@ -36,39 +36,39 @@ def problem_parser_with_objects(domain: Domain) -> ProblemParser:
     return problem_parser
 
 
-def test_parse_domain_name_when_given_invalid_domain_name_raises_error(discrete_problem_parser):
+def test_parse_domain_name_when_given_invalid_domain_name_raises_error(problem_parser):
     bad_domain_name = "bad-domain-name"
     with raises(ValueError):
-        discrete_problem_parser.parse_domain_name(bad_domain_name)
+        problem_parser.parse_domain_name(bad_domain_name)
 
 
 def test_parse_domain_name_when_given_valid_domain_name_no_error_is_raised(
-        discrete_problem_parser, domain: Domain):
+        problem_parser, domain: Domain):
     try:
-        discrete_problem_parser.parse_domain_name(domain.name)
+        problem_parser.parse_domain_name(domain.name)
     except ValueError:
         fail()
 
 
-def test_parse_objects_parse_simple_objects_list_with_one_type_correctly(discrete_problem_parser):
+def test_parse_objects_parse_simple_objects_list_with_one_type_correctly(problem_parser):
     test_objects_ast = ['num1', 'num2', 'num3', 'num4', 'num5', 'num6', 'num7', 'num8', 'num9', 'num10', 'num11',
                         'num12', 'num13', 'num14', 'num15', 'num16', '-', 'num']
-    parsed_objects = discrete_problem_parser.parse_objects(test_objects_ast)
+    parsed_objects = problem_parser.parse_objects(test_objects_ast)
     assert len(parsed_objects) == 16
     assert all([obj.type.name == "num" for obj in parsed_objects.values()])
 
 
-def test_parse_objects_parse_objects_list_with_multiple_types_correctly(discrete_problem_parser):
-    parsed_objects = discrete_problem_parser.parse_objects(test_objects_ast)
+def test_parse_objects_parse_objects_list_with_multiple_types_correctly(problem_parser):
+    parsed_objects = problem_parser.parse_objects(test_objects_ast)
     objects_types = set([obj.type.name for obj in parsed_objects.values()])
     assert len(objects_types) == 5
 
 
 def test_parse_grounded_numeric_fluent_with_different_number_of_parameters_than_domain_definition_raises_error(
-        discrete_problem_parser):
+        problem_parser):
     test_bad_function_ast = ['group_worker_cost', 'worker2', 'worker3']
     with raises(ValueError):
-        discrete_problem_parser.parse_grounded_numeric_fluent(test_bad_function_ast)
+        problem_parser.parse_grounded_numeric_fluent(test_bad_function_ast)
 
 
 def test_parse_grounded_numeric_fluent_with_correct_number_parameters_and_bad_parameter_type_raises_error(
@@ -154,7 +154,7 @@ def test_parse_state_component_with_legal_fluent_set_fluent_value_to_the_input_f
     valid_function_expression = ['=', ['group_worker_cost', 'worker2'], '60']
     problem_parser_with_objects.parse_state_component(valid_function_expression)
 
-    expected_function_str = "(group_worker_cost worker2 - worker)"
+    expected_function_str = "(group_worker_cost worker2)"
     assert len(problem_parser_with_objects.problem.initial_state_fluents) == 1
     extracted_function = problem_parser_with_objects.problem.initial_state_fluents[expected_function_str]
     assert extracted_function.value == 60
@@ -244,9 +244,9 @@ def test_parse_goal_state_with_legal_goal_state_extract_correct_number_of_ground
     assert len(problem_parser_with_objects.problem.goal_state_predicates) == 1
 
 
-def test_parse_problem_with_real_problem_data_does_not_fail(discrete_problem_parser):
+def test_parse_problem_with_real_problem_data_does_not_fail(problem_parser):
     try:
-        problem = discrete_problem_parser.parse_problem()
+        problem = problem_parser.parse_problem()
         print(problem)
     except Exception:
         fail()
