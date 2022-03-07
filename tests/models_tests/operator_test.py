@@ -5,7 +5,7 @@ from pytest import fixture, raises, fail
 
 from lisp_parsers import DomainParser
 from models import Domain, Action, Operator, GroundedPredicate, PDDLFunction, State
-from tests.models_test.consts import TEST_HARD_NUMERIC_DOMAIN
+from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN
 
 TEST_LIFTED_SIGNATURE_ITEMS = ["?s", "?d", "?i", "?m"]
 TEST_GROUNDED_ACTION_CALL = ["s1", "test_direction", "test_instrument", "test_mode"]
@@ -35,19 +35,19 @@ def complete_state_predicates(domain: Domain) -> Dict[str, Set[GroundedPredicate
     power_on_predicate = domain.predicates["power_on"]
     pointing_predicate = domain.predicates["pointing"]
     return {
-        "(calibrated ?i - instrument)": {
+        "(calibrated ?i)": {
             GroundedPredicate(name="calibrated", signature=calibrated_predicate.signature,
                               object_mapping={"?i": "test_instrument"})},
-        "(on_board ?i - instrument ?s - satellite)": [
+        "(on_board ?i ?s)": [
             GroundedPredicate(name="on_board", signature=on_board_predicate.signature,
                               object_mapping={"?i": "test_instrument", "?s": "s1"})],
-        "(supports ?i - instrument ?m - mode)": {
+        "(supports ?i ?m)": {
             GroundedPredicate(name="supports", signature=supports_predicate.signature,
                               object_mapping={"?i": "test_instrument", "?m": "test_mode"})},
-        "(power_on ?i - instrument)": {
+        "(power_on ?i)": {
             GroundedPredicate(name="power_on", signature=power_on_predicate.signature,
                               object_mapping={"?i": "test_instrument"})},
-        "(pointing ?s - satellite ?d - direction)": {
+        "(pointing ?s ?d)": {
             GroundedPredicate(name="pointing", signature=pointing_predicate.signature,
                               object_mapping={"?s": "s1", "?d": "test_direction"})},
     }
@@ -237,7 +237,7 @@ def test_is_applicable_return_false_when_one_predicate_missing_in_state_predicat
     numeric_state_variables[data_capacity_function.untyped_representation].set_value(5.3)
 
     missing_predicate_state_variables = {**complete_state_predicates}
-    missing_predicate_state_variables.pop("(calibrated ?i - instrument)")
+    missing_predicate_state_variables.pop("(calibrated ?i)")
 
     state_with_missing_predicate = State(predicates=missing_predicate_state_variables, fluents=numeric_state_variables)
     assert not operator.is_applicable(state_with_missing_predicate)
@@ -344,11 +344,11 @@ def test_update_state_predicates_adds_the_correct_predicate(
     operator.ground()
     new_state_predicates = operator.update_state_predicates(valid_previous_state)
 
-    assert "(have_image ?d - direction ?m - mode)" in new_state_predicates
+    assert "(have_image ?d ?m)" in new_state_predicates
 
 def test_update_state_predicates_removed_predicate_when_predicate_in_delete_effects(
         domain: Domain, operator: Operator, valid_previous_state: State):
-    pointing_predicate_str = "(pointing ?s - satellite ?d - direction)"
+    pointing_predicate_str = "(pointing ?s ?d)"
     assert len(valid_previous_state.state_predicates[pointing_predicate_str]) == 1
     pointing_predicate = domain.predicates["pointing"]
 
@@ -367,7 +367,7 @@ def test_apply_returns_new_state_with_correct_values(
     next_state_fluents = next_state.state_fluents
     next_state_predicates = next_state.state_predicates
 
-    assert "(have_image ?d - direction ?m - mode)" in next_state_predicates
+    assert "(have_image ?d ?m)" in next_state_predicates
     assert len(next_state_fluents) == 3
     data_function = PDDLFunction(name="data", signature={
         "test_direction": domain.types["direction"],

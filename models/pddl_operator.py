@@ -172,13 +172,15 @@ class Operator:
             "Validating whether or not the positive state variables match the operator's grounded predicates.")
         for positive_precondition in self.grounded_positive_preconditions:
             try:
-                state_grounded_predicates = state.state_predicates[positive_precondition.lifted_typed_representation]
-                if not positive_precondition in state_grounded_predicates:
-                    self.logger.debug(f"Did not find the grounded predicate {str(positive_precondition)}")
+                state_grounded_predicates = state.state_predicates[positive_precondition.lifted_untyped_representation]
+                untyped_predicates = [p.untyped_representation for p in state_grounded_predicates]
+                if not positive_precondition.untyped_representation in untyped_predicates:
+                    self.logger.debug(f"Did not find the grounded predicate "
+                                      f"{positive_precondition.untyped_representation}")
                     return False
 
             except KeyError:
-                self.logger.debug(f"Did not find the predicate {positive_precondition.lifted_typed_representation}")
+                self.logger.debug(f"Did not find the predicate {positive_precondition.lifted_untyped_representation}")
                 return False
 
         self.logger.debug("All positive preconditions we found in the state.")
@@ -240,15 +242,15 @@ class Operator:
         """
         grouped_effects = defaultdict(set)
         for predicate in grounded_effects:
-            grouped_effects[predicate.lifted_typed_representation].add(predicate)
+            grouped_effects[predicate.lifted_untyped_representation].add(predicate)
 
         return grouped_effects
 
     def update_state_predicates(self, previous_state: State) -> Dict[str, Set[GroundedPredicate]]:
-        """
+        """Updates the state predicates based on the action that is being applied.
 
-        :param previous_state:
-        :return:
+        :param previous_state: the state that the action is being applied on.
+        :return: a set of predicates representing the next state.
         """
         self.logger.info("Applying the action on the state predicates.")
         next_state_predicates = {**previous_state.state_predicates}
@@ -261,8 +263,18 @@ class Operator:
         grouped_delete_effects = self._group_effect_predicates(self.grounded_delete_effects)
         self.logger.debug("Removing state predicates according to the delete effects.")
         for lifted_predicate_str, grounded_predicates in grouped_delete_effects.items():
-            updated_predicates = next_state_predicates.get(lifted_predicate_str, set()).difference(grounded_predicates)
-            next_state_predicates[lifted_predicate_str] = updated_predicates
+            next_state_grounded_predicates = next_state_predicates.get(lifted_predicate_str, set())
+            if len(next_state_grounded_predicates) == 0:
+                next_state_predicates[lifted_predicate_str] = next_state_grounded_predicates
+                continue
+
+            for predicate_to_remove in grounded_predicates:
+                for next_state_predicate in next_state_grounded_predicates:
+                    if predicate_to_remove == next_state_predicate:
+                        next_state_grounded_predicates.discard(next_state_predicate)
+                        break
+
+            next_state_predicates[lifted_predicate_str] = next_state_grounded_predicates
 
         return next_state_predicates
 
@@ -301,6 +313,7 @@ class Operator:
             self.logger.warning("Tried to apply an action to a state where the action's preconditions don't hold!")
             raise ValueError()
 
+        self.logger.debug(f"Applying the grounded action - {self.name} on the current state.")
         next_state_predicates = self.update_state_predicates(previous_state)
         next_state_numeric_fluents = self.update_state_functions(previous_state)
         return State(predicates=next_state_predicates, fluents=next_state_numeric_fluents)

@@ -144,7 +144,7 @@ class ProblemParser:
             self.logger.debug("Component found is a predicate, starting to process it.")
             lifted_predicate = self.domain.predicates[expression[0]]
             grounded_predicate = self.parse_grounded_predicate(expression, lifted_predicate)
-            self.problem.initial_state_predicates[str(lifted_predicate)].add(grounded_predicate)
+            self.problem.initial_state_predicates[lifted_predicate.untyped_representation].add(grounded_predicate)
             return
 
         raise ValueError(f"Received illegal state component - {expression}")

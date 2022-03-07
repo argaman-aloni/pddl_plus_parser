@@ -90,6 +90,10 @@ class GroundedPredicate(Predicate):
     def lifted_typed_representation(self) -> str:
         return super().__str__()
 
+    @property
+    def lifted_untyped_representation(self) -> str:
+        return super().untyped_representation
+
     def __str__(self):
         signature_str_items = []
         for parameter_name, parameter_type in self.signature.items():
