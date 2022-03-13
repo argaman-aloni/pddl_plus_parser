@@ -19,10 +19,12 @@ class DomainParser:
 
     tokenizer: PDDLTokenizer
     logger: logging.Logger
+    partial_parsing: bool
 
-    def __init__(self, domain_path: Path) -> object:
+    def __init__(self, domain_path: Path, partial_parsing: bool=False):
         self.tokenizer = PDDLTokenizer(domain_path)
         self.logger = logging.getLogger(__name__)
+        self.partial_parsing = partial_parsing
 
     def parse_types(self, types: List[str]) -> Dict[str, PDDLType]:
         """Parse the types of the domain.
@@ -259,13 +261,13 @@ class DomainParser:
                 new_action.signature = parse_signature(iter(parameters_list), domain_types)
                 continue
 
-            if action_label_item == ":precondition":
+            if action_label_item == ":precondition" and not self.partial_parsing:
                 self.logger.debug(f"Starting to parse the preconditions of the action - {new_action.name}")
                 self.parse_preconditions(next(action_section_iterator), new_action, domain_functions,
                                          domain_predicates, domain_constants)
                 continue
 
-            if action_label_item == ":effect":
+            if action_label_item == ":effect" and not self.partial_parsing:
                 self.logger.debug(f"Starting to parse the effects of the action - {new_action.name}")
                 self.parse_effects(next(action_section_iterator), new_action, domain_functions,
                                    domain_predicates, domain_constants)

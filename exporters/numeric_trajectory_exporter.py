@@ -17,10 +17,10 @@ class ActionDescriptor:
 
 
 def parse_action_call(action_call: str) -> ActionDescriptor:
-    """
+    """Parses the string representing the action call in the plan sequence.
 
-    :param action_call:
-    :return:
+    :param action_call: the string representing the action call.
+    :return: the object representing the action name and its parameters.
     """
     action_data = action_call.lower().replace("(", " ( ").replace(")", " ) ").split()
     action_data = action_data[1:-1]
@@ -113,4 +113,7 @@ class TrajectoryExporter:
             serialized_trajectory.append(f"(operator: {str(triplet.operator)})\n")
             serialized_trajectory.append(triplet.next_state.serialize())
 
+
+        serialized_trajectory[0] = f"({serialized_trajectory[0]}"
+        serialized_trajectory[-1] = f"{serialized_trajectory[-1]})"
         return serialized_trajectory

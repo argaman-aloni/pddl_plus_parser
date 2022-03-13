@@ -7,3 +7,7 @@ TEST_WOODWORKING_DOMAIN_PATH = Path(CWD, "woodworking_domain.pddl")
 TEST_NUMERIC_DEPOT_DOMAIN_PATH = Path(CWD, "depot_numeric_domain.pddl")
 TEST_NUMERIC_PROBLEM = Path(CWD, "test_agricola_problem.pddl")
 TEST_NUMERIC_DOMAIN = Path(CWD, "test_agricola_domain.pddl")
+
+TEST_NUMERIC_DEPOT_DOMAIN = Path(CWD, "depot_numeric.pddl")
+TEST_NUMERIC_DEPOT_PROBLEM = Path(CWD, "pfile2.pddl")
+TEST_NUMERIC_DEPOT_TRAJECTORY = Path(CWD, "test_numeric_trajectory")

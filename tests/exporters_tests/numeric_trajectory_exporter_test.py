@@ -6,7 +6,7 @@ from typing import List
 
 from pytest import fixture
 
-from exporters.numeric_trajectory_exporter import TrajectoryExporter
+from exporters import TrajectoryExporter
 from lisp_parsers import DomainParser, ProblemParser
 from models import Domain, State, Problem
 

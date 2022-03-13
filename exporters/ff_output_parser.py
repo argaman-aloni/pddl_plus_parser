@@ -41,10 +41,3 @@ class MetricFFParser:
 
         with open(output_path, "wt") as output_file:
             output_file.writelines(plan_seq)
-
-
-if __name__ == '__main__':
-    plan_path = Path("C:\\Users\owner\Documents\GitHub\pddl_plus_parser\\tests\exporters_tests\output.out")
-    output_path = Path("C:\\Users\owner\Documents\GitHub\pddl_plus_parser\\tests\exporters_tests\\test_output.out")
-    ff_parser = MetricFFParser()
-    ff_parser.parse_plan(plan_path, output_path)
