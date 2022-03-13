@@ -1,8 +1,8 @@
 """Module test for the trajectory parser."""
-from pytest import fixture, raises, fail
+from pytest import fixture
 
-from lisp_parsers import DomainParser, ProblemParser, TrajectoryParser
-from models import Domain, Problem
+from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser, TrajectoryParser
+from pddl_plus_parser.models import Domain, Problem
 from tests.lisp_parsers_tests.consts import TEST_NUMERIC_DEPOT_DOMAIN, TEST_NUMERIC_DEPOT_PROBLEM, \
     TEST_NUMERIC_DEPOT_TRAJECTORY
 

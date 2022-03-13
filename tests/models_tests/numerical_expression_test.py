@@ -1,6 +1,6 @@
 from anytree import RenderTree, PreOrderIter, AnyNode
 
-from models import construct_expression_tree, PDDLFunction, PDDLType, calculate, evaluate_expression
+from pddl_plus_parser.models import construct_expression_tree, PDDLFunction, PDDLType, calculate, evaluate_expression
 
 SIMPLE_EXPRESSION = ['assign', ['amount', '?jug1'], '0']
 COMPLEX_EXPRESSION = ['>=', ['-', ['capacity', '?jug2'], ['amount', '?jug2']], ['amount', '?jug1']]

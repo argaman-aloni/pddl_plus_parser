@@ -1,7 +1,7 @@
 from pytest import fixture, raises
 
-from lisp_parsers import DomainParser, PDDLTokenizer
-from models import PDDLType, Predicate
+from pddl_plus_parser.lisp_parsers import DomainParser, PDDLTokenizer
+from pddl_plus_parser.models import PDDLType, Predicate
 from tests.lisp_parsers_tests.consts import TEST_PARSING_FILE_PATH, TEST_WOODWORKING_DOMAIN_PATH, \
     TEST_NUMERIC_DEPOT_DOMAIN_PATH
 

@@ -3,8 +3,8 @@ from typing import List, Dict, Set
 
 from pytest import fixture, raises, fail
 
-from lisp_parsers import DomainParser
-from models import Domain, Action, Operator, GroundedPredicate, PDDLFunction, State
+from pddl_plus_parser.lisp_parsers import DomainParser
+from pddl_plus_parser.models import Domain, Action, Operator, GroundedPredicate, PDDLFunction, State
 from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN
 
 TEST_LIFTED_SIGNATURE_ITEMS = ["?s", "?d", "?i", "?m"]

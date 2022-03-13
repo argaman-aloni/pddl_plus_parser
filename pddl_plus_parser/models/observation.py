@@ -1,7 +1,7 @@
 """Module to represent an observed trajectory. Compared to a trajectory, this contains only the observed data."""
 from typing import List, NoReturn
 
-from models.pddl_state import State
+from pddl_plus_parser.models.pddl_state import State
 
 
 class ActionCall:

@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import List, Optional
 
-from lisp_parsers import Token, Expression
+from pddl_plus_parser.lisp_parsers import Token, Expression
 
 
 class PDDLTokenizer:

@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Union, NoReturn
 
-from models import Domain, PDDLType, Predicate, PDDLConstant, PDDLFunction, Action, SignatureType, \
+from pddl_plus_parser.models import Domain, PDDLType, Predicate, PDDLConstant, PDDLFunction, Action, SignatureType, \
     NumericalExpressionTree, construct_expression_tree
 from .parsing_utils import parse_signature
 from .pddl_tokenizer import PDDLTokenizer

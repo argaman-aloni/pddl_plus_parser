@@ -2,7 +2,7 @@
 from collections import Iterator
 from typing import Dict
 
-from models import PDDLType, SignatureType
+from pddl_plus_parser.models import PDDLType, SignatureType
 
 
 def parse_signature(parameters: Iterator[str], domain_types: Dict[str, PDDLType]) -> SignatureType:

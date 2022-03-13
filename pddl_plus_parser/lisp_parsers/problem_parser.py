@@ -3,8 +3,8 @@ import logging
 from pathlib import Path
 from typing import NoReturn, List, Union, Dict
 
-from lisp_parsers import PDDLTokenizer
-from models import Domain, PDDLObject, Problem, PDDLFunction, Predicate, GroundedPredicate
+from pddl_plus_parser.lisp_parsers import PDDLTokenizer
+from pddl_plus_parser.models import Domain, PDDLObject, Problem, PDDLFunction, Predicate, GroundedPredicate
 
 
 class ProblemParser:

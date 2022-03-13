@@ -1,8 +1,8 @@
 """module to test the problem parsing functionality."""
 from pytest import fixture, raises, fail
 
-from lisp_parsers import DomainParser, ProblemParser
-from models import Domain
+from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser
+from pddl_plus_parser.models import Domain
 from tests.lisp_parsers_tests.consts import TEST_NUMERIC_DOMAIN, TEST_NUMERIC_PROBLEM
 
 test_objects_ast = ['num0', 'num1', 'num2', 'num3', 'num4', 'num5', 'num6', 'num7', 'num8', 'num9', 'num10', 'num11',

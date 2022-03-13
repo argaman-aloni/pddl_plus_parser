@@ -6,9 +6,9 @@ from typing import List
 
 from pytest import fixture
 
-from exporters import TrajectoryExporter
-from lisp_parsers import DomainParser, ProblemParser
-from models import Domain, State, Problem
+from pddl_plus_parser.exporters import TrajectoryExporter
+from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser
+from pddl_plus_parser.models import Domain, State, Problem
 
 CWD = os.getcwd()
 TEST_DISCRETE_DOMAIN_PATH = Path(CWD, "elevators_domain.pddl")

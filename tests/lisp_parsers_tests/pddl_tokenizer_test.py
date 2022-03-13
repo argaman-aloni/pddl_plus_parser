@@ -1,4 +1,4 @@
-from lisp_parsers import PDDLTokenizer
+from pddl_plus_parser.lisp_parsers import PDDLTokenizer
 from tests.lisp_parsers_tests.consts import TEST_NUMERIC_PROBLEM
 
 

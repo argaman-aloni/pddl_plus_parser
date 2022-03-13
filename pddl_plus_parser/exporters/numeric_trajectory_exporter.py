@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import List
 
-from models import Domain, Problem, Operator, State
+from pddl_plus_parser.models import Domain, Problem, Operator, State
 
 
 class ActionDescriptor:
