@@ -14,6 +14,10 @@ class ActionCall:
         self.parameters = grounded_parameters
 
 
+    def __str__(self):
+        called_objects = " ".join(self.parameters)
+        return f"({self.name} {called_objects})"
+
 class ObservedComponent:
     """Class representing a single observed component."""
 

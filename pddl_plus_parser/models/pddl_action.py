@@ -1,5 +1,5 @@
 """Module that represents a PDDL+ action."""
-from typing import Set, Callable, Union, NoReturn
+from typing import Set, Callable, Union, NoReturn, List
 
 from .numerical_expression import NumericalExpressionTree
 from .pddl_function import PDDLFunction
@@ -109,3 +109,7 @@ class Action:
 
         signature_str = " ".join(signature_str_items)
         return f"({self.name} {signature_str})"
+
+    @property
+    def parameter_names(self) -> List[str]:
+        return list(self.signature.keys())

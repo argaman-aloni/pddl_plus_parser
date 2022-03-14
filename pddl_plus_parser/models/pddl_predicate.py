@@ -1,5 +1,5 @@
 """Module that represents a boolean predicate in a PDDL+ model."""
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from .pddl_type import PDDLType
 
@@ -85,6 +85,10 @@ class GroundedPredicate(Predicate):
     def untyped_representation(self) -> str:
         untyped_grounded_signature_str = " ".join(self.object_mapping.values())
         return f"({self.name} {untyped_grounded_signature_str})"
+
+    @property
+    def grounded_objects(self) -> List[str]:
+        return list(self.object_mapping.values())
 
     @property
     def lifted_typed_representation(self) -> str:
