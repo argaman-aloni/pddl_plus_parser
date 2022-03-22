@@ -31,7 +31,7 @@ class TrajectoryParser:
         :return: the tokenizer that is able to parse the trajectory strings to expressions.
         """
         self.logger.debug(f"Reading the file - {trajectory_file_path}")
-        return PDDLTokenizer(trajectory_file_path)
+        return PDDLTokenizer(file_path=trajectory_file_path)
 
     def parse_state(self, state_data: List[List[Union[str, List[str]]]]) -> State:
         """Parse the trajectory's state data and extracts the state.
@@ -116,13 +116,14 @@ class TrajectoryParser:
         return GroundedPredicate(name=predicate_name, signature=lifted_predicate.signature,
                                  object_mapping=object_mapping)
 
-    def parse_action_call(self, action_call_data: List[str]) -> ActionCall:
+    def parse_action_call(self, action_call_ast: List[List[str]]) -> ActionCall:
         """Parse the grounded action call in the trajectory.
 
-        :param action_call_data: a grounded action call in the form: (<name> <p1> <p2> ... <pn>)
+        :param action_call_ast: a grounded action call in the form: [(<name> <p1> <p2> ... <pn>)]
         :return: the action call object.
         """
-        self.logger.debug(f"Parsing the grounded action call - {action_call_data}")
+        self.logger.debug(f"Parsing the grounded action call - {action_call_ast}")
+        action_call_data = action_call_ast[0]
         return ActionCall(name=action_call_data[0], grounded_parameters=action_call_data[1:])
 
     def parse_trajectory(self, trajectory_file_path: Path) -> Observation:
@@ -135,6 +136,7 @@ class TrajectoryParser:
         tokenizer = self._read_trajectory_file(trajectory_file_path)
         observation_expression = tokenizer.parse()
         observation = Observation()
+        self.logger.debug("Starting to generate the observation from the input trajectory.")
         for index in range(0, len(observation_expression) - 2, 2):
             macro_expression = observation_expression[index]
             if macro_expression[0] == ":init" or macro_expression[0] == ":state":
