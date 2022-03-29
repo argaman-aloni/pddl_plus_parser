@@ -102,6 +102,14 @@ class Action:
     delete_effects: Set[Predicate]
     numeric_effects: Set[NumericalExpressionTree]
 
+    def __init__(self):
+        self.positive_preconditions = set()
+        self.negative_preconditions = set()
+        self.numeric_preconditions = set()
+        self.add_effects = set()
+        self.delete_effects = set()
+        self.numeric_effects = set()
+
     def __str__(self):
         signature_str_items = []
         for parameter_name, parameter_type in self.signature.items():

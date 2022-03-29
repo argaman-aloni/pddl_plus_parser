@@ -81,6 +81,9 @@ class GroundedPredicate(Predicate):
 
         return self.object_mapping == other.object_mapping
 
+    def __ne__(self, other: "GroundedPredicate") -> bool:
+        return not self.__eq__(other)
+
     @property
     def untyped_representation(self) -> str:
         untyped_grounded_signature_str = " ".join(self.object_mapping.values())
