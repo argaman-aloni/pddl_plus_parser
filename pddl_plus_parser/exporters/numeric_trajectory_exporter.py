@@ -1,7 +1,7 @@
 """Module that encapsulates the numeric trajectory functionalities."""
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, NoReturn
 
 from pddl_plus_parser.models import Domain, Problem, Operator, State
 
@@ -113,7 +113,16 @@ class TrajectoryExporter:
             serialized_trajectory.append(f"(operator: {str(triplet.operator)})\n")
             serialized_trajectory.append(triplet.next_state.serialize())
 
-
         serialized_trajectory[0] = f"({serialized_trajectory[0]}"
         serialized_trajectory[-1] = f"{serialized_trajectory[-1]})"
         return serialized_trajectory
+
+    def export_to_file(self, triplets: List[TrajectoryTriplet], output_path: Path) -> NoReturn:
+        """Export the trajectory to a file.
+
+        :param triplets: the trajectory triples.
+        :param output_path: the path to the output file.
+        """
+        trajectory_lines = self.export(triplets)
+        with open(output_path, "wt") as output_path:
+            output_path.writelines(trajectory_lines)

@@ -1,6 +1,7 @@
 """Parse the output of the mtericFF planner so that the algorithms will be able to use it."""
 import logging
 import re
+import sys
 
 from pathlib import Path
 from typing import NoReturn
@@ -41,3 +42,7 @@ class MetricFFParser:
 
         with open(output_path, "wt") as output_file:
             output_file.writelines(plan_seq)
+
+
+if __name__ == '__main__':
+    MetricFFParser().parse_plan(Path(sys.argv[1]), Path(sys.argv[2]))
