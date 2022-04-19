@@ -39,6 +39,8 @@ class MetricFFParser:
             action_sequence = match.group(1)
             self.logger.debug(f"action sequence - {action_sequence}")
             plan_seq.append(f"({action_sequence.lower().strip()})\n")
+        if len(plan_seq) == 0:
+            return
 
         with open(output_path, "wt") as output_file:
             output_file.writelines(plan_seq)

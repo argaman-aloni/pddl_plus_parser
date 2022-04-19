@@ -253,7 +253,11 @@ class Operator:
         :return: a set of predicates representing the next state.
         """
         self.logger.info("Applying the action on the state predicates.")
-        next_state_predicates = {**previous_state.state_predicates}
+        next_state_predicates = {}
+        for lifted_predicate_name, grounded_predicates in previous_state.state_predicates.items():
+            next_state_predicates[lifted_predicate_name] =\
+                set([GroundedPredicate(p.name, p.signature, p.object_mapping) for p in grounded_predicates])
+
         grouped_add_effects = self._group_effect_predicates(self.grounded_add_effects)
         self.logger.debug("Adding the new predicates according to the add effects.")
         for lifted_predicate_str, grounded_predicates in grouped_add_effects.items():
