@@ -45,6 +45,16 @@ class MetricFFParser:
         with open(output_path, "wt") as output_file:
             output_file.writelines(plan_seq)
 
+    def is_valid_plan_file(self, input_path: Path) -> bool:
+        """
+
+        :param input_path:
+        :return:
+        """
+        file_content = self._open_plan_file(input_path)
+        matches = re.findall(PLAN_COMPONENT_REGEX, file_content, re.MULTILINE)
+        return len(matches) > 0
+
 
 if __name__ == '__main__':
     MetricFFParser().parse_plan(Path(sys.argv[1]), Path(sys.argv[2]))
