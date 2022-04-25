@@ -6,6 +6,8 @@ from typing import NoReturn, List, Union, Dict
 from pddl_plus_parser.lisp_parsers import PDDLTokenizer
 from pddl_plus_parser.models import Domain, PDDLObject, Problem, PDDLFunction, Predicate, GroundedPredicate
 
+LEGAL_GOAL_OPERATORS = [">", "=", "<", ">=", "<="]
+
 
 class ProblemParser:
     """Class that parses PDDL+ problem files."""
@@ -120,9 +122,9 @@ class ProblemParser:
                                  object_mapping=object_mapping)
 
     def parse_state_component(self, expression: List[Union[str, List[str]]]) -> NoReturn:
-        """Parse a single AST component the represent either a predicate or a numeric fluent.
+        """Parse a single AST component that represents either a predicate or a numeric fluent.
 
-        :param component_ast: the ast component that can represent either a predicate or a numeric fluent.
+        :param expression: the ast component that can represent either a predicate or a numeric fluent.
         """
         self.logger.info("Parsing a single component from the initial state data.")
         if expression[0] == "=":  # This is an assignment of a grounded numeric fluent.
@@ -167,11 +169,27 @@ class ProblemParser:
             raise SyntaxError("Goal state should always start with an AND statement!")
 
         for expression in goal_state_ast[1:]:
-            if expression[0] not in self.domain.predicates:
+            if expression[0] not in self.domain.predicates and expression[0] not in LEGAL_GOAL_OPERATORS:
                 raise ValueError(f"Received illegal state component - {expression}")
 
-            grounded_predicate = self.parse_grounded_predicate(expression, self.domain.predicates[expression[0]])
-            self.problem.goal_state_predicates.append(grounded_predicate)
+            if expression[0] not in LEGAL_GOAL_OPERATORS:  # This is an assignment of a grounded numeric fluent.
+                grounded_predicate = self.parse_grounded_predicate(expression, self.domain.predicates[expression[0]])
+                self.problem.goal_state_predicates.append(grounded_predicate)
+                continue
+
+            if len(expression) != 3:  # ['=', <function items as a list>, '<value>']
+                raise SyntaxError("A numeric fluent should be of length 3. Fluent scheme: "
+                                  "(= (<fluent_name> <argument>) <value>)"
+                                  f"Received - {expression}")
+
+            self.logger.debug("Component found is a numeric fluent, starting to process the fluent.")
+            function_data = expression[1]
+            assigned_value = float(expression[2])
+            numeric_fluent = self.parse_grounded_numeric_fluent(function_data)
+            self.logger.debug(f"Setting the fluent's value to - {assigned_value}")
+            numeric_fluent.set_value(assigned_value)
+            self.problem.goal_state_fluents[numeric_fluent.untyped_representation] = numeric_fluent
+            continue
 
     def parse_problem(self) -> Problem:
         """Parse the problem's AST and extracts the object that is represented by the input scheme.

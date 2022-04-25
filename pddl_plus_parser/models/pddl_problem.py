@@ -26,6 +26,7 @@ class Problem:
     initial_state_fluents: Dict[str, PDDLFunction]
     # Since we don't need to optimize the search on the goal state, the goal state will remain as list.
     goal_state_predicates: List[GroundedPredicate]
+    goal_state_fluents: Dict[str, PDDLFunction]
     metric: Dict[str, NumericalExpressionTree]
 
     def __init__(self, domain: Domain):
@@ -34,6 +35,7 @@ class Problem:
         self.initial_state_predicates = defaultdict(set)
         self.initial_state_fluents = {}
         self.goal_state_predicates = []
+        self.goal_state_fluents = {}
         self.metric = {}
 
     def __str__(self):
