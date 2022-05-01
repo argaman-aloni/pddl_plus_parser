@@ -12,9 +12,9 @@ def construct_expression_tree(expression_ast: List[Union[str, List[str]]],
                               domain_functions: Dict[str, PDDLFunction]) -> AnyNode:
     """Constructs a tree that represents the numerical expression and that is later on able to be evaluated.
 
-    :param expression_ast:
-    :param domain_functions:
-    :return:
+    :param expression_ast: the AST representing the numeric expression that is to be parsed.
+    :param domain_functions: the functions that are defined in the domain.
+    :return: the tree representing the numeric calculation.
     """
     if type(expression_ast) == str:
         if expression_ast in LEGAL_NUMERICAL_EXPRESSIONS:

@@ -1,7 +1,7 @@
 """module to test the problem parsing functionality."""
 from pytest import fixture, raises, fail
 
-from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser
+from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser, PDDLTokenizer
 from pddl_plus_parser.models import Domain
 from tests.lisp_parsers_tests.consts import TEST_NUMERIC_DOMAIN, TEST_NUMERIC_PROBLEM
 
@@ -235,6 +235,43 @@ def test_parse_goal_state_when_parsing_ast_that_does_not_start_with_and_raises_e
     bad_goal_state = ['blah', ['harvest_phase', 'stage3', 'harvest_end']]
     with raises(SyntaxError):
         problem_parser_with_objects.parse_goal_state(bad_goal_state)
+
+
+def test_parse_goal_state_when_parsing_simple_numeric_condition_the_numeric_tree_is_created_correctly(
+        problem_parser_with_objects: ProblemParser):
+    goal_state_numeric_tokens = PDDLTokenizer(
+        pddl_str="(and (>= (group_worker_cost worker1) 1))").parse()
+    problem_parser_with_objects.parse_goal_state(goal_state_numeric_tokens)
+    assert len(problem_parser_with_objects.problem.goal_state_fluents) == 1
+    for fluent in problem_parser_with_objects.problem.goal_state_fluents:
+        print(fluent)
+
+
+def test_parse_goal_state_when_parsing_complex_numeric_condition_the_numeric_tree_is_created_correctly(
+        problem_parser_with_objects: ProblemParser):
+    goal_state_numeric_tokens = PDDLTokenizer(
+        pddl_str="(and (>= (+ (* 2.0 (group_worker_cost worker0)) "
+                 "(+ (* 1.0 (group_worker_cost worker1)) (+ (* 1.5 (group_worker_cost worker2)) 0))) 14.0))").parse()
+    problem_parser_with_objects.parse_goal_state(goal_state_numeric_tokens)
+    assert len(problem_parser_with_objects.problem.goal_state_fluents) == 1
+    for fluent in problem_parser_with_objects.problem.goal_state_fluents:
+        print(fluent)
+
+
+def test_parse_goal_state_when_parsing_multiple_numeric_conditions_the_numeric_tree_is_created_correctly(
+        problem_parser_with_objects: ProblemParser):
+    goal_state_numeric_tokens = PDDLTokenizer(
+        pddl_str="""(and
+			(>= (group_worker_cost worker0) 1)
+			(>= (group_worker_cost worker1) 1)
+			(>= (group_worker_cost worker2) 1)
+			(>= (+ (* 2.0 (group_worker_cost worker0))(+ (* 1.0 (group_worker_cost worker1))(+ (* 1.5 (group_worker_cost worker2)) 0))) 14.0)
+		)""").parse()
+
+    problem_parser_with_objects.parse_goal_state(goal_state_numeric_tokens)
+    assert len(problem_parser_with_objects.problem.goal_state_fluents) == 4
+    for fluent in problem_parser_with_objects.problem.goal_state_fluents:
+        print(fluent)
 
 
 def test_parse_goal_state_with_legal_goal_state_extract_correct_number_of_grounded_predicates(

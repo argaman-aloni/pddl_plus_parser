@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import NoReturn
 
-PLAN_COMPONENT_REGEX = "\d: ([\w+\s?]+)\n"
+PLAN_COMPONENT_REGEX = "\d: ([\w+\s?-]+)\n"
 
 
 class MetricFFParser:
@@ -39,6 +39,7 @@ class MetricFFParser:
             action_sequence = match.group(1)
             self.logger.debug(f"action sequence - {action_sequence}")
             plan_seq.append(f"({action_sequence.lower().strip()})\n")
+
         if len(plan_seq) == 0:
             return
 

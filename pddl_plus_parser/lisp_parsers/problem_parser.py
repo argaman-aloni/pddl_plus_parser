@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import NoReturn, List, Union, Dict
 
 from pddl_plus_parser.lisp_parsers import PDDLTokenizer
-from pddl_plus_parser.models import Domain, PDDLObject, Problem, PDDLFunction, Predicate, GroundedPredicate
+from pddl_plus_parser.models import Domain, PDDLObject, Problem, PDDLFunction, Predicate, GroundedPredicate, \
+    NumericalExpressionTree, construct_expression_tree
 
 LEGAL_GOAL_OPERATORS = [">", "=", "<", ">=", "<="]
 
@@ -177,19 +178,9 @@ class ProblemParser:
                 self.problem.goal_state_predicates.append(grounded_predicate)
                 continue
 
-            if len(expression) != 3:  # ['=', <function items as a list>, '<value>']
-                raise SyntaxError("A numeric fluent should be of length 3. Fluent scheme: "
-                                  "(= (<fluent_name> <argument>) <value>)"
-                                  f"Received - {expression}")
-
-            self.logger.debug("Component found is a numeric fluent, starting to process the fluent.")
-            function_data = expression[1]
-            assigned_value = float(expression[2])
-            numeric_fluent = self.parse_grounded_numeric_fluent(function_data)
-            self.logger.debug(f"Setting the fluent's value to - {assigned_value}")
-            numeric_fluent.set_value(assigned_value)
-            self.problem.goal_state_fluents[numeric_fluent.untyped_representation] = numeric_fluent
-            continue
+            numeric_goal_statement = NumericalExpressionTree(
+                construct_expression_tree(expression, self.domain.functions))
+            self.problem.goal_state_fluents.add(numeric_goal_statement)
 
     def parse_problem(self) -> Problem:
         """Parse the problem's AST and extracts the object that is represented by the input scheme.

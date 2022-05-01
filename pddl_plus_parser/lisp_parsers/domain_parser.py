@@ -153,6 +153,7 @@ class DomainParser:
         :param domain_types: the types that exist in the domain.
         :return: a mapping between a function name and the function itself.
         """
+        self.logger.info("Starting to parse the function' definition in the domain data.")
         functions = {}
         for function_items in functions_ast:
             function_name = function_items[0]
@@ -174,6 +175,7 @@ class DomainParser:
         :param preconditions_ast: the AST representation of the action's preconditions.
         :param new_action: the action that is currently being parsed.
         :param domain_functions: the functions that exist in the domain.
+        :param domain_predicates: the predicates that exist in the domain.
         :param domain_constants: the constants that might exist in the domain.
         """
         new_action.positive_preconditions = set()
