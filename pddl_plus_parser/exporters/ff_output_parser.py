@@ -9,6 +9,7 @@ from typing import NoReturn, List, Tuple
 PLAN_COMPONENT_REGEX = r"\d: ([\w+\s?-]+)\n"
 VALID_PLAN_FOUND_PATTERN = "ff: found legal plan as follows"
 NO_SOLUTION_FOUND_PATTERN = "problem proven unsolvable."
+NO_SOLUTION_FOUND_PATTERN_2 = "ff: goal can be simplified to FALSE. No plan will solve it"
 
 
 class MetricFFParser:
@@ -74,7 +75,8 @@ class MetricFFParser:
             return "ok", action_sequence
 
         no_solution = re.search(NO_SOLUTION_FOUND_PATTERN, file_content, re.MULTILINE)
-        if no_solution is not None:
+        another_no_solution = re.search(NO_SOLUTION_FOUND_PATTERN_2, file_content, re.MULTILINE)
+        if no_solution is not None or another_no_solution is not None:
             return "no-solution", []
 
         return "timeout", []
