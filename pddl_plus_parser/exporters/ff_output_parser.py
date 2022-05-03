@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import NoReturn, List, Tuple
 
-PLAN_COMPONENT_REGEX = "\d: ([\w+\s?-]+)\n"
+PLAN_COMPONENT_REGEX = r"\d: ([\w+\s?-]+)\n"
 VALID_PLAN_FOUND_PATTERN = "ff: found legal plan as follows"
 NO_SOLUTION_FOUND_PATTERN = "problem proven unsolvable."
 
@@ -44,6 +44,8 @@ class MetricFFParser:
         if len(plan_seq) == 0:
             return []
 
+        return plan_seq
+
     def parse_plan(self, input_path: Path, output_path: Path) -> NoReturn:
         """Parse the output file and exports a plan if exists.
 
@@ -66,7 +68,7 @@ class MetricFFParser:
             if there is no solution for the problem as well as the action sequence.
         """
         file_content = self._open_plan_file(input_path)
-        plan_found = re.search(PLAN_COMPONENT_REGEX, file_content, re.MULTILINE)
+        plan_found = re.search(VALID_PLAN_FOUND_PATTERN, file_content, re.MULTILINE)
         if plan_found is not None:
             action_sequence = self._parse_plan_content(file_content)
             return "ok", action_sequence
