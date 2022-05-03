@@ -1,7 +1,7 @@
 """Module that encapsulates the numeric trajectory functionalities."""
 import logging
 from pathlib import Path
-from typing import List, NoReturn
+from typing import List, NoReturn, Optional
 
 from pddl_plus_parser.models import Domain, Problem, Operator, State
 
@@ -81,13 +81,13 @@ class TrajectoryExporter:
                                  op=operator,
                                  next_state=next_state)
 
-    def parse_plan(self, problem: Problem, plan_path: Path) -> List[TrajectoryTriplet]:
+    def parse_plan(self, problem: Problem, plan_path: Optional[Path] = None, action_sequence: Optional[List[str]] = None) -> List[TrajectoryTriplet]:
         """Parse the input plan file to create the trajectory.
 
         :return: the list of triplets that was generated using the plan.
         """
         self.logger.info("Parsing the plan to extract the grounded operators.")
-        plan_actions = self._read_plan(plan_path)
+        plan_actions = action_sequence if action_sequence is not None else self._read_plan(plan_path)
         initial_state_predicates = problem.initial_state_predicates
         initial_state_numeric_fluents = problem.initial_state_fluents
         previous_state = State(predicates=initial_state_predicates, fluents=initial_state_numeric_fluents, is_init=True)
