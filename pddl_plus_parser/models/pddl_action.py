@@ -1,5 +1,5 @@
 """Module that represents a PDDL+ action."""
-from typing import Set, Callable, Union, NoReturn, List
+from typing import Set, Callable, Union, NoReturn, List, Tuple
 
 from .numerical_expression import NumericalExpressionTree
 from .pddl_function import PDDLFunction
@@ -98,6 +98,8 @@ class Action:
     positive_preconditions: Set[Predicate]
     negative_preconditions: Set[Predicate]
     numeric_preconditions: Set[NumericalExpressionTree]
+    equality_preconditions: Set[Tuple[str, str]]
+    inequality_preconditions: Set[Tuple[str, str]]
     add_effects: Set[Predicate]
     delete_effects: Set[Predicate]
     numeric_effects: Set[NumericalExpressionTree]
@@ -106,6 +108,8 @@ class Action:
         self.positive_preconditions = set()
         self.negative_preconditions = set()
         self.numeric_preconditions = set()
+        self.equality_preconditions = set()
+        self.inequality_preconditions = set()
         self.add_effects = set()
         self.delete_effects = set()
         self.numeric_effects = set()

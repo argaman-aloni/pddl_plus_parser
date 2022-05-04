@@ -10,9 +10,9 @@ from .pddl_tokenizer import PDDLTokenizer
 
 ObjectType = PDDLType(name="object", parent=None)
 
-COMPARISON_OPS = ["=", "!=", "<=", ">=", ">", "<"]
+COMPARISON_OPS = ["<=", ">=", ">", "<"]
 ASSIGNMENT_OPS = ["assign", "increase", "decrease"]
-
+EQUALITY_OPERATOR = "="
 
 class DomainParser:
     """Class that parses PDDL+ domain files."""
@@ -180,6 +180,8 @@ class DomainParser:
         """
         new_action.positive_preconditions = set()
         new_action.negative_preconditions = set()
+        new_action.equality_preconditions = set()
+        new_action.inequality_preconditions = set()
         new_action.numeric_preconditions = set()
         if preconditions_ast[0] != "and":
             raise SyntaxError(f"Only accepting conjunctive preconditions! Action - {new_action.name} does not conform!")
@@ -191,8 +193,19 @@ class DomainParser:
                 continue
 
             if precondition_node[0] == "not":
+                inner_node = precondition_node[1]
+                if inner_node[0] == EQUALITY_OPERATOR:
+                    self.logger.debug("Adding new lifted objects that should be tested for inequality")
+                    new_action.inequality_preconditions.add((inner_node[1], inner_node[2]))
+                    continue
+
                 new_action.negative_preconditions.add(
                     self.parse_untyped_predicate(precondition_node[1:], new_action.signature, domain_constants))
+                continue
+
+            if precondition_node[0] == EQUALITY_OPERATOR:
+                self.logger.debug("Adding new lifted objects that should be tested for equality")
+                new_action.equality_preconditions.add((precondition_node[1], precondition_node[2]))
                 continue
 
             if precondition_node[0] in COMPARISON_OPS:
@@ -210,6 +223,7 @@ class DomainParser:
         :param effects_ast: the AST representation of the action's effects.
         :param new_action: the action that is currently being parsed.
         :param domain_functions: the functions that exist in the domain.
+        :param domain_predicates: the predicates that are defined in the domain.
         :param domain_constants: the domains that might exist in the domain.
         """
         new_action.add_effects = set()

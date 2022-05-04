@@ -149,6 +149,25 @@ def test_ground_numeric_calculation_tree_extracts_correct_grounded_tree_data_fro
     assert root.children[1].id == "(data test_direction - direction test_mode - mode)"
 
 
+def test_ground_equality_objects_returns_correct_grounded_objects(operator: Operator):
+    equality_precondition = {("?size_before", "?size_after")}
+    parameter_map = {"?size_before": "size1", "?size_after": "size2"}
+    grounded_objects = operator.ground_equality_objects(equality_precondition, parameter_map)
+    assert grounded_objects == {("size1", "size2")}
+
+
+def test_equality_holds_when_objects_not_equal_returns_false(operator: Operator):
+    assert not operator._equality_holds({("size1", "size2")})
+
+
+def test_equality_holds_when_not_all_objects_equal_returns_false(operator: Operator):
+    assert not operator._equality_holds({("size1", "size1"), ("size3", "size1")})
+
+
+def test_equality_holds_when_objects_equal_returns_true(operator: Operator):
+    assert operator._equality_holds({("size1", "size1")})
+
+
 def test_ground_numeric_expressions_extracts_all_numeric_expressions(operator: Operator, numeric_action: Action):
     test_lifted_expression_tree = numeric_action.numeric_effects
     test_parameters_map = {
@@ -300,6 +319,7 @@ def test_update_state_functions_raises_error_when_a_function_is_missing_in_previ
         operator.ground()
         operator.update_state_functions(previous_state_with_missing_numeric_fluent)
 
+
 def test_update_state_functions_does_not_raise_error_when_all_functions_are_present_in_state(
         operator: Operator, valid_previous_state: State):
     try:
@@ -307,6 +327,7 @@ def test_update_state_functions_does_not_raise_error_when_all_functions_are_pres
         operator.update_state_functions(valid_previous_state)
     except Exception:
         fail()
+
 
 def test_update_state_functions_returns_state_variables_with_correct_new_values(
         domain: Domain, operator: Operator, valid_previous_state: State):
@@ -332,6 +353,7 @@ def test_update_state_functions_does_not_add_redundant_numeric_state_variables(
 
     assert len(new_state_numeric_fluents) == 3
 
+
 def test_update_state_predicates_adds_new_predicate_to_the_new_state(
         operator: Operator, valid_previous_state: State):
     operator.ground()
@@ -339,12 +361,14 @@ def test_update_state_predicates_adds_new_predicate_to_the_new_state(
 
     assert len(new_state_predicates) == len(valid_previous_state.state_predicates) + 1
 
+
 def test_update_state_predicates_adds_the_correct_predicate(
         operator: Operator, valid_previous_state: State):
     operator.ground()
     new_state_predicates = operator.update_state_predicates(valid_previous_state)
 
     assert "(have_image ?d ?m)" in new_state_predicates
+
 
 def test_update_state_predicates_removed_predicate_when_predicate_in_delete_effects(
         domain: Domain, operator: Operator, valid_previous_state: State):
@@ -354,12 +378,13 @@ def test_update_state_predicates_removed_predicate_when_predicate_in_delete_effe
 
     operator.ground()
     operator.grounded_delete_effects = {
-            GroundedPredicate(name="pointing", signature=pointing_predicate.signature,
-                              object_mapping={"?s": "s1", "?d": "test_direction"})}
+        GroundedPredicate(name="pointing", signature=pointing_predicate.signature,
+                          object_mapping={"?s": "s1", "?d": "test_direction"})}
 
     new_state_predicates = operator.update_state_predicates(valid_previous_state)
 
     assert len(new_state_predicates[pointing_predicate_str]) == 0
+
 
 def test_apply_returns_new_state_with_correct_values(
         domain: Domain, operator: Operator, valid_previous_state: State):

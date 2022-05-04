@@ -177,6 +177,40 @@ def test_parse_function_with_no_parameters_returns_function_object_with_only_nam
     assert "total-cost" in functions
 
 
+def test_parse_action_with_inequality_precondition_adds_the_lifted_objects_correctly(domain_parser: DomainParser):
+    test_action_str = """(cut-board-medium
+	:parameters   (?m - highspeed-saw ?b - board ?p - part ?w - awood ?surface - surface ?size_before - aboardsize ?s1 - aboardsize ?size_after - aboardsize)
+	:precondition (and (unused ?p) (not (= ?size_before ?size_after)) (goalsize ?p medium) (in-highspeed-saw ?b ?m) (wood ?b ?w) (surface-condition ?b ?surface) (boardsize ?b ?size_before) (boardsize-successor ?size_after ?s1) (boardsize-successor ?s1 ?size_before))
+	:effect       (and (boardsize ?b ?size_after) (available ?p) (surface-condition ?p ?surface) (treatment ?p untreated) (wood ?p ?w) (colour ?p natural) (not (unused ?p))))"""
+    action_tokens = PDDLTokenizer(pddl_str=test_action_str).parse()
+    predicate_tokens = PDDLTokenizer(pddl_str=test_predicates_str).parse()
+    domain_types = domain_parser.parse_types(nested_types)
+    domain_consts = domain_parser.parse_constants(test_constants, domain_types)
+    domain_predicates = domain_parser.parse_predicates(predicate_tokens, domain_types)
+    domain_functions = {}  # Functions are irrelevant for this case.
+    action = domain_parser.parse_action(action_tokens, domain_types, domain_functions, domain_predicates, domain_consts)
+
+    assert action.name == "cut-board-medium"
+    assert action.inequality_preconditions == {("?size_before", "?size_after")}
+
+
+def test_parse_action_with_equality_precondition_adds_the_lifted_objects_correctly(domain_parser: DomainParser):
+    test_action_str = """(cut-board-medium
+	:parameters   (?m - highspeed-saw ?b - board ?p - part ?w - awood ?surface - surface ?size_before - aboardsize ?s1 - aboardsize ?size_after - aboardsize)
+	:precondition (and (unused ?p) (= ?size_before ?size_after) (goalsize ?p medium) (in-highspeed-saw ?b ?m) (wood ?b ?w) (surface-condition ?b ?surface) (boardsize ?b ?size_before) (boardsize-successor ?size_after ?s1) (boardsize-successor ?s1 ?size_before))
+	:effect       (and (boardsize ?b ?size_after) (available ?p) (surface-condition ?p ?surface) (treatment ?p untreated) (wood ?p ?w) (colour ?p natural) (not (unused ?p))))"""
+    action_tokens = PDDLTokenizer(pddl_str=test_action_str).parse()
+    predicate_tokens = PDDLTokenizer(pddl_str=test_predicates_str).parse()
+    domain_types = domain_parser.parse_types(nested_types)
+    domain_consts = domain_parser.parse_constants(test_constants, domain_types)
+    domain_predicates = domain_parser.parse_predicates(predicate_tokens, domain_types)
+    domain_functions = {}  # Functions are irrelevant for this case.
+    action = domain_parser.parse_action(action_tokens, domain_types, domain_functions, domain_predicates, domain_consts)
+
+    assert action.name == "cut-board-medium"
+    assert action.equality_preconditions == {("?size_before", "?size_after")}
+
+
 def test_parse_action_with_boolean_action_type_returns_action_data_correctly(domain_parser: DomainParser):
     test_action_str = """(do-spray-varnish
 	:parameters   (?m - spray-varnisher ?x - part ?newcolour - acolour ?surface - surface)
