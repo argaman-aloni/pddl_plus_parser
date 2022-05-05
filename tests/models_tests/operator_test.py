@@ -5,10 +5,13 @@ from pytest import fixture, raises, fail
 
 from pddl_plus_parser.lisp_parsers import DomainParser
 from pddl_plus_parser.models import Domain, Action, Operator, GroundedPredicate, PDDLFunction, State
-from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN
+from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, TEST_NUMERIC_DOMAIN
 
 TEST_LIFTED_SIGNATURE_ITEMS = ["?s", "?d", "?i", "?m"]
 TEST_GROUNDED_ACTION_CALL = ["s1", "test_direction", "test_instrument", "test_mode"]
+
+AGRICOLA_LIFTED_SIGNATURE_ITEMS = ["?w1", "?w2", "?wmax", "?r", "?i1", "?i2"]
+AGRICOLA_GROUNDED_ACTION_CALL = ["noworker", "w1", "w2", "round1", "n1", "n2"]
 
 
 @fixture()
@@ -18,13 +21,29 @@ def domain() -> Domain:
 
 
 @fixture()
+def agricola_domain() -> Domain:
+    domain_parser = DomainParser(TEST_NUMERIC_DOMAIN)
+    return domain_parser.parse_domain()
+
+
+@fixture()
 def numeric_action(domain: Domain) -> Action:
     return domain.actions["take_image"]
 
 
 @fixture()
+def agricola_numeric_action(agricola_domain: Domain) -> Action:
+    return agricola_domain.actions["take_food"]
+
+
+@fixture()
 def operator(domain: Domain, numeric_action: Action) -> Operator:
     return Operator(numeric_action, domain, TEST_GROUNDED_ACTION_CALL)
+
+
+@fixture()
+def agricola_operator(agricola_domain: Domain, agricola_numeric_action: Action) -> Operator:
+    return Operator(agricola_numeric_action, agricola_domain, AGRICOLA_GROUNDED_ACTION_CALL)
 
 
 @fixture()
@@ -116,6 +135,40 @@ def test_ground_predicates_creates_grounded_version_of_lifted_predicates_with_ob
                                        '(supports test_instrument test_mode)']
     assert len(grounded_predicates) == len(test_lifted_predicates)
     assert sorted([p.untyped_representation for p in grounded_predicates]) == sorted(expected_grounded_preconditions)
+
+
+def test_ground_predicates_when_domain_contains_constants_grounds_action_correctly(
+        agricola_operator: Operator, agricola_numeric_action: Action):
+    test_lifted_predicates = agricola_numeric_action.positive_preconditions
+    test_parameters_map = {
+        lifted_param: grounded_object for lifted_param, grounded_object in zip(
+            AGRICOLA_LIFTED_SIGNATURE_ITEMS, AGRICOLA_GROUNDED_ACTION_CALL)
+    }
+    grounded_predicates = agricola_operator.ground_predicates(lifted_predicates=test_lifted_predicates,
+                                                              parameters_map=test_parameters_map)
+
+    expected_grounded_preconditions = ['(available_action act_labor)',
+                                       '(current_worker noworker)',
+                                       '(next_worker noworker w1)',
+                                       '(max_worker w2)',
+                                       '(current_round round1)',
+                                       '(num_food n1)',
+                                       '(next_num n1 n2)']
+    assert len(grounded_predicates) == len(test_lifted_predicates)
+    assert sorted([p.untyped_representation for p in grounded_predicates]) == sorted(expected_grounded_preconditions)
+
+
+def test_ground_numeric_function_when_domain_contains_constants_grounds_action_correctly(
+        agricola_operator: Operator, agricola_numeric_action: Action):
+    test_grounded_call = ["w1", "w2", "noworker", "round1", "n1", "n2"]
+    test_lifted_function = agricola_numeric_action.numeric_effects.pop()
+    test_parameters_map = {
+        lifted_param: grounded_object for lifted_param, grounded_object in zip(
+            AGRICOLA_LIFTED_SIGNATURE_ITEMS, test_grounded_call)
+    }
+    grounded_expression_tree = agricola_operator.ground_numeric_calculation_tree(
+        lifted_numeric_exp_tree=test_lifted_function, parameters_map=test_parameters_map)
+    print(grounded_expression_tree)
 
 
 def test_ground_predicates_creates_grounded_version_of_lifted_predicates_with_correct_parameter_mapping(

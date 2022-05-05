@@ -9,7 +9,7 @@ from . import PDDLFunction
 from .numerical_expression import NumericalExpressionTree, evaluate_expression
 from .pddl_action import Action
 from .pddl_domain import Domain
-from .pddl_predicate import GroundedPredicate, Predicate
+from .pddl_predicate import GroundedPredicate, Predicate, SignatureType
 from .pddl_state import State
 
 
@@ -78,19 +78,40 @@ class Operator:
             # on efficiently search for it in the states.
             predicate_signature = {param: param_type for param, param_type in
                                    self.domain.predicates[predicate_name].signature.items()}
+            predicate_params = list(predicate.signature.keys())
+            if len(self.domain.constants) > 0:
+                predicate_params.extend(list(self.domain.constants.keys()))
+
             lifted_predicate_params = [param for param in predicate.signature]
-            predicate_object_mapping = {
-                parameter_name: parameters_map[lifted_predicate_params[index]] for index, parameter_name in
-                enumerate(predicate_signature)}
+            predicate_object_mapping = {}
+            for index, parameter_name in enumerate(predicate_signature):
+                if predicate_params[index] in self.domain.constants:
+                    predicate_object_mapping[parameter_name] = predicate_params[index]
+
+                else:
+                    predicate_object_mapping[parameter_name] = parameters_map[predicate_params[index]]
 
             # Matching the types to be the same as the ones in the action.
-            for domain_def_parameter, lifted_predicate_param_name in zip(predicate_signature, lifted_predicate_params):
-                predicate_signature[domain_def_parameter] = self.action.signature[lifted_predicate_param_name]
+            self._fix_grounded_predicate_types(lifted_predicate_params, predicate_signature)
 
             output_grounded_predicates.add(GroundedPredicate(name=predicate_name,
                                                              signature=predicate_signature,
                                                              object_mapping=predicate_object_mapping))
         return output_grounded_predicates
+
+    def _fix_grounded_predicate_types(self, lifted_predicate_params: List[str],
+                                      predicate_signature: SignatureType) -> NoReturn:
+        """Fix the types of the grounded predicate to match those in the action itself.
+
+        :param lifted_predicate_params: the names of the lifted predicate parameters.
+        :param predicate_signature: the signature of the grounded predicate.
+        """
+        for domain_def_parameter, lifted_predicate_param_name in zip(predicate_signature, lifted_predicate_params):
+            if lifted_predicate_param_name in self.domain.constants:
+                predicate_signature[domain_def_parameter] = self.domain.constants[lifted_predicate_param_name].type
+
+            else:
+                predicate_signature[domain_def_parameter] = self.action.signature[lifted_predicate_param_name]
 
     def iterate_calc_tree_and_ground(self, calc_node: AnyNode, parameters_map: Dict[str, str]) -> AnyNode:
         """Recursion function that iterates over the lifted calculation tree and grounds its elements.
@@ -103,9 +124,15 @@ class Operator:
             if isinstance(calc_node.value, PDDLFunction):
                 lifted_function: PDDLFunction = calc_node.value
                 lifted_function_params = [param for param in lifted_function.signature]
-                grounded_signature = {
-                    parameters_map[lifted_function_params[index]]: lifted_function.signature[parameter_name] for
-                    index, parameter_name in enumerate(lifted_function_params)}
+                grounded_signature = {}
+                for index, parameter_name in enumerate(lifted_function_params):
+                    if parameter_name in self.domain.constants:
+                        grounded_signature[parameter_name] = lifted_function.signature[parameter_name]
+
+                    else:
+                        grounded_signature[parameters_map[lifted_function_params[index]]] = \
+                            lifted_function.signature[parameter_name]
+
                 grounded_function = PDDLFunction(name=lifted_function.name,
                                                  signature=grounded_signature)
                 return AnyNode(id=str(grounded_function), value=grounded_function)

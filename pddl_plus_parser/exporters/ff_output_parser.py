@@ -8,8 +8,12 @@ from typing import NoReturn, List, Tuple
 
 PLAN_COMPONENT_REGEX = r"\d: ([\w+\s?-]+)\n"
 VALID_PLAN_FOUND_PATTERN = "ff: found legal plan as follows"
+NO_SOLUTION_OPTIONS = ["problem proven unsolvable.",
+                       "ff: goal can be simplified to FALSE. No plan will solve it",
+                       "all increasers applied yet goal not fulfilled"]
 NO_SOLUTION_FOUND_PATTERN = "problem proven unsolvable."
 NO_SOLUTION_FOUND_PATTERN_2 = "ff: goal can be simplified to FALSE. No plan will solve it"
+NO_SOLUTION_FOUND_PATTERN_3 = "all increasers applied yet goal not fulfilled"
 
 
 class MetricFFParser:
@@ -74,10 +78,10 @@ class MetricFFParser:
             action_sequence = self._parse_plan_content(file_content)
             return "ok", action_sequence
 
-        no_solution = re.search(NO_SOLUTION_FOUND_PATTERN, file_content, re.MULTILINE)
-        another_no_solution = re.search(NO_SOLUTION_FOUND_PATTERN_2, file_content, re.MULTILINE)
-        if no_solution is not None or another_no_solution is not None:
-            return "no-solution", []
+        for option in NO_SOLUTION_OPTIONS:
+            no_solution_match = re.search(option, file_content, re.MULTILINE)
+            if no_solution_match is not None:
+                return "no-solution", []
 
         return "timeout", []
 
