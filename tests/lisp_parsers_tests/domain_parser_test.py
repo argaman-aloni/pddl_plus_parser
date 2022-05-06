@@ -3,7 +3,7 @@ from pytest import fixture, raises
 from pddl_plus_parser.lisp_parsers import DomainParser, PDDLTokenizer
 from pddl_plus_parser.models import PDDLType, Predicate
 from tests.lisp_parsers_tests.consts import TEST_PARSING_FILE_PATH, TEST_WOODWORKING_DOMAIN_PATH, \
-    TEST_NUMERIC_DEPOT_DOMAIN_PATH
+    TEST_NUMERIC_DEPOT_DOMAIN_PATH, PLANT_WATERING_DOMAIN
 
 test_types_with_no_parent = ['acolour', 'awood', 'woodobj', 'machine', 'surface', 'treatmentstatus', 'aboardsize',
                              'apartsize']
@@ -350,7 +350,7 @@ def test_parse_woodworking_domain_with_boolean_actions_and_constants_succeeds_in
     assert len(domain.actions) == 13
 
 
-def test_parse_depot_domain_with_numric_actions_succeeds_in_parsing_all_domain_parts():
+def test_parse_depot_domain_with_numeric_actions_succeeds_in_parsing_all_domain_parts():
     domain_parser = DomainParser(TEST_NUMERIC_DEPOT_DOMAIN_PATH)
     domain = domain_parser.parse_domain()
     assert domain is not None
@@ -359,3 +359,15 @@ def test_parse_depot_domain_with_numric_actions_succeeds_in_parsing_all_domain_p
     assert len(domain.predicates) == 6
     assert len(domain.functions) == 4
     assert len(domain.actions) == 5
+
+
+def test_parse_action_with_function_equality_precondition_sets_a_new_numeric_precondition():
+    domain_parser = DomainParser(PLANT_WATERING_DOMAIN)
+    domain = domain_parser.parse_domain()
+    assert domain is not None
+    assert len(domain.actions) == 10
+    assert len(domain.actions["pour"].numeric_preconditions) == 5
+    for action in domain.actions.values():
+        print(action.name)
+        for numeric_precond in action.numeric_preconditions:
+            print(str(numeric_precond))

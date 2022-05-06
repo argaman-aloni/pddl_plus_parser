@@ -15,3 +15,5 @@ TEST_NUMERIC_DEPOT_TRAJECTORY = Path(CWD, "test_numeric_trajectory")
 FARMLAND_NUMERIC_DOMAIN = Path(CWD, "farmland.pddl")
 FARMLAND_NUMERIC_PROBLEM = Path(CWD, "pfile10_10.pddl")
 FARMLAND_NUMERIC_TRAJECTORY = Path(CWD, "pfile10_10.trajectory")
+
+PLANT_WATERING_DOMAIN = Path(CWD, "plant_watering_domain.pddl")

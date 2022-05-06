@@ -1,5 +1,6 @@
 """Module that contains the parser for PDDL+ domain files."""
 import logging
+import types
 from pathlib import Path
 from typing import List, Dict, Union, NoReturn
 
@@ -10,9 +11,10 @@ from .pddl_tokenizer import PDDLTokenizer
 
 ObjectType = PDDLType(name="object", parent=None)
 
-COMPARISON_OPS = ["<=", ">=", ">", "<"]
+COMPARISON_OPS = ["=", "<=", ">=", ">", "<"]
 ASSIGNMENT_OPS = ["assign", "increase", "decrease"]
 EQUALITY_OPERATOR = "="
+
 
 class DomainParser:
     """Class that parses PDDL+ domain files."""
@@ -21,7 +23,7 @@ class DomainParser:
     logger: logging.Logger
     partial_parsing: bool
 
-    def __init__(self, domain_path: Path, partial_parsing: bool=False):
+    def __init__(self, domain_path: Path, partial_parsing: bool = False):
         self.tokenizer = PDDLTokenizer(domain_path)
         self.logger = logging.getLogger(__name__)
         self.partial_parsing = partial_parsing
@@ -204,9 +206,10 @@ class DomainParser:
                 continue
 
             if precondition_node[0] == EQUALITY_OPERATOR:
-                self.logger.debug("Adding new lifted objects that should be tested for equality")
-                new_action.equality_preconditions.add((precondition_node[1], precondition_node[2]))
-                continue
+                if not isinstance(precondition_node[1], List):
+                    self.logger.debug("Adding new lifted objects that should be tested for equality")
+                    new_action.equality_preconditions.add((precondition_node[1], precondition_node[2]))
+                    continue
 
             if precondition_node[0] in COMPARISON_OPS:
                 numerical_precondition = NumericalExpressionTree(

@@ -23,7 +23,12 @@ def set_expression_value(expression_node: AnyNode, state_fluents: Dict[str, PDDL
             return
 
         grounded_fluent: PDDLFunction = expression_node.value
-        grounded_fluent.set_value(state_fluents[grounded_fluent.untyped_representation].value)
+        try:
+            grounded_fluent.set_value(state_fluents[grounded_fluent.untyped_representation].value)
+
+        except KeyError:
+            grounded_fluent.set_value(0.0)
+
         return
 
     set_expression_value(expression_node.children[0], state_fluents)

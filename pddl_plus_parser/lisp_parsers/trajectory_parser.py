@@ -89,7 +89,9 @@ class TrajectoryParser:
         fluent_signature = {
             object_name: self.problem.objects[object_name].type for object_name in fluent_signature_items
         }
-        assert list(fluent_signature.values()) == list(lifted_function.signature.values())
+        for grounded_param_type, lifted_param_type in zip(fluent_signature.values(), lifted_function.signature.values()):
+            assert grounded_param_type.is_sub_type(lifted_param_type)
+
         return PDDLFunction(name=function_name, signature=fluent_signature)
 
     def parse_grounded_predicate(self, grounded_predicate_ast: List[str],
