@@ -86,8 +86,9 @@ class TrajectoryParser:
                 f"Received fluent - {function_name} with wrong number of parameters! "
                 f"Expected - {len(lifted_function.signature)} and received - {len(fluent_signature_items)}")
 
+        possible_objects = {**self.problem.objects, **self.partial_domain.constants}
         fluent_signature = {
-            object_name: self.problem.objects[object_name].type for object_name in fluent_signature_items
+            object_name: possible_objects[object_name].type for object_name in fluent_signature_items
         }
         for grounded_param_type, lifted_param_type in zip(fluent_signature.values(), lifted_function.signature.values()):
             assert grounded_param_type.is_sub_type(lifted_param_type)
