@@ -13,10 +13,10 @@ class ActionCall:
         self.name = name
         self.parameters = grounded_parameters
 
-
     def __str__(self):
         called_objects = " ".join(self.parameters)
         return f"({self.name} {called_objects})"
+
 
 class ObservedComponent:
     """Class representing a single observed component."""
@@ -35,6 +35,7 @@ class ObservedComponent:
                f"operator: {str(self.grounded_action_call)}\n" \
                f"next state: {self.next_state.serialize()}"
 
+
 class Observation:
     """Class representing an observed trajectory data."""
 
@@ -51,4 +52,3 @@ class Observation:
         :param next_state: the state after the action was executed.
         """
         self.components.append(ObservedComponent(previous_state, call, next_state))
-

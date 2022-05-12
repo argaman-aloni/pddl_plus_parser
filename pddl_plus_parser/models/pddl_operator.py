@@ -17,6 +17,7 @@ def set_expression_value(expression_node: AnyNode, state_fluents: Dict[str, PDDL
     """Set the value of the expression according to the fluents present in the state.
 
     :param expression_node: the node that is currently being observed.
+    :param state_fluents: the grounded numeric fluents present in the state.
     """
     if expression_node.is_leaf:
         if not isinstance(expression_node.value, PDDLFunction):
@@ -121,7 +122,7 @@ class Operator:
     def iterate_calc_tree_and_ground(self, calc_node: AnyNode, parameters_map: Dict[str, str]) -> AnyNode:
         """Recursion function that iterates over the lifted calculation tree and grounds its elements.
 
-        :param calc_tree: the current node the recursion currently visits.
+        :param calc_node: the current node the recursion currently visits.
         :param parameters_map: the mapping between the action parameters and the objects in which the action was called.
         :return: the node that represents the calculations of the current lifted expression.
         """
@@ -299,7 +300,8 @@ class Operator:
 
         return True
 
-    def _group_effect_predicates(self, grounded_effects: Set[GroundedPredicate]) -> Dict[str, Set[GroundedPredicate]]:
+    @staticmethod
+    def _group_effect_predicates(grounded_effects: Set[GroundedPredicate]) -> Dict[str, Set[GroundedPredicate]]:
         """
 
         :param grounded_effects:
