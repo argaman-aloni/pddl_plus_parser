@@ -137,6 +137,11 @@ def test_ground_predicates_creates_grounded_version_of_lifted_predicates_with_ob
     assert sorted([p.untyped_representation for p in grounded_predicates]) == sorted(expected_grounded_preconditions)
 
 
+def test_typed_action_call_returns_correct_string(operator: Operator):
+    assert operator.typed_action_call == \
+           "(take_image s1 - satellite test_direction - direction test_instrument - instrument test_mode - mode)"
+
+
 def test_ground_predicates_when_domain_contains_constants_grounds_action_correctly(
         agricola_operator: Operator, agricola_numeric_action: Action):
     test_lifted_predicates = agricola_numeric_action.positive_preconditions

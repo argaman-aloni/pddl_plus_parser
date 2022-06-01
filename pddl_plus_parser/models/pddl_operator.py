@@ -64,6 +64,13 @@ class Operator:
     def name(self) -> str:
         return self.action.name
 
+    @property
+    def typed_action_call(self) -> str:
+        signature_str_items = [f"{parameter_name} - {str(parameter_type)}"
+                               for parameter_name, parameter_type in
+                               zip(self.grounded_call_objects, self.action.signature.values())]
+        return f"({self.name} {' '.join(signature_str_items)})"
+
     def __str__(self):
         called_objects = " ".join(self.grounded_call_objects)
         return f"({self.name} {called_objects})"

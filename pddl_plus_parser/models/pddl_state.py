@@ -15,11 +15,10 @@ class State:
     state_fluents: Dict[str, PDDLFunction]
 
     def __init__(self, predicates: Dict[str, Set[GroundedPredicate]],
-                 fluents: Dict[str, PDDLFunction], is_init: bool=False):
+                 fluents: Dict[str, PDDLFunction], is_init: bool = False):
         self.state_predicates = predicates
         self.state_fluents = fluents
         self.is_init = is_init
-
 
     def _serialize_numeric_fluents(self) -> str:
         """Serialize the numeric fluents of the state.
@@ -40,8 +39,20 @@ class State:
 
         return predicates_str
 
+    def typed_serialize(self) -> str:
+        """Returns a typed version of the serialized state.
+
+        :return: typed version of the serialized state.
+        """
+        typed_predicates_str = ""
+        for grounded_predicates in self.state_predicates.values():
+            typed_predicates_str += " "
+            typed_predicates_str += " ".join(str(predicate) for predicate in grounded_predicates)
+
+        return f"({' '.join(fluent.state_typed_representation for fluent in self.state_fluents.values())}" \
+               f"{typed_predicates_str})\n"
+
     def serialize(self) -> str:
         return f"({':init' if self.is_init else ':state'}" \
                f" {self._serialize_numeric_fluents()}" \
                f"{self._serialize_predicates()})\n"
-

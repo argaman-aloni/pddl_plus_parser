@@ -17,12 +17,12 @@ class PDDLFunction:
         self.stored_value = 0
 
     def __eq__(self, other: "PDDLFunction") -> bool:
-        """Checks whether or not two functions are considered equal.
+        """Checks whether two functions are considered equal.
 
         Equality can be considered if a type inherits from another type as well.
 
         :param other: the other predicate to compare.
-        :return: whether or not the predicates are equal.
+        :return: whether the predicates are equal.
         """
         if not self.name == other.name:
             return False
@@ -36,7 +36,6 @@ class PDDLFunction:
                 return False
 
         return True
-
 
     @property
     def value(self) -> float:
@@ -53,6 +52,12 @@ class PDDLFunction:
     def state_representation(self) -> str:
         untyped_signature_str = " ".join(self.signature.keys())
         return f"(= ({self.name} {untyped_signature_str}) {self.value})"
+
+    @property
+    def state_typed_representation(self) -> str:
+        signature_str_items = [f"{parameter_name} - {str(parameter_type)}"
+                               for parameter_name, parameter_type in self.signature.items()]
+        return f"(= ({self.name} {' '.join(signature_str_items)}) {self.value})"
 
     @property
     def untyped_representation(self) -> str:
