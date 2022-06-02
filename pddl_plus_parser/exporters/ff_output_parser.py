@@ -24,7 +24,8 @@ class MetricFFParser:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-    def _open_plan_file(self, input_path: Path) -> str:
+    @staticmethod
+    def _open_plan_file(input_path: Path) -> str:
         """Safely open the file and returns its content.
 
         :param input_path: the path to the log file.
