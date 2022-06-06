@@ -100,7 +100,8 @@ class TrajectoryExporter:
 
         return triplets
 
-    def export(self, triplets: List[TrajectoryTriplet]) -> List[str]:
+    @staticmethod
+    def export(triplets: List[TrajectoryTriplet]) -> List[str]:
         """Export the input triplets as a valid trajectory object.
 
         :param triplets: the objects representing the triplets generated from the plan sequence.
