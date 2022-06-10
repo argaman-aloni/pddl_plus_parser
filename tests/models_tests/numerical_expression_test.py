@@ -1,6 +1,7 @@
 from anytree import RenderTree, PreOrderIter, AnyNode
 
-from pddl_plus_parser.models import construct_expression_tree, PDDLFunction, PDDLType, calculate, evaluate_expression
+from pddl_plus_parser.models import construct_expression_tree, PDDLFunction, PDDLType, calculate, evaluate_expression, \
+    NumericalExpressionTree
 
 SIMPLE_EXPRESSION = ['assign', ['amount', '?jug1'], '0']
 COMPLEX_EXPRESSION = ['>=', ['-', ['capacity', '?jug2'], ['amount', '?jug2']], ['amount', '?jug1']]
@@ -53,6 +54,7 @@ def test_calculate_returns_correct_calculation_on_a_more_complex_tree():
     ])
     assert calculate(root) == 140.0
 
+
 def test_evaluate_expression_evaluates_simple_pddl_ast():
     test_expression = ['>=', ['amount', '?jug1'], '-3.5']
     root = construct_expression_tree(test_expression, TEST_DOMAIN_FUNCTIONS)
@@ -60,6 +62,7 @@ def test_evaluate_expression_evaluates_simple_pddl_ast():
 
     result = evaluate_expression(root)
     assert result == True
+
 
 def test_evaluate_expression_evaluates_another_simple_pddl_ast():
     test_expression = ['>=', ['amount', '?jug1'], '3.5']
@@ -77,3 +80,11 @@ def test_evaluate_expression_evaluates_complex_pddl_ast():
 
     result = evaluate_expression(root)
     assert result == False
+
+
+def test_convert_to_pddl_returns_correct_expression():
+    test_expression = ['>=', ['capacity', '?jug2'], ['amount', '?jug2']]
+    root = construct_expression_tree(test_expression, TEST_DOMAIN_FUNCTIONS)
+    tree = NumericalExpressionTree(root)
+    pddl_str = tree.to_pddl()
+    assert pddl_str == "(>= (capacity ?jug2) (amount ?jug2))"

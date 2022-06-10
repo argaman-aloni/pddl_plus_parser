@@ -143,3 +143,23 @@ class NumericalExpressionTree:
 
     def __str__(self):
         return "\n".join([f"{pre}{node.id}" for pre, _, node in RenderTree(self.root)])
+
+    def _convert_to_pddl(self, node: AnyNode) -> str:
+        """Recursive method that converts the expression tree to a PDDL string.
+
+        :param node: the node that the recursion is currently working on.
+        :return: the PDDL string of the expression.
+        """
+        if node.is_leaf:
+            if isinstance(node.value, PDDLFunction):
+                function: PDDLFunction = node.value
+                return function.untyped_representation
+
+            return node.value
+
+        left_operand = self._convert_to_pddl(node.children[0])
+        right_operand = self._convert_to_pddl(node.children[1])
+        return f"({node.value} {left_operand} {right_operand})"
+
+    def to_pddl(self) -> str:
+        return self._convert_to_pddl(self.root)
