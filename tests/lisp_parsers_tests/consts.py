@@ -16,4 +16,7 @@ FARMLAND_NUMERIC_DOMAIN = Path(CWD, "farmland.pddl")
 FARMLAND_NUMERIC_PROBLEM = Path(CWD, "pfile10_10.pddl")
 FARMLAND_NUMERIC_TRAJECTORY = Path(CWD, "pfile10_10.trajectory")
 
+ZENOTRAVEL_DOMAIN_PATH = Path(CWD, "zenonumeric.pddl")
+ZENOTRAVEL_PROBLEM_PATH = Path(CWD, "pfile0.pddl")
+
 PLANT_WATERING_DOMAIN = Path(CWD, "plant_watering_domain.pddl")

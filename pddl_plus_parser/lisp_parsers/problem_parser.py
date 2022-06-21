@@ -1,5 +1,6 @@
 """Module containing a parser that is able to parse PDDL domains."""
 import logging
+from collections import Counter
 from pathlib import Path
 from typing import NoReturn, List, Union, Dict
 
@@ -87,6 +88,7 @@ class ProblemParser:
         lifted_function = self.domain.functions[function_name]
         # For now, assuming that fluents have valid parameters.
         fluent_signature_items = grounded_numeric_fluent[1:]
+        grounded_fluents_counter = Counter(fluent_signature_items)
         if len(fluent_signature_items) != len(lifted_function.signature):
             raise ValueError(f"Received fluent - {function_name} with wrong number of parameters! "
                              f"Expected - {len(lifted_function.signature)} and received - {len(fluent_signature_items)}")
@@ -95,10 +97,11 @@ class ProblemParser:
         fluent_signature = {
             object_name: possible_objects[object_name].type for object_name in fluent_signature_items
         }
+        repeating_items = {object_name: count for object_name, count in grounded_fluents_counter.items() if count > 1}
         for grounded_signature_type, lifted_signature_type in zip(fluent_signature.values(), lifted_function.signature.values()):
             assert grounded_signature_type.is_sub_type(lifted_signature_type)
 
-        return PDDLFunction(name=function_name, signature=fluent_signature)
+        return PDDLFunction(name=function_name, signature=fluent_signature, repeating_variables=repeating_items)
 
     def parse_grounded_predicate(self, grounded_predicate_ast: List[str],
                                  lifted_predicate: Predicate) -> GroundedPredicate:

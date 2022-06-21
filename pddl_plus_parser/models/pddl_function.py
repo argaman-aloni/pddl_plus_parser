@@ -1,5 +1,5 @@
 """Module that represents a numerical in a PDDL+ model."""
-from typing import Optional, NoReturn
+from typing import Optional, NoReturn, Dict
 
 from .pddl_predicate import SignatureType
 
@@ -10,11 +10,14 @@ class PDDLFunction:
     name: str
     signature: SignatureType
     stored_value: float
+    repeating_variables: Dict[str, int]
 
-    def __init__(self, name: Optional[str] = None, signature: Optional[SignatureType] = None):
+    def __init__(self, name: Optional[str] = None, signature: Optional[SignatureType] = None,
+                 repeating_variables: Optional[Dict[str, int]] = {}):
         self.name = name
         self.signature = signature
         self.stored_value = 0
+        self.repeating_variables = repeating_variables
 
     def __eq__(self, other: "PDDLFunction") -> bool:
         """Checks whether two functions are considered equal.
@@ -50,17 +53,34 @@ class PDDLFunction:
 
     @property
     def state_representation(self) -> str:
-        untyped_signature_str = " ".join(self.signature.keys())
+        """Returns the state representation of the function."""
+        function_variables = []
+        for repeating_variable, num_repeats in self.repeating_variables.items():
+            function_variables.extend([repeating_variable] * num_repeats)
+        function_variables.extend(param for param in self.signature if param not in self.repeating_variables)
+
+        untyped_signature_str = " ".join(function_variables)
         return f"(= ({self.name} {untyped_signature_str}) {self.value})"
 
     @property
     def state_typed_representation(self) -> str:
-        signature_str_items = [f"{parameter_name} - {str(parameter_type)}"
-                               for parameter_name, parameter_type in self.signature.items()]
+        """Returns the state representation of the function with the type signature."""
+        function_variables = []
+        for repeating_variable, num_repeats in self.repeating_variables.items():
+            function_variables.extend([repeating_variable] * num_repeats)
+        function_variables.extend(param for param in self.signature if param not in self.repeating_variables)
+
+        signature_str_items = [f"{parameter_name} - {str(self.signature[parameter_name])}"
+                               for parameter_name in function_variables]
         return f"(= ({self.name} {' '.join(signature_str_items)}) {self.value})"
 
     @property
     def untyped_representation(self) -> str:
+        """Returns the representation of the function without the type information.
+
+        Note:
+            This property is used only for lifted assignments so no need to check for the grounded items' multiplicity.
+        """
         untyped_signature_str = " ".join(self.signature.keys())
         return f"({self.name} {untyped_signature_str})"
 

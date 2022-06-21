@@ -3,7 +3,8 @@ from pytest import fixture, raises, fail
 
 from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser, PDDLTokenizer
 from pddl_plus_parser.models import Domain
-from tests.lisp_parsers_tests.consts import TEST_NUMERIC_DOMAIN, TEST_NUMERIC_PROBLEM
+from tests.lisp_parsers_tests.consts import TEST_NUMERIC_DOMAIN, TEST_NUMERIC_PROBLEM, ZENOTRAVEL_DOMAIN_PATH, \
+    ZENOTRAVEL_PROBLEM_PATH
 
 test_objects_ast = ['num0', 'num1', 'num2', 'num3', 'num4', 'num5', 'num6', 'num7', 'num8', 'num9', 'num10', 'num11',
                     'num12', 'num13', 'num14', 'num15', 'num16', '-', 'num', 'stage1', 'stage2', 'stage3', 'stage4',
@@ -16,6 +17,16 @@ test_objects_ast = ['num0', 'num1', 'num2', 'num3', 'num4', 'num5', 'num6', 'num
 def domain() -> Domain:
     domain_parser = DomainParser(TEST_NUMERIC_DOMAIN)
     return domain_parser.parse_domain()
+
+
+@fixture()
+def zenotravel_domain() -> Domain:
+    domain_parser = DomainParser(ZENOTRAVEL_DOMAIN_PATH)
+    return domain_parser.parse_domain()
+
+@fixture()
+def zenotravel_problem_parser(zenotravel_domain: Domain):
+    return ProblemParser(problem_path=ZENOTRAVEL_PROBLEM_PATH, domain=zenotravel_domain)
 
 
 @fixture(scope="module")
@@ -93,6 +104,23 @@ def test_parse_grounded_numeric_fluent_with_valid_grounded_fluent_definition_ret
     assert extracted_function.signature == {
         "worker2": domain.types["worker"]
     }
+
+
+def test_parse_grounded_numeric_fluent_with_valid_grounded_fluent_with_repeating_parameters_returns_correct_function(
+        zenotravel_problem_parser: ProblemParser, zenotravel_domain: Domain):
+    valid_grounded_function = ['distance', 'city7', 'city7']
+    test_objects_ast = [f"city{i}" for i in range(0, 10)]
+    test_objects_ast.extend(['-', 'city'])
+
+    parsed_objects = zenotravel_problem_parser.parse_objects(test_objects_ast)
+    zenotravel_problem_parser.problem.objects = parsed_objects
+
+    extracted_function = zenotravel_problem_parser.parse_grounded_numeric_fluent(valid_grounded_function)
+    assert extracted_function.name == "distance"
+    assert extracted_function.signature == {
+        "city7": zenotravel_domain.types["city"]
+    }
+    assert extracted_function.state_representation == "(= (distance city7 city7) 0)"
 
 
 def test_parse_parse_grounded_predicate_when_given_wrong_number_of_parameters_raises_an_error(
