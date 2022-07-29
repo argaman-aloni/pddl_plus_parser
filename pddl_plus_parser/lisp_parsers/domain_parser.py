@@ -22,11 +22,13 @@ class DomainParser:
     tokenizer: PDDLTokenizer
     logger: logging.Logger
     partial_parsing: bool
+    enable_conjunctions: bool
 
-    def __init__(self, domain_path: Path, partial_parsing: bool = False):
+    def __init__(self, domain_path: Path, partial_parsing: bool = False, enable_conjunctions: bool = False):
         self.tokenizer = PDDLTokenizer(domain_path)
         self.logger = logging.getLogger(__name__)
         self.partial_parsing = partial_parsing
+        self.enable_conjunctions = enable_conjunctions
 
     def parse_types(self, types: List[str]) -> Dict[str, PDDLType]:
         """Parse the types of the domain.
@@ -185,7 +187,11 @@ class DomainParser:
         new_action.equality_preconditions = set()
         new_action.inequality_preconditions = set()
         new_action.numeric_preconditions = set()
-        if preconditions_ast[0] != "and":
+        if len(preconditions_ast) == 0:
+            self.logger.warning("Received an action with no preconditions.")
+            return
+
+        if preconditions_ast[0] != "and" and not self.enable_conjunctions:
             raise SyntaxError(f"Only accepting conjunctive preconditions! Action - {new_action.name} does not conform!")
 
         for precondition_node in preconditions_ast[1:]:

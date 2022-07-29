@@ -4,7 +4,7 @@ import itertools
 import random
 from pathlib import Path
 
-from problem_generators.common import get_problem_template
+from pddl_plus_parser.problem_generators import get_problem_template
 
 TEMPLATE_FILE_PATH = Path("sailing_template.pddl")
 
@@ -50,7 +50,7 @@ def generate_multiple_problems(
 
 
 def main():
-    generate_multiple_problems(6, 9, 3, 5, 100, Path("/sise/home/mordocha/numeric_planning/domains/sailing/"))
+    generate_multiple_problems(16, 20, 5, 9, 100, Path("C:\Argaman\Planning\Minecraft\more_domains\sailin"))
     # args = parse_arguments()
     # generate_multiple_problems(args.min_boats, args.max_boats, args.min_people, args.max_people, args.max_dist_goal,
     #                            Path(args.output_folder))
