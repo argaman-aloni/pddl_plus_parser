@@ -139,6 +139,7 @@ class TrajectoryParser:
         tokenizer = self._read_trajectory_file(trajectory_file_path)
         observation_expression = tokenizer.parse()
         observation = Observation()
+        observation.add_problem_objects(self.problem.objects)
         self.logger.debug("Starting to generate the observation from the input trajectory.")
         for index in range(0, len(observation_expression) - 2, 2):
             macro_expression = observation_expression[index]

@@ -208,7 +208,7 @@ class DomainParser:
                     continue
 
                 new_action.negative_preconditions.add(
-                    self.parse_untyped_predicate(precondition_node[1:], new_action.signature, domain_constants))
+                    self.parse_untyped_predicate(precondition_node[1], new_action.signature, domain_constants))
                 continue
 
             if precondition_node[0] == EQUALITY_OPERATOR:

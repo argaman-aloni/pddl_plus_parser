@@ -1,6 +1,7 @@
 """Module to represent an observed trajectory. Compared to a trajectory, this contains only the observed data."""
-from typing import List, NoReturn
+from typing import List, NoReturn, Dict
 
+from pddl_plus_parser.models.pddl_object import PDDLObject
 from pddl_plus_parser.models.pddl_state import State
 
 
@@ -40,9 +41,18 @@ class Observation:
     """Class representing an observed trajectory data."""
 
     components: List[ObservedComponent]
+    grounded_objects: Dict[str, PDDLObject]
 
     def __init__(self):
         self.components = []
+        self.grounded_objects = {}
+
+    def add_problem_objects(self, objects: Dict[str, PDDLObject]) -> NoReturn:
+        """Add the objects from the problem to the observation data.
+
+        :param objects: the objects from the problem.
+        """
+        self.grounded_objects = objects
 
     def add_component(self, previous_state: State, call: ActionCall, next_state: State) -> NoReturn:
         """Add a new component to the observation data.
