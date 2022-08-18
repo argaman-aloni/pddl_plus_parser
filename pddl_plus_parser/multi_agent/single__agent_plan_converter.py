@@ -2,7 +2,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import NoReturn, List, Tuple
+from typing import List, Tuple
 
 from pddl_plus_parser.models import Domain, ActionCall, Operator, JointActionCall
 
@@ -11,6 +11,8 @@ NOP_ACTION = "nop"
 
 
 class PlanConverter:
+    """Class that converts single agent plans to multi-agent plans with joint actions."""
+
     ma_domain: Domain
     logger: logging.Logger
 
@@ -137,7 +139,8 @@ class PlanConverter:
                 break
 
             next_action, next_executing_agent = plan_actions[0]
-            while self._validate_well_defined_joint_action(joint_action, next_action, next_executing_agent, agent_names):
+            while self._validate_well_defined_joint_action(joint_action, next_action, next_executing_agent,
+                                                           agent_names):
                 joint_action[agent_names.index(next_executing_agent)] = plan_actions.pop(0)[0]
 
             joint_actions.append(JointActionCall(joint_action))
@@ -145,11 +148,11 @@ class PlanConverter:
         return joint_actions
 
     def convert_plan(self, plan_file_path: Path, agent_names: List[str]) -> List[JointActionCall]:
-        """
+        """Converts a single agent plan to a multi-agent plan containing joint actions.
 
-        :param plan_file_path:
-        :param agent_names:
-        :return:
+        :param plan_file_path: the path to the original single agent plan.
+        :param agent_names: the names of the agents that appear in the plan.
+        :return: the list of joint actions describing the multi-agent plan.
         """
         with open(plan_file_path, "rt") as plan_file:
             plan_data = self._extract_plan_actions(plan_file.read(), agent_names)
