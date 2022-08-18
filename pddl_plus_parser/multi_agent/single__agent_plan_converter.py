@@ -1,0 +1,158 @@
+"""Module to convert single agent plans to multi-agent plans with joint actions."""
+import logging
+import re
+from pathlib import Path
+from typing import NoReturn, List, Tuple
+
+from pddl_plus_parser.models import Domain, ActionCall, Operator, JointActionCall
+
+PLAN_COMPONENT_REGEX = r"\d+ : \(([\w+\s?-]+)\)"
+NOP_ACTION = "nop"
+
+
+class PlanConverter:
+    ma_domain: Domain
+    logger: logging.Logger
+
+    def __init__(self, ma_domain: Domain):
+        self.ma_domain = ma_domain
+        self.logger = logging.getLogger(__name__)
+
+    def _extract_plan_actions(self, plan: str, agent_names: List[str]) -> List[Tuple[ActionCall, str]]:
+        """Extracts the actions from the multi-agent plan.
+
+        :param plan: the multi-agent plan.
+        :param agent_names: the names of the agents.
+        :return: the list tuples containing the action and the agent that executes it.
+        """
+        self.logger.info(f"Extracting the actions from the multi-agent plan:\n{plan}")
+        matches = re.finditer(PLAN_COMPONENT_REGEX, plan, re.MULTILINE)
+        plan_seq = []
+        for match in matches:
+            action_sequence = match.group(1)
+            self.logger.debug(f"action sequence - {action_sequence}")
+            action_components = action_sequence.lower().split()
+            action_name = action_components[0]
+            action_parameters = action_components[1:]
+            # assuming that only one agent executes an action
+            executing_agent = [param for param in action_parameters if param in agent_names][0]
+            plan_seq.append((ActionCall(action_name, action_parameters), executing_agent))
+
+        return plan_seq
+
+    def _validate_well_defined_action_literals(self, combined_actions: List[ActionCall], next_action: Operator) -> bool:
+        """Validates whether the actions' grounded literals are well-defined.
+
+        We define a contradiction as the following:
+            If a fluent and its negation exist in the same time, than it is considered a contradiction.
+
+        :param combined_actions: the currently constructed joint action.
+        :param next_action: the new action to consider to add to the joint action.
+        :return: whether the grounded literals are well-defined.
+        """
+        positive_preconditions = set()
+        negative_preconditions = set()
+        add_effects = set()
+        delete_effects = set()
+
+        for action_call in combined_actions:
+            if action_call.name == NOP_ACTION:
+                continue
+
+            op = Operator(self.ma_domain.actions[action_call.name], self.ma_domain, action_call.parameters)
+            op.ground()
+            positive_preconditions.update([p.untyped_representation for p in op.grounded_positive_preconditions])
+            negative_preconditions.update([p.untyped_representation for p in op.grounded_negative_preconditions])
+            add_effects.update([p.untyped_representation for p in op.grounded_add_effects])
+            delete_effects.update([p.untyped_representation for p in op.grounded_delete_effects])
+
+        next_action_pos_preconditions = [p.untyped_representation for p in next_action.grounded_positive_preconditions]
+        next_action_neg_preconditions = [p.untyped_representation for p in next_action.grounded_negative_preconditions]
+        next_action_add_effects = [p.untyped_representation for p in next_action.grounded_add_effects]
+        next_action_del_effects = [p.untyped_representation for p in next_action.grounded_delete_effects]
+
+        if len(negative_preconditions.intersection(next_action_pos_preconditions)) > 0 or \
+                len(positive_preconditions.intersection(next_action_neg_preconditions)) > 0 or \
+                len(add_effects.intersection(next_action_del_effects)) > 0 or \
+                len(delete_effects.intersection(next_action_add_effects)) > 0:
+            self.logger.debug("The new action combined with the current joint action is not well defined!")
+            return False
+
+        return True
+
+    def _validate_well_defined_joint_action(self, combined_actions: List[ActionCall], next_action: ActionCall,
+                                            next_executing_agent: str, agent_names: List[str]) -> bool:
+        """Validates if the joint action is well-defined.
+
+        Note: the method in which the algorithm validates if a joint-action is well-defined is as follows:
+            1. if the next action's executing agent already appears in the joint action,
+                then the joint action is not well-defined.
+            2. for each grounded literal in the joint action, if the preconditions contain contradictions,
+                or the effects contain contradictions, then the joint action is not well-defined.
+
+        We define a contradiction as the following:
+            If a fluent and its negation exist in the same time, than it is considered a contradiction.
+            Another example for a contradiction is a violation of the concurrency constraint which means, in our case,
+            that more than one agent is interacting with an object.
+
+        :param combined_actions: the joint action that is currently constructed.
+        :param next_action: the new action to consider to add to the joint action.
+        :param next_executing_agent: the agent that executes the new action.
+        :return: whether the joint action with the new action is well-defined.
+        """
+        self.logger.info(f"Validating the joint action with the new action {str(next_action)}")
+        next_agent_action_index = agent_names.index(next_executing_agent)
+        if combined_actions[next_agent_action_index].name != NOP_ACTION:
+            self.logger.debug("The agent already executes an action in the joint action")
+            return False
+
+        joint_action = JointActionCall(actions=combined_actions)
+        if len(set(joint_action.joint_parameters).intersection(set(next_action.parameters))) > 0:
+            self.logger.debug("The new action violates the concurrency constraint!")
+            return False
+
+        next_action_op = Operator(self.ma_domain.actions[next_action.name], self.ma_domain, next_action.parameters)
+        next_action_op.ground()
+
+        return self._validate_well_defined_action_literals(combined_actions, next_action_op)
+
+    def _create_joint_actions(self, plan_actions: List[Tuple[ActionCall, str]],
+                              agent_names: List[str]) -> List[JointActionCall]:
+        """Creates the joint actions from the single agent actions.
+
+        :param plan_actions: the single agent actions.
+        :param agent_names: the names of the agents.
+        :return: the joint actions.
+        """
+        self.logger.info("Creating the joint actions from the single agent action plan!")
+        joint_actions = []
+        while len(plan_actions) > 0:
+            self.logger.debug("Initializing joint action to have only NOP for all the agents")
+            joint_action = [ActionCall(NOP_ACTION, []) for _ in agent_names]
+            action, agent = plan_actions.pop(0)
+            joint_action[agent_names.index(agent)] = action
+
+            if len(plan_actions) == 0:
+                joint_actions.append(JointActionCall(joint_action))
+                break
+
+            next_action, next_executing_agent = plan_actions[0]
+            while self._validate_well_defined_joint_action(joint_action, next_action, next_executing_agent, agent_names):
+                joint_action[agent_names.index(next_executing_agent)] = plan_actions.pop(0)[0]
+
+            joint_actions.append(JointActionCall(joint_action))
+
+        return joint_actions
+
+    def convert_plan(self, plan_file_path: Path, agent_names: List[str]) -> List[JointActionCall]:
+        """
+
+        :param plan_file_path:
+        :param agent_names:
+        :return:
+        """
+        with open(plan_file_path, "rt") as plan_file:
+            plan_data = self._extract_plan_actions(plan_file.read(), agent_names)
+            plan_actions = self._create_joint_actions(plan_data, agent_names)
+
+        return plan_actions

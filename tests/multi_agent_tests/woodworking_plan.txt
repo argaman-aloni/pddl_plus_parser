@@ -1,0 +1,6 @@
+0 : (do-grind grinder0 p0 smooth red varnished colourfragments)
+1 : (do-plane planer0 p2 verysmooth natural varnished)
+2 : (do-saw-medium saw0 b0 p1 pine rough s3 s2 s1)
+3 : (do-glaze glazer0 p2 red)
+4 : (do-plane planer0 p1 rough natural untreated)
+5 : (do-immersion-varnish immersion-varnisher0 p1 natural smooth)
