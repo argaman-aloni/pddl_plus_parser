@@ -26,6 +26,9 @@ class Domain:
         self.actions = {}
         self.constants = {}
         self.functions = {}
+        self.types = {}
+        self.predicates = {}
+        self.requirements = []
 
     def __str__(self):
         return (

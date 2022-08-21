@@ -59,6 +59,13 @@ class ProblemParser:
         same_type_objects = []
         iterator = 0
         while iterator < len(objects_ast):
+            if isinstance(objects_ast[iterator], list):
+                self.logger.debug("Found private objects, iterating over them and then continue regularly.")
+                private_objects = self.parse_objects(objects_ast[iterator][1:])
+                problem_objects.update(private_objects)
+                iterator += 1
+                continue
+
             if objects_ast[iterator] != "-":
                 same_type_objects.append(objects_ast[iterator])
                 iterator += 1
@@ -98,7 +105,8 @@ class ProblemParser:
             object_name: possible_objects[object_name].type for object_name in fluent_signature_items
         }
         repeating_items = {object_name: count for object_name, count in grounded_fluents_counter.items() if count > 1}
-        for grounded_signature_type, lifted_signature_type in zip(fluent_signature.values(), lifted_function.signature.values()):
+        for grounded_signature_type, lifted_signature_type in zip(fluent_signature.values(),
+                                                                  lifted_function.signature.values()):
             assert grounded_signature_type.is_sub_type(lifted_signature_type)
 
         return PDDLFunction(name=function_name, signature=fluent_signature, repeating_variables=repeating_items)

@@ -395,3 +395,14 @@ class Operator:
         next_state_predicates = self.update_state_predicates(previous_state)
         next_state_numeric_fluents = self.update_state_functions(previous_state)
         return State(predicates=next_state_predicates, fluents=next_state_numeric_fluents)
+
+
+class NOPOperator:
+    """A n-op operator for when agents do not take action in a certain timestamp."""
+
+    def __str__(self):
+        return "(nop )"
+
+    @property
+    def name(self):
+        return "nop"

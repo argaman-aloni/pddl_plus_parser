@@ -144,6 +144,13 @@ class DomainParser:
         """
         predicates = {}
         for predicate in predicates_ast:
+            if predicate[0] == ":private":
+                for private_predicate in predicate[1:]:
+                    extracted_private_predicate = self.parse_predicate(private_predicate, domain_types)
+                    predicates[extracted_private_predicate.name] = extracted_private_predicate
+
+                continue
+
             extracted_predicate = self.parse_predicate(predicate, domain_types)
             predicates[extracted_predicate.name] = extracted_predicate
 

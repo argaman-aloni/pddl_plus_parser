@@ -9,7 +9,8 @@ from tests.multi_agent_tests.consts import SOKOBAN_DOMAIN_FILE_PATH, SOKOBAN_UNP
     WOODWORKING_DOMAIN_FILE_PATH, WOODWORKING_UNPARSED_PLAN_PATH
 
 SOKOBAN_AGENT_NAMES = ["player-01", "player-02"]
-WOODWORKING_AGENT_NAMES = ["grinder0", "planer0", "saw0", "glazer0", "immersion-varnisher0"]
+WOODWORKING_AGENT_NAMES = ["glazer0", "grinder0", "highspeed-saw0", "immersion-varnisher0", "planer0", "saw0",
+                           "spray-varnisher0"]
 
 
 @fixture()

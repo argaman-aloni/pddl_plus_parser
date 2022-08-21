@@ -24,6 +24,7 @@ def zenotravel_domain() -> Domain:
     domain_parser = DomainParser(ZENOTRAVEL_DOMAIN_PATH)
     return domain_parser.parse_domain()
 
+
 @fixture()
 def zenotravel_problem_parser(zenotravel_domain: Domain):
     return ProblemParser(problem_path=ZENOTRAVEL_PROBLEM_PATH, domain=zenotravel_domain)
@@ -67,6 +68,22 @@ def test_parse_objects_parse_simple_objects_list_with_one_type_correctly(problem
     parsed_objects = problem_parser.parse_objects(test_objects_ast)
     assert len(parsed_objects) == 16
     assert all([obj.type.name == "num" for obj in parsed_objects.values()])
+
+
+def test_parse_objects_with_private_objects_parse_correctly_correctly(problem_parser):
+    objects_str_with_private_objs = """(
+    num0 num1 num2 num3  - num
+    (:private
+        stage1 stage2 - stage
+        round1 round2  - round
+    )
+    worker1 worker2 - worker
+    )
+    """
+    tokenizer = PDDLTokenizer(pddl_str=objects_str_with_private_objs)
+    parsed_objects = problem_parser.parse_objects(tokenizer.parse())
+    assert set(parsed_objects.keys()) == {"num0", "num1", "num2", "num3", "stage1", "stage2", "round1", "round2",
+                                          "worker1", "worker2"}
 
 
 def test_parse_objects_parse_objects_list_with_multiple_types_correctly(problem_parser):

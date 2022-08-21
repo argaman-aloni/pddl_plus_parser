@@ -4,10 +4,9 @@ import re
 from pathlib import Path
 from typing import List, Tuple
 
-from pddl_plus_parser.models import Domain, ActionCall, Operator, JointActionCall
+from pddl_plus_parser.models import Domain, ActionCall, Operator, JointActionCall, NOP_ACTION
 
 PLAN_COMPONENT_REGEX = r"\d+ : \(([\w+\s?-]+)\)"
-NOP_ACTION = "nop"
 
 
 class PlanConverter:
@@ -47,6 +46,9 @@ class PlanConverter:
 
         We define a contradiction as the following:
             If a fluent and its negation exist in the same time, than it is considered a contradiction.
+
+        Note: extending to numeric actions is easy when considering that two actions cannot change the same function at
+        the same time.
 
         :param combined_actions: the currently constructed joint action.
         :param next_action: the new action to consider to add to the joint action.
@@ -159,3 +161,13 @@ class PlanConverter:
             plan_actions = self._create_joint_actions(plan_data, agent_names)
 
         return plan_actions
+
+    @staticmethod
+    def export_plan(plan_file_path: Path, plan_actions: List[JointActionCall]):
+        """Exports the multi-agent plan to a file.
+
+        :param plan_file_path: the path to the file to export the plan to.
+        :param plan_actions: the list of joint actions to export.
+        """
+        with open(plan_file_path, "wt") as plan_file:
+            plan_file.writelines([f"{str(joint_action)}\n" for joint_action in plan_actions])

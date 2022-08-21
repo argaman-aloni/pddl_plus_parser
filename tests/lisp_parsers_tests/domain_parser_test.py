@@ -140,6 +140,21 @@ def test_parse_predicates_with_single_predicate_returns_predicates_dictionary_co
     assert "available" in predicates
 
 
+def test_parse_predicates_with_private_predicates_extracts_predicates_correctly(domain_parser: DomainParser):
+    private_predicates_str = """((:private
+	(surface-condition ?obj - woodobj ?surface - surface)
+	(treatment ?obj - part ?treatment - treatmentstatus)
+    ))"""
+
+    tokenizer = PDDLTokenizer(pddl_str=private_predicates_str)
+    domain_types = domain_parser.parse_types(nested_types)
+    predicates = domain_parser.parse_predicates(tokenizer.parse(), domain_types)
+    assert "surface-condition" in predicates
+    assert predicates["surface-condition"].untyped_representation == "(surface-condition ?obj ?surface)"
+    assert "treatment" in predicates
+    assert predicates["treatment"].untyped_representation == "(treatment ?obj ?treatment)"
+
+
 def test_parse_predicates_with_multiple_predicate_returns_predicates_dictionary_correctly(domain_parser: DomainParser):
     tokenizer = PDDLTokenizer(pddl_str=test_predicates_str)
     domain_types = domain_parser.parse_types(nested_types)

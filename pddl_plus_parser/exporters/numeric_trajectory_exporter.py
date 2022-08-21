@@ -3,20 +3,10 @@ import logging
 from pathlib import Path
 from typing import List, NoReturn, Optional
 
-from pddl_plus_parser.models import Domain, Problem, Operator, State
+from pddl_plus_parser.models import Domain, Problem, Operator, State, ActionCall
 
 
-class ActionDescriptor:
-    """An object representing a single action call."""
-    name: str
-    parameters: List[str]
-
-    def __init__(self, name: str, grounded_parameters: List[str]):
-        self.name = name
-        self.parameters = grounded_parameters
-
-
-def parse_action_call(action_call: str) -> ActionDescriptor:
+def parse_action_call(action_call: str) -> ActionCall:
     """Parses the string representing the action call in the plan sequence.
 
     :param action_call: the string representing the action call.
@@ -24,7 +14,7 @@ def parse_action_call(action_call: str) -> ActionDescriptor:
     """
     action_data = action_call.lower().replace("(", " ( ").replace(")", " ) ").split()
     action_data = action_data[1:-1]
-    return ActionDescriptor(name=action_data[0], grounded_parameters=action_data[1:])
+    return ActionCall(name=action_data[0], grounded_parameters=action_data[1:])
 
 
 class TrajectoryTriplet:
@@ -81,7 +71,8 @@ class TrajectoryExporter:
                                  op=operator,
                                  next_state=next_state)
 
-    def parse_plan(self, problem: Problem, plan_path: Optional[Path] = None, action_sequence: Optional[List[str]] = None) -> List[TrajectoryTriplet]:
+    def parse_plan(self, problem: Problem, plan_path: Optional[Path] = None,
+                   action_sequence: Optional[List[str]] = None) -> List[TrajectoryTriplet]:
         """Parse the input plan file to create the trajectory.
 
         :return: the list of triplets that was generated using the plan.

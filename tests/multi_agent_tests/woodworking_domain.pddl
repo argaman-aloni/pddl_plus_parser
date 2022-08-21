@@ -30,7 +30,7 @@
             (empty ?m - highspeed-saw)
             (has-colour ?machine - machine ?colour - acolour)
             (contains-part ?b - board ?p - part)
-            (grind-treatment-change ?old - treatmentstatus ?new - treatmentstatus)
+            (grind-treatment-change ?agent - grinder ?old - treatmentstatus ?new - treatmentstatus)
             (is-smooth ?surface - surface))
 
 
@@ -87,7 +87,7 @@
             (is-smooth ?oldsurface)
             (colour ?x ?oldcolour)
             (treatment ?x ?oldtreatment)
-            (grind-treatment-change ?oldtreatment ?newtreatment))
+            (grind-treatment-change ?m ?oldtreatment ?newtreatment))
     :effect (and
             (not (surface-condition ?x ?oldsurface))
             (surface-condition ?x verysmooth)
