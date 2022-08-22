@@ -1,4 +1,4 @@
-"""Module to convert MA domains into single agent domains"""
+"""Module to convert MA problems into single agent domains"""
 import logging
 from pathlib import Path
 from typing import NoReturn
@@ -9,7 +9,7 @@ from pddl_plus_parser.models import Problem
 
 
 class MultiAgentProblemsConverter:
-    """Manages the multiple agents and their domain and problems."""
+    """Converts factored multi-agent problems to single agent problems."""
 
     logger: logging.Logger
     problems_directory_path: Path
@@ -22,8 +22,9 @@ class MultiAgentProblemsConverter:
     def combine_problems(self, combined_domain_path: Path) -> Problem:
         """Converts the MA problems to one single agent problem with combined initial state and goals.
 
-        :return: the problem that represents the combination of all of the agents' problems.
+        :return: the problem that represents the combination of all the agents' problems.
         """
+        self.logger.info("Starting to combine the problems")
         combined_domain = DomainParser(domain_path=combined_domain_path, partial_parsing=False).parse_domain()
         combined_problem = Problem(domain=combined_domain)
         for problem_file_path in self.problems_directory_path.glob(f"{self.problem_file_prefix}-*.pddl"):
@@ -41,10 +42,9 @@ class MultiAgentProblemsConverter:
         return combined_problem
 
     def export_combined_problem(self, combined_domain_path: Path) -> NoReturn:
-        """
+        """Export the combined multi-agent problem to a single PDDL file.
 
-        :param combined_domain_path:
-        :return:
+        :param combined_domain_path: the path to the combined domain (containing the agents' data).
         """
         combined_problem = self.combine_problems(combined_domain_path)
         ProblemExporter().export_problem(combined_problem, self.problems_directory_path / f"combined_problem.pddl")

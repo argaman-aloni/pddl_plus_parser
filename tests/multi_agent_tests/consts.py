@@ -12,3 +12,5 @@ WOODWORKING_PARSED_PLAN_PATH = Path(CWD, "woodworking_plan.solution")
 
 COMBINED_PROBLEM_PATH = Path(CWD, "combined_problem.pddl")
 COMBINED_DOMAIN_PATH = Path(CWD, "combined_domain.pddl")
+
+MULTI_AGENT_DATA_DIRECTORY = Path(CWD, "multi_agent_problem")

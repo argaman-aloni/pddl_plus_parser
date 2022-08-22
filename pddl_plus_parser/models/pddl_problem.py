@@ -30,6 +30,7 @@ class Problem:
     metric: Dict[str, NumericalExpressionTree]
 
     def __init__(self, domain: Domain):
+        self.name = ""
         self.domain = domain
         self.objects = {}
         self.initial_state_predicates = defaultdict(set)

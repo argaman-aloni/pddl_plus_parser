@@ -9,7 +9,7 @@ from pddl_plus_parser.models import Domain
 
 
 class MultiAgentDomainsConverter:
-    """"""
+    """Converts multiple MA domains to single agent domain containing all the agents' data."""
 
     logger: logging.Logger
     domains_directory_path: Path
@@ -40,6 +40,6 @@ class MultiAgentDomainsConverter:
         return combined_domain
 
     def export_combined_domain(self) -> NoReturn:
-        """Export the domain into a file so that the model will be able to use it later."""
+        """Export the multi-agent domains to a single PDDL domain file."""
         combined_domain = self.locate_domains()
         DomainExporter().export_domain(combined_domain, self.domains_directory_path / f"combined_domain.pddl")

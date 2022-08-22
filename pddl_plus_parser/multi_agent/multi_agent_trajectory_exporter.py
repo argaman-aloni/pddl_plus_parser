@@ -1,19 +1,17 @@
 """Module that encapsulates the multi-agent trajectory functionalities."""
 import logging
 import re
-from collections import defaultdict
 from pathlib import Path
 from typing import List, NoReturn, Optional, Union
 
-from pddl_plus_parser.lisp_parsers import DomainParser
 from pddl_plus_parser.models import Domain, Problem, Operator, State, JointActionCall, ActionCall, NOP_ACTION, \
-    PDDLFunction, NOPOperator
+    NOPOperator
 
 JOINT_ACTION_REGEX = r"\(([\w+\s?-]+)\)"
 
 
 def parse_action_call(joint_action_call: str) -> JointActionCall:
-    """Parses the string representing the action call in the plan sequence.
+    """Parses the string representing the joint action call in the plan sequence.
 
     :param joint_action_call: the string representing the joint action.
     :return: the object representing the action name and its parameters.
@@ -30,7 +28,7 @@ def parse_action_call(joint_action_call: str) -> JointActionCall:
 
 
 class MultiAgentTrajectoryTriplet:
-    """Class representing a single trajectory triplet."""
+    """Class representing a single multi-agent trajectory triplet."""
     previous_state: State
     joint_action: List[Union[Operator, NOPOperator]]
     next_state: State

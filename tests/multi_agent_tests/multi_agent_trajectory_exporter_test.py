@@ -1,6 +1,4 @@
 """Module test for the numeric trajectory exporter functionality."""
-import os
-from pathlib import Path
 
 import pytest
 from pytest import fixture
@@ -92,3 +90,11 @@ def test_parse_plan_can_parse_complete_plan_and_create_correct_length_trajectory
         multi_agent_trajectory_exporter: MultiAgentTrajectoryExporter, combined_problem: Problem):
     triplets = multi_agent_trajectory_exporter.parse_plan(combined_problem, WOODWORKING_PARSED_PLAN_PATH)
     assert len(triplets) == 4
+
+
+def test_export_returns_readable_list_of_strings_representing_the_trajectory(
+        multi_agent_trajectory_exporter: MultiAgentTrajectoryExporter, combined_problem: Problem):
+    triplets = multi_agent_trajectory_exporter.parse_plan(combined_problem, WOODWORKING_PARSED_PLAN_PATH)
+    trajectory_lines = multi_agent_trajectory_exporter.export(triplets)
+    for line in trajectory_lines:
+        print(line)
