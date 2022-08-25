@@ -5,7 +5,7 @@ with open("README.md") as f:
     long_description = f.read()
 
 setup(name='pddl-plus-parser',
-      version='1.4.4',
+      version='2.0.3',
       python_requires=">=3.8",
       description='Parser of PDDL+ domains and problems for learning purposes',
       long_description=long_description,

@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import List, Union
 
 from pddl_plus_parser.lisp_parsers.pddl_tokenizer import PDDLTokenizer
-from pddl_plus_parser.models import Domain, Observation, State, ActionCall, PDDLFunction, Predicate, GroundedPredicate, Problem
+from pddl_plus_parser.models import Domain, Observation, State, ActionCall, PDDLFunction, Predicate, GroundedPredicate, \
+    Problem, MultiAgentObservation, JointActionCall, NOP_ACTION
 
 
 class TrajectoryParser:
@@ -90,7 +91,8 @@ class TrajectoryParser:
         fluent_signature = {
             object_name: possible_objects[object_name].type for object_name in fluent_signature_items
         }
-        for grounded_param_type, lifted_param_type in zip(fluent_signature.values(), lifted_function.signature.values()):
+        for grounded_param_type, lifted_param_type in zip(fluent_signature.values(),
+                                                          lifted_function.signature.values()):
             assert grounded_param_type.is_sub_type(lifted_param_type)
 
         return PDDLFunction(name=function_name, signature=fluent_signature)
@@ -129,16 +131,39 @@ class TrajectoryParser:
         action_call_data = action_call_ast[0]
         return ActionCall(name=action_call_data[0], grounded_parameters=action_call_data[1:])
 
-    def parse_trajectory(self, trajectory_file_path: Path) -> Observation:
+    def parse_joint_action(self, joint_action_call_ast: List[List[str]],
+                           executing_agents: List[str]) -> List[ActionCall]:
+        """Parse the joint action call AST in the trajectory.
+
+        :param joint_action_call_ast: the joint action call AST in the form.
+        :return: the joint action call object.
+        """
+        self.logger.debug(f"Parsing the joint action call - {joint_action_call_ast}")
+        actions = []
+        for agent_name, action_call_ast in zip(executing_agents, joint_action_call_ast):
+            if action_call_ast[0] == NOP_ACTION:
+                self.logger.debug(f"{agent_name} is executing a NOP action.")
+                actions.append(ActionCall(name=NOP_ACTION, grounded_parameters=[]))
+                continue
+
+            actions.append(self.parse_action_call([action_call_ast]))
+
+        return actions
+
+    def parse_trajectory(self, trajectory_file_path: Path,
+                         executing_agents: List[str] = None) -> Union[Observation, MultiAgentObservation]:
         """Parse a trajectory and extracts the observed data into objects.
 
         :param trajectory_file_path: the path to the trajectory file.
+        :param executing_agents: the list of agents that partake in the observation.
         :return: the observation extracted from the serialized trajectory.
         """
         self.logger.info("Starting to read the trajectory file!")
         tokenizer = self._read_trajectory_file(trajectory_file_path)
         observation_expression = tokenizer.parse()
-        observation = Observation()
+        observation = MultiAgentObservation(
+            executing_agents=executing_agents) if executing_agents is not None else Observation()
+
         observation.add_problem_objects(self.problem.objects)
         self.logger.debug("Starting to generate the observation from the input trajectory.")
         for index in range(0, len(observation_expression) - 2, 2):
@@ -146,8 +171,11 @@ class TrajectoryParser:
             if macro_expression[0] == ":init" or macro_expression[0] == ":state":
                 previous_state = self.parse_state(macro_expression[1:])
                 macro_expression = observation_expression[index + 1]
-                if macro_expression[0] == "operator:":  # TODO: Still need to develop multiple action call mechanism
+                if macro_expression[0] == "operator:":
                     action_call = self.parse_action_call(macro_expression[1:])
+
+                elif macro_expression[0] == "operators:":
+                    action_call = self.parse_joint_action(macro_expression[1:], executing_agents)
 
                 else:
                     raise SyntaxError("Encountered a trajectory without an action call!")

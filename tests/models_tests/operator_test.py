@@ -371,13 +371,6 @@ def test_is_applicable_return_true_when_given_correct_fluents_with_negative_valu
     assert operator.is_applicable(state_with_complete_predicates)
 
 
-def test_update_state_functions_raises_error_when_a_function_is_missing_in_previous_state(
-        operator: Operator, previous_state_with_missing_numeric_fluent: State):
-    with raises(ValueError):
-        operator.ground()
-        operator.update_state_functions(previous_state_with_missing_numeric_fluent)
-
-
 def test_update_state_functions_does_not_raise_error_when_all_functions_are_present_in_state(
         operator: Operator, valid_previous_state: State):
     try:

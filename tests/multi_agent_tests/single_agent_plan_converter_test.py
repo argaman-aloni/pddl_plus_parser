@@ -6,11 +6,9 @@ from pddl_plus_parser.lisp_parsers import DomainParser
 from pddl_plus_parser.models import Domain
 from pddl_plus_parser.multi_agent import PlanConverter
 from tests.multi_agent_tests.consts import SOKOBAN_DOMAIN_FILE_PATH, SOKOBAN_UNPARSED_PLAN_PATH, \
-    WOODWORKING_DOMAIN_FILE_PATH, WOODWORKING_UNPARSED_PLAN_PATH
+    WOODWORKING_DOMAIN_FILE_PATH, WOODWORKING_UNPARSED_PLAN_PATH, WOODWORKING_AGENT_NAMES
 
 SOKOBAN_AGENT_NAMES = ["player-01", "player-02"]
-WOODWORKING_AGENT_NAMES = ["glazer0", "grinder0", "highspeed-saw0", "immersion-varnisher0", "planer0", "saw0",
-                           "spray-varnisher0"]
 
 
 @fixture()

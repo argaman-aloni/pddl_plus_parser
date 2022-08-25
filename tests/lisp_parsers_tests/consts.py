@@ -20,3 +20,7 @@ ZENOTRAVEL_DOMAIN_PATH = Path(CWD, "zenonumeric.pddl")
 ZENOTRAVEL_PROBLEM_PATH = Path(CWD, "pfile0.pddl")
 
 PLANT_WATERING_DOMAIN = Path(CWD, "plant_watering_domain.pddl")
+
+WOODWORKING_COMBINED_DOMAIN_PATH = Path(CWD) / "woodworking_combined_domain.pddl"
+WOODWORKING_COMBINED_PROBLEM_PATH = Path(CWD) / "woodworking_combined_problem.pddl"
+WOODWORKING_COMBINED_TRAJECTORY_PATH = Path(CWD) / "ma_woodworking_trajectory.trajectory"

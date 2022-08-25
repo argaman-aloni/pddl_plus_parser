@@ -8,9 +8,6 @@ from pddl_plus_parser.models import Domain, State, Problem
 from pddl_plus_parser.multi_agent import MultiAgentTrajectoryExporter
 from tests.multi_agent_tests.consts import COMBINED_DOMAIN_PATH, COMBINED_PROBLEM_PATH, WOODWORKING_PARSED_PLAN_PATH
 
-WOODWORKING_AGENT_NAMES = ["glazer0", "grinder0", "highspeed-saw0", "immersion-varnisher0", "planer0", "saw0",
-                           "spray-varnisher0"]
-
 
 @fixture()
 def combined_domain() -> Domain:

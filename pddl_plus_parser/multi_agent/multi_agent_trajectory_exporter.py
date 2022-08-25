@@ -123,7 +123,8 @@ class MultiAgentTrajectoryExporter:
         first_state = triplets[0].previous_state
         serialized_trajectory.append(first_state.serialize())
         for triplet in triplets:
-            serialized_trajectory.append(f"(operators: {[str(op) for op in triplet.joint_action]})\n")
+            operators = " ".join([str(op) for op in triplet.joint_action])
+            serialized_trajectory.append(f"(operators: {operators})\n")
             serialized_trajectory.append(triplet.next_state.serialize())
 
         serialized_trajectory[0] = f"({serialized_trajectory[0]}"
