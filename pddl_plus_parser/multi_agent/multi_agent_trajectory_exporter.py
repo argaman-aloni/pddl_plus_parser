@@ -6,6 +6,7 @@ from typing import List, NoReturn, Optional, Union
 
 from pddl_plus_parser.models import Domain, Problem, Operator, State, JointActionCall, ActionCall, NOP_ACTION, \
     NOPOperator
+from pddl_plus_parser.multi_agent.common import create_initial_state, apply_actions
 
 JOINT_ACTION_REGEX = r"\(([\w+\s?-]+)\)"
 
@@ -73,23 +74,17 @@ class MultiAgentTrajectoryExporter:
         """
         self.logger.info(f"Trying to apply the action - {action_call} on the state - {previous_state.serialize()}")
         joint_action = parse_action_call(action_call)
-        interm_state_predicates = previous_state.state_predicates.copy()
-        interm_state_numeric_fluents = previous_state.state_fluents.copy()
+        executed_actions = [ActionCall(name=op.name, grounded_parameters=op.parameters) for op in
+                            joint_action.actions if op.name != NOP_ACTION]
         operators = []
         for sa_action in joint_action.actions:
             if sa_action.name == NOP_ACTION:
                 operators.append(NOPOperator())
                 continue
 
-            operator = Operator(action=self.domain.actions[sa_action.name], domain=self.domain,
-                                grounded_action_call=sa_action.parameters)
-            partial_numeric_state = State(predicates=interm_state_predicates, fluents=interm_state_numeric_fluents)
-            partial_next_state = operator.apply(partial_numeric_state)
-            interm_state_predicates.update(partial_next_state.state_predicates)
-            interm_state_numeric_fluents.update(partial_next_state.state_fluents)
-            operators.append(operator)
-
-        next_state = State(predicates=interm_state_predicates, fluents=interm_state_numeric_fluents)
+            operators.append(Operator(action=self.domain.actions[sa_action.name], domain=self.domain,
+                                      grounded_action_call=sa_action.parameters))
+        next_state = apply_actions(self.domain, previous_state, executed_actions)
         return MultiAgentTrajectoryTriplet(previous_state=previous_state, ops=operators, next_state=next_state)
 
     def parse_plan(self, problem: Problem, plan_path: Optional[Path] = None,
@@ -100,9 +95,7 @@ class MultiAgentTrajectoryExporter:
         """
         self.logger.info("Parsing the plan to extract the grounded operators.")
         plan_actions = action_sequence if action_sequence is not None else self._read_plan(plan_path)
-        initial_state_predicates = problem.initial_state_predicates
-        initial_state_numeric_fluents = problem.initial_state_fluents
-        previous_state = State(predicates=initial_state_predicates, fluents=initial_state_numeric_fluents, is_init=True)
+        previous_state = create_initial_state(problem)
         triplets = []
         self.logger.debug("Starting to create the trajectory triplets.")
         for grounded_action_call in plan_actions:

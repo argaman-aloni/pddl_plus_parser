@@ -6,7 +6,8 @@ from pytest import fixture
 from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser
 from pddl_plus_parser.models import Domain, State, Problem
 from pddl_plus_parser.multi_agent import MultiAgentTrajectoryExporter
-from tests.multi_agent_tests.consts import COMBINED_DOMAIN_PATH, COMBINED_PROBLEM_PATH, WOODWORKING_PARSED_PLAN_PATH
+from tests.multi_agent_tests.consts import COMBINED_DOMAIN_PATH, COMBINED_PROBLEM_PATH, WOODWORKING_PARSED_PLAN_PATH, \
+    WOODWORKING_SHORT_PARSED_PLAN_PATH
 
 
 @fixture()
@@ -92,6 +93,14 @@ def test_parse_plan_can_parse_complete_plan_and_create_correct_length_trajectory
 def test_export_returns_readable_list_of_strings_representing_the_trajectory(
         multi_agent_trajectory_exporter: MultiAgentTrajectoryExporter, combined_problem: Problem):
     triplets = multi_agent_trajectory_exporter.parse_plan(combined_problem, WOODWORKING_PARSED_PLAN_PATH)
+    trajectory_lines = multi_agent_trajectory_exporter.export(triplets)
+    for line in trajectory_lines:
+        print(line)
+
+
+def test_export_with_interacting_plan_returns_readable_list_of_strings_representing_the_trajectory(
+        multi_agent_trajectory_exporter: MultiAgentTrajectoryExporter, combined_problem: Problem):
+    triplets = multi_agent_trajectory_exporter.parse_plan(combined_problem, WOODWORKING_SHORT_PARSED_PLAN_PATH)
     trajectory_lines = multi_agent_trajectory_exporter.export(triplets)
     for line in trajectory_lines:
         print(line)

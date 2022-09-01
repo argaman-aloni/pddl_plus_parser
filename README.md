@@ -14,4 +14,6 @@
 * version 1.3.0 - Added problem generators for some domains used in the experiments. 
 * version 1.4.0 - Added negative preconditions for actions.
 * version 2.0.0 - Added support for multi-agent PDDL domains and problems.
+* version 2.1.0 - Added support for more complex type of multi-agent trajectories to support non-trivial interactions. 
+
 
