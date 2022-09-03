@@ -52,6 +52,7 @@ class Operator:
     grounded_add_effects: Set[GroundedPredicate]
     grounded_delete_effects: Set[GroundedPredicate]
     grounded_numeric_effects: Set[NumericalExpressionTree]
+    grounded_disjunctive_numeric_preconditions: List[Set[NumericalExpressionTree]]
 
     def __init__(self, action: Action, domain: Domain, grounded_action_call: List[str]):
         self.action = action
@@ -216,6 +217,9 @@ class Operator:
 
         self.grounded_numeric_preconditions = self.ground_numeric_expressions(self.action.numeric_preconditions,
                                                                               parameters_map)
+        self.grounded_disjunctive_numeric_preconditions = [
+            self.ground_numeric_expressions(expressions, parameters_map) for expressions in
+            self.action.disjunctive_numeric_preconditions]
         self.grounded_numeric_effects = self.ground_numeric_expressions(self.action.numeric_effects, parameters_map)
         self.grounded = True
 
@@ -273,6 +277,27 @@ class Operator:
         """
         return all([obj[0] == obj[1] for obj in grounded_objects])
 
+    def _numeric_conditions_set_hold(self, state: State, numeric_conditions: Set[NumericalExpressionTree]) -> bool:
+        """Check if the set of numeric conditions holds as a whole.
+
+        :param state: the state that the action is being applied to.
+        :param numeric_conditions: the set of numeric conditions to check.
+        :return: whether the set of numeric conditions holds.
+        """
+        for grounded_expression in numeric_conditions:
+            try:
+                self.logger.debug("Setting the values of the numeric state functions to the grounded operator")
+                set_expression_value(grounded_expression.root, state.state_fluents)
+                if not evaluate_expression(grounded_expression.root):
+                    self.logger.debug(f"The evaluation of the numeric state variable failed. "
+                                      f"The failed expression:\n{str(grounded_expression)}")
+                    return False
+
+            except KeyError:
+                return False
+
+        return True
+
     def is_applicable(self, state: State) -> bool:
         """Checks if the action is applicable on the current state.
 
@@ -293,17 +318,14 @@ class Operator:
             return False
 
         # Checking that the value of the numeric expression holds.
-        for grounded_expression in self.grounded_numeric_preconditions:
-            try:
-                self.logger.debug("Setting the values of the numeric state functions to the grounded operator")
-                set_expression_value(grounded_expression.root, state.state_fluents)
-                if not evaluate_expression(grounded_expression.root):
-                    self.logger.debug(f"The evaluation of the numeric state variable failed. "
-                                      f"The failed expression:\n{str(grounded_expression)}")
-                    return False
+        if not self._numeric_conditions_set_hold(state, self.grounded_numeric_preconditions):
+            return False
 
-            except KeyError:
-                return False
+        if len(self.grounded_disjunctive_numeric_preconditions) > 0 and \
+                not any([self._numeric_conditions_set_hold(state, disjunctive_numeric_preconditions)
+                         for disjunctive_numeric_preconditions in self.grounded_disjunctive_numeric_preconditions]):
+            self.logger.debug("None of the disjunctive numeric preconditions hold.")
+            return False
 
         return True
 
@@ -357,10 +379,10 @@ class Operator:
         return next_state_predicates
 
     def update_state_functions(self, previous_state: State) -> Dict[str, PDDLFunction]:
-        """
+        """Updates the state functions based on the action that is being applied.
 
-        :param previous_state:
-        :return:
+        :param previous_state: the state that the action is being applied on.
+        :return: the updated state functions with their new values.
         """
         new_state_numeric_fluents = {**previous_state.state_fluents}
         for grounded_expression in self.grounded_numeric_effects:
@@ -398,7 +420,7 @@ class Operator:
 
 
 class NOPOperator:
-    """A n-op operator for when agents do not take action in a certain timestamp."""
+    """A no-op operator for when agents do not take action in a certain timestamp."""
 
     def __str__(self):
         return "(nop )"

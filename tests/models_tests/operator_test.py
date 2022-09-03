@@ -3,7 +3,7 @@ from typing import List, Dict, Set
 
 from pytest import fixture, raises, fail
 
-from pddl_plus_parser.lisp_parsers import DomainParser
+from pddl_plus_parser.lisp_parsers import DomainParser, PDDLTokenizer
 from pddl_plus_parser.models import Domain, Action, Operator, GroundedPredicate, PDDLFunction, State
 from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, TEST_NUMERIC_DOMAIN
 
@@ -455,3 +455,31 @@ def test_apply_returns_new_state_with_correct_values(
     assert next_state_fluents[data_function.untyped_representation].value == 5.3
     assert next_state_fluents[data_capacity_function.untyped_representation].value == 18.3 - 5.3
     assert next_state_fluents[data_stored_function.untyped_representation].value == 10 + 5.3
+
+
+def test_is_applicable_with_disjunctive_action_operator_does_not_fail(valid_previous_state: State):
+    test_action_str = """  (take_image
+   :parameters (?s - satellite ?d - direction ?i - instrument ?m - mode)
+   :precondition (and (calibrated ?i)
+                      (on_board ?i ?s)
+                      (supports ?i ?m)
+                      (power_on ?i)
+                      (pointing ?s ?d)
+                      (power_on ?i)
+                      (or 
+                      (and (>= (data_capacity ?s) (data ?d ?m)))
+			          (and (>= (data_capacity ?s) 0))
+               ))
+   :effect (and (decrease (data_capacity ?s) (data ?d ?m)) (have_image ?d ?m)
+		(increase (data-stored) (data ?d ?m)))
+  )"""
+    domain_parser = DomainParser(TEST_HARD_NUMERIC_DOMAIN)
+    domain = domain_parser.parse_domain()
+    action_tokens = PDDLTokenizer(pddl_str=test_action_str).parse()
+    action = domain_parser.parse_action(action_tokens, domain.types, domain.functions, domain.predicates,
+                                        domain.constants)
+    test_operator = Operator(action, domain, TEST_GROUNDED_ACTION_CALL)
+    try:
+        test_operator.is_applicable(valid_previous_state)
+    except Exception:
+        fail()

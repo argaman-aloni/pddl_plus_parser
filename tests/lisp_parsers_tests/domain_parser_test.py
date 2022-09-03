@@ -386,3 +386,31 @@ def test_parse_action_with_function_equality_precondition_sets_a_new_numeric_pre
         print(action.name)
         for numeric_precond in action.numeric_preconditions:
             print(str(numeric_precond))
+
+
+def test_parse_preconditions_with_action_with_disjunctive_preconditions_extracts_different_set_of_preconditions():
+    test_action_str = """(lift
+	:parameters (?x - hoist ?y - crate ?z - surface ?p - place)
+	:precondition (and (on ?y ?z) (at ?y ?p) (clear ?y) (at ?x ?p) (available ?x)
+				(or (and		
+    (>= (+ (* (fuel-cost ) -0.01) 0.78) 0.0)		
+    (>= (+ (* (fuel-cost ) -0.02) 1.01) 0.0)		
+    )		
+    (and		
+    (>= (+ (* (fuel-cost ) 0.01) -1.79) 0.0)		
+    (>= (+ (+ (* (weight ?y) 0.01) (* (fuel-cost ) 0.01)) -2.05) 0.0)		
+    (>= (+ (* (fuel-cost ) -0.01) 0.78) 0.0)		
+    )))
+        :effect (and (clear ?z) (lifting ?x ?y) (not (available ?x)) (not (on ?y ?z)) (not (at ?y ?p))
+            (increase (fuel-cost ) 1.0)
+    ))"""
+    domain_parser = DomainParser(TEST_NUMERIC_DEPOT_DOMAIN_PATH)
+    domain = domain_parser.parse_domain()
+    action_tokens = PDDLTokenizer(pddl_str=test_action_str).parse()
+    action = domain_parser.parse_action(action_tokens, domain.types, domain.functions, domain.predicates,
+                                        domain.constants)
+    disjunctive_preconditions = action.disjunctive_numeric_preconditions
+    assert len(disjunctive_preconditions) == 2
+    assert len(disjunctive_preconditions[0]) == 2
+    assert len(disjunctive_preconditions[1]) == 3
+    print(str(action))

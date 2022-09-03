@@ -177,6 +177,25 @@ class DomainParser:
 
         return functions
 
+    def parse_disjunctive_numeric_preconditions(
+            self, numeric_preconditions_node: List[Union[str, List[str]]],
+            new_action: Action, domain_functions: Dict[str, PDDLFunction]) -> NoReturn:
+        """Parse a set of disjunctive numeric preconditions.
+
+        :param numeric_preconditions_node: the node that contains the numeric preconditions.
+        :param new_action: the action that is currently being parsed.
+        :param domain_functions: the functions that are defined in the domain.
+        """
+        self.logger.info("Starting to parse the disjunctive numeric preconditions!")
+        for conditions_set_ast in numeric_preconditions_node:
+            if conditions_set_ast[0] != "and":
+                raise SyntaxError(
+                    f"Only accepting conjunctive preconditions! Action - {new_action.name} does not conform!")
+
+            conditions_set = {NumericalExpressionTree(construct_expression_tree(node, domain_functions)) for node in
+                              conditions_set_ast[1:]}
+            new_action.disjunctive_numeric_preconditions.append(conditions_set)
+
     def parse_preconditions(self, preconditions_ast: List[Union[str, List[str]]], new_action: Action,
                             domain_functions: Dict[str, PDDLFunction],
                             domain_predicates: Dict[str, Predicate],
@@ -223,6 +242,10 @@ class DomainParser:
                     self.logger.debug("Adding new lifted objects that should be tested for equality")
                     new_action.equality_preconditions.add((precondition_node[1], precondition_node[2]))
                     continue
+
+            if precondition_node[0] == "or":
+                self.logger.debug("Assuming that the OR operator is used for the disjunction of numeric preconditions.")
+                self.parse_disjunctive_numeric_preconditions(precondition_node[1:], new_action, domain_functions)
 
             if precondition_node[0] in COMPARISON_OPS:
                 numerical_precondition = NumericalExpressionTree(
@@ -342,6 +365,6 @@ class DomainParser:
 
             elif expression[0] == ":process" or expression[0] == ":event":
                 self.logger.debug("Still no support for temporal domains.")
-                # TODO: complete once I finish numerical actions support
+                # TODO: complete once I finish numeric actions support
 
         return domain
