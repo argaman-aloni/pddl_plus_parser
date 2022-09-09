@@ -1,4 +1,4 @@
 from .multi_agent_domain_converter import MultiAgentDomainsConverter
 from .multi_agent_problem_converter import MultiAgentProblemsConverter
 from .multi_agent_trajectory_exporter import MultiAgentTrajectoryTriplet, MultiAgentTrajectoryExporter
-from .single__agent_plan_converter import PlanConverter
+from .single_agent_plan_converter import PlanConverter

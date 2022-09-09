@@ -6,7 +6,7 @@ from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser
 from pddl_plus_parser.models import Domain, Problem
 from pddl_plus_parser.multi_agent import PlanConverter
 from tests.multi_agent_tests.consts import SOKOBAN_DOMAIN_FILE_PATH, SOKOBAN_UNPARSED_PLAN_PATH, \
-    WOODWORKING_DOMAIN_FILE_PATH, WOODWORKING_UNPARSED_PLAN_PATH, WOODWORKING_AGENT_NAMES, COMBINED_PROBLEM_PATH, \
+    WOODWORKING_UNPARSED_PLAN_PATH, WOODWORKING_AGENT_NAMES, COMBINED_PROBLEM_PATH, \
     SOKOBAN_PROBLEM_PATH, COMBINED_DOMAIN_PATH
 
 SOKOBAN_AGENT_NAMES = ["player-01", "player-02"]

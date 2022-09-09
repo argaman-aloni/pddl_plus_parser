@@ -7,7 +7,7 @@ from typing import List, Tuple, Set
 from pddl_plus_parser.models import Domain, ActionCall, Operator, JointActionCall, NOP_ACTION, Problem, State
 from pddl_plus_parser.multi_agent.common import create_initial_state, apply_actions
 
-PLAN_COMPONENT_REGEX = r"\d+ : \(([\w+\s?-]+)\)"
+PLAN_COMPONENT_REGEX = r"[\d+ : ]?\(([\w+\s?-]+)\)"
 
 
 class PlanConverter:

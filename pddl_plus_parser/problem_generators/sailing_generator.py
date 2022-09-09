@@ -50,10 +50,9 @@ def generate_multiple_problems(
 
 
 def main():
-    generate_multiple_problems(16, 20, 5, 9, 100, Path("C:\Argaman\Planning\Minecraft\more_domains\sailin"))
-    # args = parse_arguments()
-    # generate_multiple_problems(args.min_boats, args.max_boats, args.min_people, args.max_people, args.max_dist_goal,
-    #                            Path(args.output_folder))
+    args = parse_arguments()
+    generate_multiple_problems(args.min_boats, args.max_boats, args.min_people, args.max_people, args.max_dist_goal,
+                               Path(args.output_folder))
 
 
 if __name__ == '__main__':
