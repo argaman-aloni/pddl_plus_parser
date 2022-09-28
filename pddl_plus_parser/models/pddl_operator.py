@@ -1,14 +1,15 @@
 """module to represent an operator that can apply actions and change state objects."""
 import logging
 from collections import defaultdict
-from typing import List, Set, Dict, NoReturn, Tuple
+from typing import List, Set, Dict, NoReturn, Tuple, Optional
 
 from anytree import AnyNode
 
-from . import PDDLFunction
+from .conditional_effect import ConditionalEffect
 from .numerical_expression import NumericalExpressionTree, evaluate_expression
 from .pddl_action import Action
 from .pddl_domain import Domain
+from .pddl_function import PDDLFunction
 from .pddl_predicate import GroundedPredicate, Predicate, SignatureType
 from .pddl_state import State
 
@@ -52,6 +53,7 @@ class Operator:
     grounded_add_effects: Set[GroundedPredicate]
     grounded_delete_effects: Set[GroundedPredicate]
     grounded_numeric_effects: Set[NumericalExpressionTree]
+    grounded_conditional_effects: Set[ConditionalEffect]
     grounded_disjunctive_numeric_preconditions: List[Set[NumericalExpressionTree]]
 
     def __init__(self, action: Action, domain: Domain, grounded_action_call: List[str]):
@@ -187,6 +189,29 @@ class Operator:
 
         return grounded_numeric_expressions
 
+    def ground_conditional_effect(self, lifted_condition: ConditionalEffect,
+                                  parameters_map: Dict[str, str]) -> ConditionalEffect:
+        """Grounds a single conditional effect.
+
+        :param lifted_condition: the conditional effect to ground.
+        :param parameters_map: the mapping between the action's parameters and the objects using which the action was
+            called.
+        :return: a grounded conditional effect.
+        """
+        grounded_conditional_effect = ConditionalEffect()
+        grounded_conditional_effect.positive_conditions = self.ground_predicates(
+            lifted_condition.positive_conditions, parameters_map)
+        grounded_conditional_effect.negative_conditions = self.ground_predicates(lifted_condition.negative_conditions,
+                                                                                 parameters_map)
+        grounded_conditional_effect.numeric_conditions = self.ground_numeric_expressions(
+            lifted_condition.numeric_conditions, parameters_map)
+        grounded_conditional_effect.add_effects = self.ground_predicates(lifted_condition.add_effects, parameters_map)
+        grounded_conditional_effect.delete_effects = self.ground_predicates(lifted_condition.delete_effects,
+                                                                            parameters_map)
+        grounded_conditional_effect.numeric_effects = self.ground_numeric_expressions(lifted_condition.numeric_effects,
+                                                                                      parameters_map)
+        return grounded_conditional_effect
+
     @staticmethod
     def ground_equality_objects(equality_preconditions: Set[Tuple[str, str]],
                                 parameters_map: Dict[str, str]) -> Set[Tuple[str, str]]:
@@ -221,17 +246,21 @@ class Operator:
             self.ground_numeric_expressions(expressions, parameters_map) for expressions in
             self.action.disjunctive_numeric_preconditions]
         self.grounded_numeric_effects = self.ground_numeric_expressions(self.action.numeric_effects, parameters_map)
+        self.grounded_conditional_effects = {self.ground_conditional_effect(condition, parameters_map) for condition in
+                                             self.action.conditional_effects}
         self.grounded = True
 
-    def _positive_preconditions_hold(self, state: State) -> bool:
-        """
+    def _positive_preconditions_hold(self, state: State, conditions: Optional[Set[GroundedPredicate]] = None) -> bool:
+        """Check whether the positive preconditions hold in the given state.
 
-        :param state:
-        :return:
+        :param state: the state which the action is applied on.
+        :param conditions: the positive preconditions to check.
+        :return: whether the positive preconditions hold.
         """
+        positive_conditions = conditions or self.grounded_positive_preconditions
         self.logger.info(
             "Validating whether or not the positive state variables match the operator's grounded predicates.")
-        for positive_precondition in self.grounded_positive_preconditions:
+        for positive_precondition in positive_conditions:
             try:
                 state_grounded_predicates = state.state_predicates[positive_precondition.lifted_untyped_representation]
                 untyped_predicates = [p.untyped_representation for p in state_grounded_predicates]
@@ -247,14 +276,16 @@ class Operator:
         self.logger.debug("All positive preconditions we found in the state.")
         return True
 
-    def _negative_preconditions_hold(self, state: State) -> bool:
-        """
+    def _negative_preconditions_hold(self, state: State, conditions: Optional[Set[GroundedPredicate]] = None) -> bool:
+        """Check whether the negative preconditions hold in the given state.
 
-        :param state:
-        :return:
+        :param state: the state which the action is applied on.
+        :param conditions: the negative preconditions to check.
+        :return: whether the negative preconditions hold.
         """
+        negative_conditions = conditions or self.grounded_negative_preconditions
         self.logger.info("Validating that all of the negative preconditions don't exist in the state.")
-        for negative_precondition in self.grounded_negative_preconditions:
+        for negative_precondition in negative_conditions:
             try:
                 state_grounded_predicates = state.state_predicates[negative_precondition.lifted_typed_representation]
                 if negative_precondition in state_grounded_predicates:
@@ -376,7 +407,26 @@ class Operator:
             updated_predicates = next_state_predicates.get(lifted_predicate_str, set()).union(grounded_predicates)
             next_state_predicates[lifted_predicate_str] = updated_predicates
 
+        self.logger.debug("Applying the conditional discrete effects!")
+        conditional_effects = self.update_discrete_conditional_effects(previous_state)
+
         return next_state_predicates
+
+    def update_discrete_conditional_effects(
+            self, previous_state: State,
+            next_state_predicates: Dict[str, Set[GroundedPredicate]]) -> Dict[str, Set[GroundedPredicate]]:
+        """
+
+        :param previous_state:
+        :return:
+        """
+        for effect in self.grounded_conditional_effects:
+            if self._positive_preconditions_hold(previous_state, effect.positive_conditions) \
+                    and self._negative_preconditions_hold(previous_state, effect.negative_conditions) and \
+                    self._numeric_conditions_set_hold(previous_state, effect.numeric_conditions):
+                grouped_add_effects = self._group_effect_predicates(effect.add_effects)
+                grouped_delete_effects = self._group_effect_predicates(effect.delete_effects)
+
 
     def update_state_functions(self, previous_state: State) -> Dict[str, PDDLFunction]:
         """Updates the state functions based on the action that is being applied.

@@ -10,3 +10,4 @@ from .pddl_problem import Problem
 from .pddl_state import State
 from .pddl_type import PDDLType
 from .action_call import ActionCall, JointActionCall, NOP_ACTION
+from .conditional_effect import ConditionalEffect

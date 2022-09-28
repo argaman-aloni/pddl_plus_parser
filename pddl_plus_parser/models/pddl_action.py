@@ -1,8 +1,8 @@
 """Module that represents a PDDL+ action."""
-from typing import Set, Callable, Union, NoReturn, List, Tuple
+from typing import Set, List, Tuple
 
+from .conditional_effect import ConditionalEffect
 from .numerical_expression import NumericalExpressionTree
-from .pddl_function import PDDLFunction
 from .pddl_predicate import SignatureType, Predicate
 
 
@@ -18,6 +18,7 @@ class Action:
     inequality_preconditions: Set[Tuple[str, str]]
     add_effects: Set[Predicate]
     delete_effects: Set[Predicate]
+    conditional_effects: Set[ConditionalEffect]    # Currently only supporting discrete conditional effects.
     numeric_effects: Set[NumericalExpressionTree]
     # currently only supporting disjunction of numeric preconditions
     disjunctive_numeric_preconditions: List[Set[NumericalExpressionTree]]
