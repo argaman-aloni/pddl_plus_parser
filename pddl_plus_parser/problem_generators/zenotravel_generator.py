@@ -1,4 +1,5 @@
 """Problem generator for the zeno-travel domain."""
+import argparse
 import random
 from enum import Enum
 from typing import List, Optional, Any, Dict
@@ -229,9 +230,19 @@ class ZenoTravelGenerator:
         return "\n".join(problem)
 
 
+def parse_arguments() -> argparse.Namespace:
+    """Parse the command line arguments."""
+    parser = argparse.ArgumentParser(description="Generate a single zenotravel planning problem.")
+    parser.add_argument("--number_people", required=True, help="The number of people in the problem.", type=int)
+    parser.add_argument("--number_airplanes", required=True, help="The number of airplanes in the problem.", type=int)
+    parser.add_argument("--num_locations", required=True, help="The number of locations in the problem.", type=int)
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
+    args = parse_arguments()
     generator = ZenoTravelGenerator(domain_type=AllowedDomainTypes.NUMERIC,
-                                    number_people=5,
-                                    number_airplanes=5,
-                                    num_locations=5)
+                                    number_people=args.number_people,
+                                    number_airplanes=args.number_airplanes,
+                                    num_locations=args.num_locations)
     print(generator.generate_problem())

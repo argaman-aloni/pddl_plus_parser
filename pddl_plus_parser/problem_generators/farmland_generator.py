@@ -7,10 +7,11 @@ import itertools
 import random
 from enum import Enum
 from pathlib import Path
+from typing import NoReturn
 
 import networkx as nx
 
-from .common import get_problem_template
+from pddl_plus_parser.problem_generators import get_problem_template
 
 TEMPLATE_FILE_PATH = Path("farmland_template.pddl")
 
@@ -21,11 +22,11 @@ class GraphGeneratorTypes(Enum):
 
 
 def generate_adjacent_graph(graph_generator: GraphGeneratorTypes, num_farms: int) -> nx.Graph:
-    """
+    """Generates the graph of farms where there are adjacent farms represented in a graph.
 
-    :param graph_generator:
-    :param num_farms:
-    :return:
+    :param graph_generator: the type of graph generator to use.
+    :param num_farms: the number of farms in the graph.
+    :return: the graph of farms.
     """
     if graph_generator == GraphGeneratorTypes.star:
         G = nx.star_graph(num_farms - 1)
@@ -40,13 +41,13 @@ def generate_adjacent_graph(graph_generator: GraphGeneratorTypes, num_farms: int
 
 def generate_instance(
         instance_name: str, num_farms: int, num_units: int, graph_generator: GraphGeneratorTypes) -> str:
-    """
+    """Generates the farmland planning problem instance.
 
-    :param instance_name:
-    :param num_farms:
-    :param num_units:
-    :param graph_generator:
-    :return:
+    :param instance_name: the name of the problem instance.
+    :param num_farms: the number of farms in the problem.
+    :param num_units: the number of units in the problem.
+    :param graph_generator: the type of generator to use to generate the adjacent graph.
+    :return: the string representation of the problem instance.
     """
     template = get_problem_template(TEMPLATE_FILE_PATH)
     template_mapping = {"instance_name": instance_name, "domain_name": "farmland"}
@@ -84,49 +85,48 @@ def generate_instance(
 
 
 def parse_arguments() -> argparse.Namespace:
-    """
-
-    :return:
-    """
+    """Parses the command line arguments."""
     parser = argparse.ArgumentParser(description="Generate farmland planning instance")
-    parser.add_argument("--random_seed", required=False, help="Set RNG seed", default="1229")
-    parser.add_argument("--num_farms", required=True, help="Number of farms")
-    parser.add_argument("--num_units", required=True, help="Maximum Number of Units")
+    parser.add_argument("--min_farms", required=True, help="The minimal number of farms possible in a planning problem")
+    parser.add_argument("--max_farms", required=True, help="The maximal number of farms possible in a planning problem")
+    parser.add_argument("--min_num_units", required=True, help="Minimal number of units")
+    parser.add_argument("--max_num_units", required=True, help="Maximal number of units")
+    parser.add_argument("--output_folder", required=True, help="The path to the output folder")
     parser.add_argument("--graph_generator", required=False,
                         help="Graph Generator between star (default) or strogatz or ladder",
                         default=GraphGeneratorTypes.star)
-
-    args = parser.parse_args()
-    args.random_seed = int(args.random_seed)
-
-    if args.random_seed is not None:
-        random.seed(args.random_seed)
-        print(";; Setting seed to {0}".format(args.random_seed))
-
-    return args
+    return parser.parse_args()
 
 
-def generate_multiple_problems(min_farms, max_farms, min_num_units, max_num_units):
+def generate_multiple_problems(min_farms: int, max_farms: int, min_num_units: int, max_num_units: int,
+                               output_folder: Path,
+                               graph_generator: GraphGeneratorTypes = GraphGeneratorTypes.star) -> NoReturn:
+    """Generate multiple problems based on the input arguments.
+
+    :param min_farms: the minimal number of farms possible in a planning problem.
+    :param max_farms: the maximal number of farms possible in a planning problem.
+    :param min_num_units: the minimal number of units.
+    :param max_num_units: the maximal number of units.
+    :param output_folder: the path to the output folder where the planning problems will be saved.
+    :param graph_generator: the type of graph generator to use.
+    """
     farms_range = [i for i in range(min_farms, max_farms + 1)]
     units_range = [i for i in range(min_num_units, max_num_units + 1)]
     for num_farms, num_units in itertools.product(farms_range, units_range):
-        with open(f"/sise/home/mordocha/numeric_planning/domains/farmland/pfile{num_farms}_{num_units}.pddl",
-                  "wt") as problem_file:
+        print(f"Generating problem with {num_farms} farms and {num_units} units")
+        with open(output_folder / f"pfile{num_farms}_{num_units}.pddl", "wt") as problem_file:
             problem_file.write(generate_instance(f"instance_{num_farms}_{num_units}", num_farms, num_units,
-                                                 GraphGeneratorTypes.star))
-
-        # print(generate_instance(f"instance_{num_farms}_{num_units}", num_farms, num_units,
-        # GraphGeneratorTypes.star))
-        #     'instance_' + str(args.num_farms) + '_' + str(args.num_units) + '_' + str(args.random_seed) + '_' + str(
-        #         args.graph_generator), int(args.num_farms), int(args.num_units), args.graph_generator))
+                                                 graph_generator))
 
 
 def main():
-    generate_multiple_problems(10, 15, 10, 20)
-    # args = parse_arguments()
-    # generate_instance(
-    #     'instance_' + str(args.num_farms) + '_' + str(args.num_units) + '_' + str(args.random_seed) + '_' + str(
-    #         args.graph_generator), int(args.num_farms), int(args.num_units), args.graph_generator)
+    args = parse_arguments()
+    generate_multiple_problems(min_farms=int(args.min_farms),
+                               max_farms=int(args.max_farms),
+                               min_num_units=int(args.min_num_units),
+                               max_num_units=int(args.max_num_units),
+                               output_folder=Path(args.output_folder),
+                               graph_generator=args.graph_generator)
 
 
 if __name__ == '__main__':
