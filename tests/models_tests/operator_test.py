@@ -1,17 +1,21 @@
 """Module test for the grounded operator class."""
 from typing import List, Dict, Set
 
-from pytest import fixture, raises, fail
+from pytest import fixture, fail
 
-from pddl_plus_parser.lisp_parsers import DomainParser, PDDLTokenizer
-from pddl_plus_parser.models import Domain, Action, Operator, GroundedPredicate, PDDLFunction, State
-from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, TEST_NUMERIC_DOMAIN
+from pddl_plus_parser.lisp_parsers import DomainParser, PDDLTokenizer, ProblemParser
+from pddl_plus_parser.models import Domain, Action, Operator, GroundedPredicate, PDDLFunction, State, Problem
+from tests.lisp_parsers_tests.consts import SPIDER_PROBLEM_PATH
+from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, TEST_NUMERIC_DOMAIN, SPIDER_DOMAIN_PATH
 
 TEST_LIFTED_SIGNATURE_ITEMS = ["?s", "?d", "?i", "?m"]
 TEST_GROUNDED_ACTION_CALL = ["s1", "test_direction", "test_instrument", "test_mode"]
 
 AGRICOLA_LIFTED_SIGNATURE_ITEMS = ["?w1", "?w2", "?wmax", "?r", "?i1", "?i2"]
 AGRICOLA_GROUNDED_ACTION_CALL = ["noworker", "w1", "w2", "round1", "n1", "n2"]
+
+SPIDER_START_DEALING_CALL = []
+SPIDER_DEAL_CARD_CALL = ["card-d0-s1-v3", "card-d0-s0-v3", "deal-0", "card-d0-s3-v1", "pile-0"]
 
 
 @fixture()
@@ -27,6 +31,17 @@ def agricola_domain() -> Domain:
 
 
 @fixture()
+def spider_domain() -> Domain:
+    domain_parser = DomainParser(SPIDER_DOMAIN_PATH)
+    return domain_parser.parse_domain()
+
+
+@fixture()
+def spider_problem(spider_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=SPIDER_PROBLEM_PATH, domain=spider_domain).parse_problem()
+
+
+@fixture()
 def numeric_action(domain: Domain) -> Action:
     return domain.actions["take_image"]
 
@@ -37,6 +52,16 @@ def agricola_numeric_action(agricola_domain: Domain) -> Action:
 
 
 @fixture()
+def spider_unconditional_action(spider_domain: Domain) -> Action:
+    return spider_domain.actions["start-dealing"]
+
+
+@fixture()
+def spider_conditional_action(spider_domain: Domain) -> Action:
+    return spider_domain.actions["deal-card"]
+
+
+@fixture()
 def operator(domain: Domain, numeric_action: Action) -> Operator:
     return Operator(numeric_action, domain, TEST_GROUNDED_ACTION_CALL)
 
@@ -44,6 +69,16 @@ def operator(domain: Domain, numeric_action: Action) -> Operator:
 @fixture()
 def agricola_operator(agricola_domain: Domain, agricola_numeric_action: Action) -> Operator:
     return Operator(agricola_numeric_action, agricola_domain, AGRICOLA_GROUNDED_ACTION_CALL)
+
+
+@fixture()
+def spider_start_dealing_operator(spider_domain: Domain, spider_unconditional_action: Action) -> Operator:
+    return Operator(spider_unconditional_action, spider_domain, SPIDER_START_DEALING_CALL)
+
+
+@fixture()
+def spider_deal_card_operator(spider_domain: Domain, spider_conditional_action: Action) -> Operator:
+    return Operator(spider_conditional_action, spider_domain, SPIDER_DEAL_CARD_CALL)
 
 
 @fixture()
@@ -483,3 +518,34 @@ def test_is_applicable_with_disjunctive_action_operator_does_not_fail(valid_prev
         test_operator.is_applicable(valid_previous_state)
     except Exception:
         fail()
+
+
+def test_apply_with_conditional_effects_does_not_fail(
+        spider_domain: Domain,
+        spider_start_dealing_operator: Operator,
+        spider_deal_card_operator: Operator,
+        spider_problem: Problem):
+    try:
+        initial_state = State(spider_problem.initial_state_predicates, spider_problem.initial_state_fluents)
+        second_state = spider_start_dealing_operator.apply(initial_state)
+        third_state = spider_deal_card_operator.apply(second_state)
+        assert third_state is not None
+
+    except Exception:
+        fail()
+
+
+def test_apply_with_conditional_effects_outputs_conditional_effects_in_successive_state(
+        spider_domain: Domain,
+        spider_start_dealing_operator: Operator,
+        spider_deal_card_operator: Operator,
+        spider_problem: Problem):
+    initial_state = State(spider_problem.initial_state_predicates, spider_problem.initial_state_fluents)
+    second_state = spider_start_dealing_operator.apply(initial_state)
+    third_state = spider_deal_card_operator.apply(second_state)
+    state_predicates = set()
+    for predicates in third_state.state_predicates.values():
+        state_predicates.update(predicates)
+
+    assert "(currently-updating-unmovable )" in [p.untyped_representation for p in state_predicates]
+    assert "(make-unmovable card-d0-s3-v1)" in [p.untyped_representation for p in state_predicates]

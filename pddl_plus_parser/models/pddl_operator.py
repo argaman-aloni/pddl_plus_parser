@@ -373,6 +373,18 @@ class Operator:
 
         return grouped_effects
 
+    @staticmethod
+    def _update_single_numeric_expression(numeric_expression: NumericalExpressionTree,
+                                          previous_values: Dict[str, PDDLFunction]) -> NoReturn:
+        """Updates the numeric value of a single numeric expression.
+
+        :param numeric_expression: the expression that represents the change to the state.
+        :param previous_values: the previous values of the numeric expressions in the state.
+        """
+        set_expression_value(numeric_expression.root, previous_values)
+        new_grounded_function = evaluate_expression(numeric_expression.root)
+        previous_values[new_grounded_function.untyped_representation] = new_grounded_function
+
     def update_state_predicates(self, previous_state: State) -> Dict[str, Set[GroundedPredicate]]:
         """Updates the state predicates based on the action that is being applied.
 
@@ -408,25 +420,49 @@ class Operator:
             next_state_predicates[lifted_predicate_str] = updated_predicates
 
         self.logger.debug("Applying the conditional discrete effects!")
-        conditional_effects = self.update_discrete_conditional_effects(previous_state)
+        self.update_discrete_conditional_effects(previous_state, next_state_predicates)
 
         return next_state_predicates
 
     def update_discrete_conditional_effects(
-            self, previous_state: State,
-            next_state_predicates: Dict[str, Set[GroundedPredicate]]) -> Dict[str, Set[GroundedPredicate]]:
-        """
+            self, previous_state: State, next_state_predicates: Dict[str, Set[GroundedPredicate]]):
+        """Checks whether the conditions for the conditional effects hold and updates the discrete state accordingly.
 
-        :param previous_state:
-        :return:
+        :param previous_state: the state that the action is being applied on.
+        :param next_state_predicates: the next state predicates.
         """
         for effect in self.grounded_conditional_effects:
-            if self._positive_preconditions_hold(previous_state, effect.positive_conditions) \
-                    and self._negative_preconditions_hold(previous_state, effect.negative_conditions) and \
-                    self._numeric_conditions_set_hold(previous_state, effect.numeric_conditions):
-                grouped_add_effects = self._group_effect_predicates(effect.add_effects)
-                grouped_delete_effects = self._group_effect_predicates(effect.delete_effects)
+            if not (self._positive_preconditions_hold(previous_state, effect.positive_conditions)
+                    and self._negative_preconditions_hold(previous_state, effect.negative_conditions) and
+                    self._numeric_conditions_set_hold(previous_state, effect.numeric_conditions)):
+                continue
 
+            self.logger.debug("The conditionals for the effect hold so applying the effect.")
+            for predicate in effect.add_effects:
+                lifted_predicate_str = predicate.lifted_untyped_representation
+                next_state_grounded_predicates = next_state_predicates.get(lifted_predicate_str, set())
+                next_state_grounded_predicates.add(predicate)
+                next_state_predicates[lifted_predicate_str] = next_state_grounded_predicates
+
+            for predicate in effect.delete_effects:
+                next_state_predicates[predicate.lifted_untyped_representation].discard(predicate)
+
+    def update_numeric_conditional_effects(
+            self, previous_state: State, new_state_numeric_fluents: Dict[str, PDDLFunction]) -> NoReturn:
+        """Checks whether the conditions for the conditional effects hold and updates the discrete state accordingly.
+
+        :param previous_state: the state that the action is being applied on.
+        :param new_state_numeric_fluents: the next state grounded numeric functions.
+        """
+        for effect in self.grounded_conditional_effects:
+            if not (self._positive_preconditions_hold(previous_state, effect.positive_conditions)
+                    and self._negative_preconditions_hold(previous_state, effect.negative_conditions) and
+                    self._numeric_conditions_set_hold(previous_state, effect.numeric_conditions)):
+                continue
+
+            self.logger.debug("The conditionals for the effect hold so applying the numeric effect.")
+            for grounded_expression in effect.numeric_effects:
+                self._update_single_numeric_expression(grounded_expression, new_state_numeric_fluents)
 
     def update_state_functions(self, previous_state: State) -> Dict[str, PDDLFunction]:
         """Updates the state functions based on the action that is being applied.
@@ -438,9 +474,7 @@ class Operator:
         for grounded_expression in self.grounded_numeric_effects:
             try:
                 self.logger.debug("First setting the values of the functions according to the stored state.")
-                set_expression_value(grounded_expression.root, previous_state.state_fluents)
-                new_grounded_function = evaluate_expression(grounded_expression.root)
-                new_state_numeric_fluents[new_grounded_function.untyped_representation] = new_grounded_function
+                self._update_single_numeric_expression(grounded_expression, new_state_numeric_fluents)
 
             except KeyError:
                 raise ValueError(f"There are missing fluents in the state! "

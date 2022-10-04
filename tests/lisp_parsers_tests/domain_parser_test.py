@@ -1,9 +1,10 @@
 from pytest import fixture, raises
 
 from pddl_plus_parser.lisp_parsers import DomainParser, PDDLTokenizer
-from pddl_plus_parser.models import PDDLType, Predicate
+from pddl_plus_parser.models import PDDLType, Predicate, Action
 from tests.lisp_parsers_tests.consts import TEST_PARSING_FILE_PATH, TEST_WOODWORKING_DOMAIN_PATH, \
-    TEST_NUMERIC_DEPOT_DOMAIN_PATH, PLANT_WATERING_DOMAIN
+    TEST_NUMERIC_DEPOT_DOMAIN_PATH, PLANT_WATERING_DOMAIN, TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN, \
+    TEST_TYPES_FOR_CONDITIONAL_DOMAIN, TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN, SPIDER_DOMAIN_PATH
 
 test_types_with_no_parent = ['acolour', 'awood', 'woodobj', 'machine', 'surface', 'treatmentstatus', 'aboardsize',
                              'apartsize']
@@ -300,6 +301,152 @@ def test_parse_action_with_boolean_action_type_returns_action_data_correctly(dom
         assert effect in action.delete_effects
 
 
+def test_parse_effects_with_conditional_effects_with_one_condition_and_one_effect_parse_correctly(
+        domain_parser: DomainParser):
+    conditional_effects = """(and (when
+            (not (CAN-CONTINUE-GROUP ?c ?to))
+            (make-unmovable ?to)
+    ))"""
+    types_tokens = PDDLTokenizer(pddl_str=TEST_TYPES_FOR_CONDITIONAL_DOMAIN).parse()
+    predicate_tokens = PDDLTokenizer(pddl_str=TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN).parse()
+    constants_tokens = PDDLTokenizer(pddl_str=TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN).parse()
+    effects_tokens = PDDLTokenizer(pddl_str=conditional_effects).parse()
+    domain_types = domain_parser.parse_types(types_tokens)
+    domain_consts = domain_parser.parse_constants(constants_tokens, domain_types)
+    domain_predicates = domain_parser.parse_predicates(predicate_tokens, domain_types)
+    domain_functions = {}  # Functions are irrelevant for this case.
+    new_action = Action()
+    new_action.name = "test-action"
+    new_action.signature = {"?c": domain_types["card"], "?from": domain_types["cardposition"],
+                            "?fromdeal": domain_types["deal"], "?to": domain_types["card"],
+                            "?totableau": domain_types["tableau"]}
+    domain_parser.parse_effects(effects_ast=effects_tokens, new_action=new_action,
+                                domain_functions=domain_functions, domain_predicates=domain_predicates,
+                                domain_constants=domain_consts)
+    conditional_effect = new_action.conditional_effects.pop()
+    assert conditional_effect is not None
+    assert str(
+        conditional_effect) == "(when (and (not (CAN-CONTINUE-GROUP ?c ?to))) (and (make-unmovable ?to)))".lower()
+
+
+def test_parse_effects_with_conditional_effects_with_one_condition_and_two_effects_parse_correctly(
+        domain_parser: DomainParser):
+    conditional_effects = """(and (when
+            (not (can-continue-group ?c ?to))
+            (and
+                (currently-updating-unmovable)
+                (make-unmovable ?to)
+            )
+    ))"""
+    types_tokens = PDDLTokenizer(pddl_str=TEST_TYPES_FOR_CONDITIONAL_DOMAIN).parse()
+    predicate_tokens = PDDLTokenizer(pddl_str=TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN).parse()
+    constants_tokens = PDDLTokenizer(pddl_str=TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN).parse()
+    effects_tokens = PDDLTokenizer(pddl_str=conditional_effects).parse()
+    domain_types = domain_parser.parse_types(types_tokens)
+    domain_consts = domain_parser.parse_constants(constants_tokens, domain_types)
+    domain_predicates = domain_parser.parse_predicates(predicate_tokens, domain_types)
+    domain_functions = {}  # Functions are irrelevant for this case.
+    new_action = Action()
+    new_action.name = "test-action"
+    new_action.signature = {"?c": domain_types["card"], "?from": domain_types["cardposition"],
+                            "?fromdeal": domain_types["deal"], "?to": domain_types["card"],
+                            "?totableau": domain_types["tableau"]}
+    domain_parser.parse_effects(effects_ast=effects_tokens, new_action=new_action,
+                                domain_functions=domain_functions, domain_predicates=domain_predicates,
+                                domain_constants=domain_consts)
+    conditional_effect = new_action.conditional_effects.pop()
+    assert conditional_effect is not None
+    negative_condition = conditional_effect.negative_conditions.pop()
+    add_effects = conditional_effect.add_effects
+    assert negative_condition.untyped_representation == "(can-continue-group ?c ?to)"
+    print([eff.untyped_representation for eff in add_effects])
+    assert len(add_effects) == 2
+    effects_str = {effect.untyped_representation for effect in add_effects}
+    assert effects_str == {"(currently-updating-unmovable )", "(make-unmovable ?to)"}
+
+
+def test_parse_effects_with_conditional_effects_with_two_conditions_and_two_effects_parse_correctly(
+        domain_parser: DomainParser):
+    conditional_effects = """(and (when
+            (and (can-continue-group ?c ?to) (not (can-continue-group ?c ?from)))
+            (and (currently-updating-unmovable) (make-unmovable ?to))))"""
+    types_tokens = PDDLTokenizer(pddl_str=TEST_TYPES_FOR_CONDITIONAL_DOMAIN).parse()
+    predicate_tokens = PDDLTokenizer(pddl_str=TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN).parse()
+    constants_tokens = PDDLTokenizer(pddl_str=TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN).parse()
+    effects_tokens = PDDLTokenizer(pddl_str=conditional_effects).parse()
+    domain_types = domain_parser.parse_types(types_tokens)
+    domain_consts = domain_parser.parse_constants(constants_tokens, domain_types)
+    domain_predicates = domain_parser.parse_predicates(predicate_tokens, domain_types)
+    domain_functions = {}  # Functions are irrelevant for this case.
+    new_action = Action()
+    new_action.name = "test-action"
+    new_action.signature = {"?c": domain_types["card"], "?from": domain_types["cardposition"],
+                            "?fromdeal": domain_types["deal"], "?to": domain_types["card"],
+                            "?totableau": domain_types["tableau"]}
+    domain_parser.parse_effects(effects_ast=effects_tokens, new_action=new_action,
+                                domain_functions=domain_functions, domain_predicates=domain_predicates,
+                                domain_constants=domain_consts)
+    conditional_effect = new_action.conditional_effects.pop()
+    assert conditional_effect is not None
+    negative_condition = conditional_effect.negative_conditions.pop()
+    positive_condition = conditional_effect.positive_conditions.pop()
+    add_effects = conditional_effect.add_effects
+    assert negative_condition.untyped_representation == "(can-continue-group ?c ?from)"
+    assert positive_condition.untyped_representation == "(can-continue-group ?c ?to)"
+    assert len(add_effects) == 2
+    effects_str = {effect.untyped_representation for effect in add_effects}
+    assert effects_str == {"(currently-updating-unmovable )", "(make-unmovable ?to)"}
+
+
+def test_parse_action_with_conditional_effects(domain_parser: DomainParser):
+    test_action_with_conditional_effects = """(deal-card
+    :parameters (?c - card ?from - cardposition ?fromdeal - deal ?to - card ?totableau - tableau)
+    :precondition
+    (and
+        (currently-dealing)
+        (not (currently-updating-movable))
+        (not (currently-updating-unmovable))
+        (not (currently-updating-part-of-tableau))
+        (not (currently-collecting-deck))
+        (current-deal ?fromdeal)
+        (TO-DEAL ?c ?totableau ?fromdeal ?from)
+        (clear ?c)
+        (on ?c ?from)
+        (part-of-tableau ?to ?totableau)
+        (clear ?to)
+    )
+    :effect
+    (and
+        (not (on ?c ?from))
+        (on ?c ?to)
+        (not (clear ?to))
+        (clear ?from)
+        (in-play ?c)
+        (part-of-tableau ?c ?totableau)
+        (movable ?c)
+        (when
+            (not (CAN-CONTINUE-GROUP ?c ?to))
+            (and
+                (currently-updating-unmovable)
+                (make-unmovable ?to)
+            )
+        )
+    )
+    )"""
+    types_tokens = PDDLTokenizer(pddl_str=TEST_TYPES_FOR_CONDITIONAL_DOMAIN).parse()
+    predicate_tokens = PDDLTokenizer(pddl_str=TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN).parse()
+    constants_tokens = PDDLTokenizer(pddl_str=TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN).parse()
+    action_tokens = PDDLTokenizer(pddl_str=test_action_with_conditional_effects).parse()
+    domain_types = domain_parser.parse_types(types_tokens)
+    domain_consts = domain_parser.parse_constants(constants_tokens, domain_types)
+    domain_predicates = domain_parser.parse_predicates(predicate_tokens, domain_types)
+    domain_functions = {}  # Functions are irrelevant for this case.
+    action = domain_parser.parse_action(action_tokens, domain_types, domain_functions, domain_predicates, domain_consts)
+    assert action is not None
+    assert action.name == "deal-card"
+    assert action.conditional_effects is not None
+
+
 def test_parse_simple_action_with_numeric_preconditions_and_effects_extracts_the_calculation_tree_correctly(
         domain_parser: DomainParser):
     test_simple_types = """(place locatable - object
@@ -414,3 +561,9 @@ def test_parse_preconditions_with_action_with_disjunctive_preconditions_extracts
     assert len(disjunctive_preconditions[0]) == 2
     assert len(disjunctive_preconditions[1]) == 3
     print(str(action))
+
+
+def test_parse_domain_with_domain_with_conditional_effects_not_fail():
+    domain_parser = DomainParser(SPIDER_DOMAIN_PATH)
+    domain = domain_parser.parse_domain()
+    print(str(domain))

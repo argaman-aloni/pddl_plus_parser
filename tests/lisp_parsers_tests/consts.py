@@ -24,3 +24,40 @@ PLANT_WATERING_DOMAIN = Path(CWD, "plant_watering_domain.pddl")
 WOODWORKING_COMBINED_DOMAIN_PATH = Path(CWD) / "woodworking_combined_domain.pddl"
 WOODWORKING_COMBINED_PROBLEM_PATH = Path(CWD) / "woodworking_combined_problem.pddl"
 WOODWORKING_COMBINED_TRAJECTORY_PATH = Path(CWD) / "ma_woodworking_trajectory.trajectory"
+
+
+TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN = """((on ?c1 - card ?c2 - cardposition)
+    (clear ?c - cardposition)
+    (in-play ?c - card)
+    (current-deal ?d - deal)
+    (CAN-CONTINUE-GROUP ?c1 - card ?c2 - cardposition)
+    (CAN-BE-PLACED-ON ?c1 - card ?c2 - card)
+    (IS-ACE ?c - card)
+    (IS-KING ?c - card)
+    (NEXT-DEAL ?d - deal ?nd - deal)
+    (TO-DEAL ?c - card ?p - tableau ?d - deal ?next - cardposition)
+    (currently-dealing)
+    (currently-collecting-deck)
+    (collect-card ?c - cardposition)
+    (part-of-tableau ?c - cardposition ?t - tableau)
+    (movable ?c - card)
+    (currently-updating-unmovable)
+    (make-unmovable ?c - card)
+    (currently-updating-movable)
+    (make-movable ?c - cardposition)
+    (currently-updating-part-of-tableau)
+    (make-part-of-tableau ?c - card ?t - tableau)
+)
+"""
+
+TEST_TYPES_FOR_CONDITIONAL_DOMAIN = """(cardposition - object
+    card_or_tableau - cardposition
+    card - card_or_tableau
+    tableau - card_or_tableau
+    deal - cardposition
+)"""
+
+TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN = """(discard - cardposition)"""
+
+SPIDER_DOMAIN_PATH = Path(CWD, "domain_spider.pddl")
+SPIDER_PROBLEM_PATH = Path(CWD, "pfile04.pddl")

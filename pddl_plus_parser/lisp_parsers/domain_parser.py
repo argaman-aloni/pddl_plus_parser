@@ -2,10 +2,10 @@
 import logging
 import types
 from pathlib import Path
-from typing import List, Dict, Union, NoReturn
+from typing import List, Dict, Union, NoReturn, Tuple
 
 from pddl_plus_parser.models import Domain, PDDLType, Predicate, PDDLConstant, PDDLFunction, Action, SignatureType, \
-    NumericalExpressionTree, construct_expression_tree
+    NumericalExpressionTree, construct_expression_tree, ConditionalEffect
 from .parsing_utils import parse_signature
 from .pddl_tokenizer import PDDLTokenizer
 
@@ -253,6 +253,123 @@ class DomainParser:
                 new_action.numeric_preconditions.add(numerical_precondition)
                 continue
 
+    def _parse_single_conditional(self, conditional: List[Union[str, List[str]]],
+                                  positive_conditionals: List[Predicate], negative_conditionals: List[Predicate],
+                                  numeric_conditionals: List[NumericalExpressionTree],
+                                  signature: Dict[str, PDDLType], domain_functions: Dict[str, PDDLFunction],
+                                  domain_constants: Dict[str, PDDLConstant]) -> NoReturn:
+        """Parse a single conditional from the conditional effect.
+
+        :param conditional: the single conditional effect to parse.
+        :param positive_conditionals: the positive conditionals of the conditional effect to
+            possibly add the conditional to.
+        :param negative_conditionals: the negative conditionals of the conditional effect to
+            possibly add the conditional to.
+        :param numeric_conditionals: the numeric conditionals of the conditional effect.
+        :param signature: the action's signature.
+        :param domain_functions: the functions that exist in the domain.
+        :param domain_constants: the constants that exist in the domain.
+        """
+        if conditional[0] == "not":
+            negative_conditionals.append(
+                self.parse_untyped_predicate(conditional[1], signature, domain_constants))
+
+        elif conditional[0] in COMPARISON_OPS:
+            numerical_precondition = NumericalExpressionTree(
+                construct_expression_tree(conditional, domain_functions))
+            numeric_conditionals.append(numerical_precondition)
+
+        else:
+            positive_conditionals.append(self.parse_untyped_predicate(conditional, signature, domain_constants))
+
+    def _parse_conditionals(
+            self, conditional_ast: List[Union[str, List[str]]],
+            signature: Dict[str, PDDLType], domain_functions: Dict[str, PDDLFunction],
+            domain_constants: Dict[str, PDDLConstant]) -> Tuple[
+        List[Predicate], List[Predicate], List[NumericalExpressionTree]]:
+        """Parse the conditionals for a conditional effect of an action.
+
+        :param conditional_ast: the AST representation of the conditionals.
+        :param signature: the action's signature.
+        :param domain_functions: the functions that exist in the domain.
+        :param domain_constants: the constants that exist in the domain.
+        :return: a tuple containing the positive and negative and numeric conditionals (in this order).
+        """
+        positive_conditionals = []
+        negative_conditionals = []
+        numeric_conditionals = []
+        if conditional_ast[0] == "and":
+            self.logger.debug("Received a conjunctive conditional effect with more than one condition.")
+            for conditional in conditional_ast[1:]:
+                self._parse_single_conditional(conditional, positive_conditionals, negative_conditionals,
+                                               numeric_conditionals, signature, domain_functions, domain_constants)
+
+        else:
+            self._parse_single_conditional(conditional_ast, positive_conditionals, negative_conditionals,
+                                           numeric_conditionals, signature, domain_functions, domain_constants)
+
+        return positive_conditionals, negative_conditionals, numeric_conditionals
+
+    def _parse_single_conditional_effect(self, action, conditional_effect_ast, add_effects, del_effects,
+                                         numeric_effects, domain_constants, domain_functions) -> NoReturn:
+        """
+
+        :param action: the action that is being parsed.
+        :param conditional_effect_ast: the AST representation of the conditional effect.
+        :param add_effects: the add effects of the action.
+        :param del_effects: the delete effects of the action.
+        :param numeric_effects: the numeric effects of the action.
+        :param domain_constants: the constants that exist in the domain.
+        :param domain_functions: the functions that exist in the domain.
+        """
+
+        if conditional_effect_ast[0] == "not":
+            del_effects.append(
+                self.parse_untyped_predicate(conditional_effect_ast[1], action.signature, domain_constants))
+
+        elif conditional_effect_ast[0] in ASSIGNMENT_OPS:
+            numeric_effects.append(
+                NumericalExpressionTree(construct_expression_tree(conditional_effect_ast, domain_functions)))
+
+        else:
+            add_effects.append(self.parse_untyped_predicate(conditional_effect_ast, action.signature, domain_constants))
+
+    def _construct_conditional_effects(self, conditional_effect_ast: List[Union[str, List[str]]],
+                                       positive_conditionals: List[Predicate], negative_conditionals: List[Predicate],
+                                       numeric_conditionals: List[NumericalExpressionTree],
+                                       action: Action, domain_functions: Dict[str, PDDLFunction],
+                                       domain_constants: Dict[str, PDDLConstant]) -> NoReturn:
+        """Parse all the conditional effects that are under the same when statement - can be composite.
+
+        :param conditional_effect_ast: the AST representation of the conditional effects.
+        :param positive_conditionals: the positive conditionals of the conditional effect.
+        :param negative_conditionals: the negative conditionals of the conditional effect.
+        :param numeric_conditionals: the numeric conditionals of the conditional effect.
+        :param action: the action that is being parsed.
+        :param domain_functions: the functions that exist in the domain.
+        :param domain_constants: the constants that exist in the domain.
+        """
+        add_effects = []
+        del_effects = []
+        numeric_effects = []
+        if conditional_effect_ast[0] == "and":
+            for effect in conditional_effect_ast[1:]:
+                self._parse_single_conditional_effect(action, effect, add_effects, del_effects, numeric_effects,
+                                                      domain_constants, domain_functions)
+
+        else:
+            self._parse_single_conditional_effect(action, conditional_effect_ast, add_effects, del_effects,
+                                                  numeric_effects, domain_constants, domain_functions)
+
+        conditional_effect = ConditionalEffect()
+        conditional_effect.add_effects = set(add_effects)
+        conditional_effect.delete_effects = set(del_effects)
+        conditional_effect.numeric_effects = set(numeric_effects)
+        conditional_effect.positive_conditions = set(positive_conditionals)
+        conditional_effect.negative_conditions = set(negative_conditionals)
+        conditional_effect.numeric_conditions = set(numeric_conditionals)
+        action.conditional_effects.add(conditional_effect)
+
     def parse_effects(self, effects_ast: List[Union[str, List[str]]], new_action: Action,
                       domain_functions: Dict[str, PDDLFunction],
                       domain_predicates: Dict[str, Predicate],
@@ -269,7 +386,9 @@ class DomainParser:
         new_action.delete_effects = set()
         new_action.numeric_effects = set()
         if effects_ast[0] != "and":
-            raise SyntaxError(f"Only accepting conjunctive effects! Action - {new_action.name} does not conform!")
+            print(effects_ast[0])
+            raise SyntaxError(
+                f"Only accepting conjunctive effects! Action - {new_action.name} does not conform!")
 
         for effect_node in effects_ast[1:]:
             if effect_node[0] in domain_predicates:
@@ -280,6 +399,20 @@ class DomainParser:
             if effect_node[0] == "not":
                 new_action.delete_effects.add(
                     self.parse_untyped_predicate(effect_node[1], new_action.signature, domain_constants))
+                continue
+
+            if effect_node[0] == "when":
+                if len(effect_node[1:]) != 2:
+                    raise SyntaxError(f"Conditional effect scheme does not match for action {new_action.name}!")
+
+                self.logger.debug("Found a conditional effect!")
+                positive_conditionals, negative_conditionals, numerical_conditionals = \
+                    self._parse_conditionals(effect_node[1], new_action.signature, domain_functions, domain_constants)
+
+                self._construct_conditional_effects(effect_node[2], positive_conditionals, negative_conditionals,
+                                                    numerical_conditionals, new_action, domain_functions,
+                                                    domain_constants)
+
                 continue
 
             if effect_node[0] in ASSIGNMENT_OPS:

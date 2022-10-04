@@ -16,5 +16,5 @@
 * version 2.0.0 - Added support for multi-agent PDDL domains and problems.
 * version 2.1.0 - Added support for more complex type of multi-agent trajectories to support non-trivial interactions. 
 * version 2.2.0 - Added support for domains with disjunctive numeric preconditions.
-* version 3.0.0 - Added support for conditional effect without existential quantification.
+* version 3.0.0 - Added support for conditional effect without existential quantification and only conjunctive conditions.
 

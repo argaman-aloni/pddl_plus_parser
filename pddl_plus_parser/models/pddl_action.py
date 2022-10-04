@@ -18,7 +18,7 @@ class Action:
     inequality_preconditions: Set[Tuple[str, str]]
     add_effects: Set[Predicate]
     delete_effects: Set[Predicate]
-    conditional_effects: Set[ConditionalEffect]    # Currently only supporting discrete conditional effects.
+    conditional_effects: Set[ConditionalEffect]
     numeric_effects: Set[NumericalExpressionTree]
     # currently only supporting disjunction of numeric preconditions
     disjunctive_numeric_preconditions: List[Set[NumericalExpressionTree]]
@@ -33,6 +33,7 @@ class Action:
         self.delete_effects = set()
         self.numeric_effects = set()
         self.disjunctive_numeric_preconditions = []
+        self.conditional_effects = set()
 
     def __str__(self):
         signature_str_items = []
