@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import List
 
+import pytest
 from pytest import fixture
 
 from pddl_plus_parser.exporters import TrajectoryExporter
@@ -20,6 +21,10 @@ TEST_NUMERIC_PLAN_PATH = Path(CWD, "depot_numeric.solution")
 TEST_DISCRETE_TRAJECTORY_FILE_PATH = Path(CWD, "test_trajectory")
 TEST_NUMERIC_TRAJECTORY_FILE_PATH = Path(CWD, "test_numeric_trajectory")
 
+TEST_CONDITIONAL_DOMAIN_PATH = Path(CWD, "domain_spider.pddl")
+TEST_CONDITIONAL_PROBLEM_PATH = Path(CWD, "pfile01_spider.pddl")
+TEST_CONDITIONAL_PLAN_PATH = Path(CWD, "pfile01_spider.solution")
+
 
 @fixture()
 def discrete_domain() -> Domain:
@@ -34,6 +39,12 @@ def numeric_domain() -> Domain:
 
 
 @fixture()
+def conditional_domain() -> Domain:
+    domain_parser = DomainParser(TEST_CONDITIONAL_DOMAIN_PATH)
+    return domain_parser.parse_domain()
+
+
+@fixture()
 def discrete_problem_parser(discrete_domain: Domain) -> ProblemParser:
     return ProblemParser(problem_path=TEST_DISCRETE_PROBLEM_PATH, domain=discrete_domain)
 
@@ -41,6 +52,11 @@ def discrete_problem_parser(discrete_domain: Domain) -> ProblemParser:
 @fixture()
 def numeric_problem_parser(numeric_domain: Domain) -> ProblemParser:
     return ProblemParser(problem_path=TEST_NUMERIC_PROBLEM_PATH, domain=numeric_domain)
+
+
+@fixture()
+def conditional_problem_parser(conditional_domain: Domain) -> ProblemParser:
+    return ProblemParser(problem_path=TEST_CONDITIONAL_PROBLEM_PATH, domain=conditional_domain)
 
 
 @fixture()
@@ -54,6 +70,11 @@ def numeric_problem(numeric_problem_parser: ProblemParser) -> Problem:
 
 
 @fixture()
+def conditional_problem(conditional_problem_parser: ProblemParser) -> Problem:
+    return conditional_problem_parser.parse_problem()
+
+
+@fixture()
 def discrete_trajectory_exporter(discrete_domain: Domain) -> TrajectoryExporter:
     return TrajectoryExporter(domain=discrete_domain)
 
@@ -61,6 +82,11 @@ def discrete_trajectory_exporter(discrete_domain: Domain) -> TrajectoryExporter:
 @fixture()
 def numeric_trajectory_exporter(numeric_domain: Domain) -> TrajectoryExporter:
     return TrajectoryExporter(domain=numeric_domain)
+
+
+@fixture()
+def conditional_trajectory_exporter(conditional_domain: Domain) -> TrajectoryExporter:
+    return TrajectoryExporter(domain=conditional_domain)
 
 
 def create_state_from_predicate_components(
@@ -122,3 +148,14 @@ def test_export_numeric_trajectory(numeric_trajectory_exporter: TrajectoryExport
     exportable_triplets = numeric_trajectory_exporter.export(triplets)
     with open(TEST_NUMERIC_TRAJECTORY_FILE_PATH, "wt") as trajectory_file:
         trajectory_file.writelines(exportable_triplets)
+
+
+def test_export_trajectory_with_conditional_effects(
+        conditional_trajectory_exporter: TrajectoryExporter, conditional_problem: Problem):
+    triplets = conditional_trajectory_exporter.parse_plan(conditional_problem, TEST_CONDITIONAL_PLAN_PATH)
+    try:
+        exportable_triplets = conditional_trajectory_exporter.export(triplets)
+        for triplet in exportable_triplets:
+            print(triplet)
+    except Exception as e:
+        pytest.fail("Exporting a trajectory with conditional effects failed with the following error: " + str(e))

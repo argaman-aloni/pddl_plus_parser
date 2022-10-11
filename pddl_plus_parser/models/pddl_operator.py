@@ -287,8 +287,9 @@ class Operator:
         self.logger.info("Validating that all of the negative preconditions don't exist in the state.")
         for negative_precondition in negative_conditions:
             try:
-                state_grounded_predicates = state.state_predicates[negative_precondition.lifted_typed_representation]
-                if negative_precondition in state_grounded_predicates:
+                state_grounded_predicates = state.state_predicates[negative_precondition.lifted_untyped_representation]
+                untyped_predicates = [p.untyped_representation for p in state_grounded_predicates]
+                if negative_precondition.untyped_representation in untyped_predicates:
                     self.logger.debug(
                         f"Found the predicate {str(negative_precondition)} but it should not hold in the state!")
                     return False
@@ -425,7 +426,7 @@ class Operator:
         return next_state_predicates
 
     def update_discrete_conditional_effects(
-            self, previous_state: State, next_state_predicates: Dict[str, Set[GroundedPredicate]]):
+            self, previous_state: State, next_state_predicates: Dict[str, Set[GroundedPredicate]]) -> NoReturn:
         """Checks whether the conditions for the conditional effects hold and updates the discrete state accordingly.
 
         :param previous_state: the state that the action is being applied on.
@@ -435,6 +436,8 @@ class Operator:
             if not (self._positive_preconditions_hold(previous_state, effect.positive_conditions)
                     and self._negative_preconditions_hold(previous_state, effect.negative_conditions) and
                     self._numeric_conditions_set_hold(previous_state, effect.numeric_conditions)):
+                self.logger.debug(
+                    f"Some of the antecedents for the conditional effect do not hold for the action {self.name}.")
                 continue
 
             self.logger.debug("The conditionals for the effect hold so applying the effect.")
