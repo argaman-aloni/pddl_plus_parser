@@ -5,7 +5,8 @@ from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser, Trajector
 from pddl_plus_parser.models import Domain, Problem
 from tests.lisp_parsers_tests.consts import TEST_NUMERIC_DEPOT_DOMAIN, TEST_NUMERIC_DEPOT_PROBLEM, \
     TEST_NUMERIC_DEPOT_TRAJECTORY, FARMLAND_NUMERIC_DOMAIN, FARMLAND_NUMERIC_PROBLEM, FARMLAND_NUMERIC_TRAJECTORY, \
-    WOODWORKING_COMBINED_DOMAIN_PATH, WOODWORKING_COMBINED_PROBLEM_PATH, WOODWORKING_COMBINED_TRAJECTORY_PATH
+    WOODWORKING_COMBINED_DOMAIN_PATH, WOODWORKING_COMBINED_PROBLEM_PATH, WOODWORKING_COMBINED_TRAJECTORY_PATH, \
+    DEPOT_MA_PROBLEM_PATH, DEPOT_MA_DOMAIN_PATH, DEPOT_MA_TRAJECTORY_PATH
 from tests.multi_agent_tests.consts import WOODWORKING_AGENT_NAMES
 
 
@@ -56,6 +57,21 @@ def ma_trajectory_parser(ma_combined_domain: Domain, ma_combined_problem: Proble
     return TrajectoryParser(ma_combined_domain, ma_combined_problem)
 
 
+@fixture()
+def ma_depot_domain() -> Domain:
+    return DomainParser(DEPOT_MA_DOMAIN_PATH, partial_parsing=True).parse_domain()
+
+
+@fixture()
+def ma_depot_problem(ma_depot_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=DEPOT_MA_PROBLEM_PATH, domain=ma_depot_domain).parse_problem()
+
+
+@fixture()
+def ma_depot_trajectory_parser(ma_depot_domain: Domain, ma_depot_problem: Problem) -> TrajectoryParser:
+    return TrajectoryParser(ma_depot_domain, ma_depot_problem)
+
+
 def test_parse_trajectory(trajectory_parser: TrajectoryParser):
     observation = trajectory_parser.parse_trajectory(TEST_NUMERIC_DEPOT_TRAJECTORY)
     assert len(observation.components) == 19
@@ -71,3 +87,13 @@ def test_parse_ma_combined_trajectory(ma_trajectory_parser: TrajectoryParser):
                                                         executing_agents=WOODWORKING_AGENT_NAMES)
     assert len(observation.components) == 4
     print(observation.components[0].grounded_joint_action)
+
+
+def test_parse_depot_combined_trajectory(ma_depot_trajectory_parser: TrajectoryParser):
+    observation = ma_depot_trajectory_parser.parse_trajectory(DEPOT_MA_TRAJECTORY_PATH,
+                                                              executing_agents=["depot0", "distributor0",
+                                                                                "distributor1",
+                                                                                "distributor2", "distributor3",
+                                                                                "truck0",
+                                                                                "truck1", "truck2", "truck3"])
+    assert "(clear pallet6)" not in observation.components[0].next_state.serialize()

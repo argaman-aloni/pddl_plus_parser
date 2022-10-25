@@ -61,3 +61,7 @@ TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN = """(discard - cardposition)"""
 
 SPIDER_DOMAIN_PATH = Path(CWD, "domain_spider.pddl")
 SPIDER_PROBLEM_PATH = Path(CWD, "pfile04.pddl")
+
+DEPOT_MA_DOMAIN_PATH = Path(CWD, "Depots.pddl")
+DEPOT_MA_PROBLEM_PATH = Path(CWD, "pfile1_depot.pddl")
+DEPOT_MA_TRAJECTORY_PATH = Path(CWD, "test_joint_trajectory_with_potential_bug")
