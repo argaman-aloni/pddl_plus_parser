@@ -7,7 +7,8 @@ from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser
 from pddl_plus_parser.models import Domain, State, Problem
 from pddl_plus_parser.multi_agent import MultiAgentTrajectoryExporter
 from tests.multi_agent_tests.consts import COMBINED_DOMAIN_PATH, COMBINED_PROBLEM_PATH, WOODWORKING_PARSED_PLAN_PATH, \
-    WOODWORKING_SHORT_PARSED_PLAN_PATH
+    WOODWORKING_SHORT_PARSED_PLAN_PATH, DEPOT_MA_DOMAIN_PATH, DEPOT_MA_PROBLEM_PATH, DEPOT_MA_SOLUTION_PATH, \
+    DEPOT_MA_CONCURRENT_PROBLEM_PATH
 
 
 @fixture()
@@ -24,6 +25,26 @@ def combined_problem(combined_domain: Domain) -> Problem:
 @fixture()
 def multi_agent_trajectory_exporter(combined_domain: Domain) -> MultiAgentTrajectoryExporter:
     return MultiAgentTrajectoryExporter(domain=combined_domain)
+
+
+@fixture()
+def ma_depot_domain() -> Domain:
+    return DomainParser(DEPOT_MA_DOMAIN_PATH, partial_parsing=False).parse_domain()
+
+
+@fixture()
+def ma_depot_problem(ma_depot_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=DEPOT_MA_PROBLEM_PATH, domain=ma_depot_domain).parse_problem()
+
+
+@fixture()
+def ma_depot_problem2(ma_depot_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=DEPOT_MA_CONCURRENT_PROBLEM_PATH, domain=ma_depot_domain).parse_problem()
+
+
+@fixture()
+def multi_agent_depots_trajectory_exporter(ma_depot_domain: Domain) -> MultiAgentTrajectoryExporter:
+    return MultiAgentTrajectoryExporter(domain=ma_depot_domain)
 
 
 def test_create_single_triplet_with_single_state_and_single_call_creates_next_state_correctly(
@@ -104,3 +125,25 @@ def test_export_with_interacting_plan_returns_readable_list_of_strings_represent
     trajectory_lines = multi_agent_trajectory_exporter.export(triplets)
     for line in trajectory_lines:
         print(line)
+
+
+def test_create_trajectory_triplet_applies_action_on_state_and_removes_delete_effects_from_the_next_state(
+        multi_agent_depots_trajectory_exporter: MultiAgentTrajectoryExporter, ma_depot_problem: Problem):
+    triplets = multi_agent_depots_trajectory_exporter.parse_plan(ma_depot_problem, DEPOT_MA_SOLUTION_PATH)
+    trajectory_lines = multi_agent_depots_trajectory_exporter.export(triplets)
+    print()
+    for line in trajectory_lines:
+        print(line)
+
+
+def test_create_trajectory_triplet_applies_action_on_state_and_removes_delete_effects_from_the_next_state_when_two_actions_are_executed_concurrently(
+        multi_agent_depots_trajectory_exporter: MultiAgentTrajectoryExporter, ma_depot_problem2: Problem):
+    previous_state = State(predicates=ma_depot_problem2.initial_state_predicates,
+                           fluents=ma_depot_problem2.initial_state_fluents)
+    action_call = "[(nop ),(nop ),(lift hoist2 crate1 pallet2 distributor1),(nop ),(nop ),(nop ),(drive truck1 distributor0 depot0),(nop ),(nop )]"
+    triplet = multi_agent_depots_trajectory_exporter.create_multi_agent_triplet(previous_state=previous_state,
+                                                                                action_call=action_call)
+    print(triplet)
+    at_item_predicates = triplet.next_state.state_predicates["(at ?x ?y)"]
+    at_predicates_str = [p.untyped_representation for p in at_item_predicates]
+    assert "(at truck1 distributor0)" not in at_predicates_str

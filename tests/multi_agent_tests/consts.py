@@ -18,3 +18,9 @@ MULTI_AGENT_DATA_DIRECTORY = Path(CWD, "multi_agent_problem")
 
 WOODWORKING_AGENT_NAMES = ["glazer0", "grinder0", "highspeed-saw0", "immersion-varnisher0", "planer0", "saw0",
                            "spray-varnisher0"]
+
+
+DEPOT_MA_DOMAIN_PATH = Path(CWD, "Depots.pddl")
+DEPOT_MA_PROBLEM_PATH = Path(CWD, "pfile1_depot.pddl")
+DEPOT_MA_CONCURRENT_PROBLEM_PATH = Path(CWD, "pfile7_depot.pddl")
+DEPOT_MA_SOLUTION_PATH = Path(CWD, "pfile1_depots.solution")

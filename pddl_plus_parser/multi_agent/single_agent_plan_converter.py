@@ -2,7 +2,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import List, Tuple, Set
+from typing import List, Tuple
 
 from pddl_plus_parser.models import Domain, ActionCall, Operator, JointActionCall, NOP_ACTION, Problem, State
 from pddl_plus_parser.multi_agent.common import create_initial_state, apply_actions
@@ -42,36 +42,6 @@ class PlanConverter:
 
         return plan_seq
 
-    @staticmethod
-    def _validate_two_sided_relation(
-            positive_preconditions: Set[str], negative_preconditions: Set[str], add_effects: Set[str],
-            delete_effects: Set[str], next_action_pos_preconditions: Set[str],
-            next_action_neg_preconditions: Set[str], next_action_add_effects: List[str],
-            next_action_del_effects: List[str]) -> bool:
-        """
-
-        :param positive_preconditions:
-        :param negative_preconditions:
-        :param add_effects:
-        :param delete_effects:
-        :param next_action_pos_preconditions:
-        :param next_action_neg_preconditions:
-        :param next_action_add_effects:
-        :param next_action_del_effects:
-        :return:
-        """
-        if len(negative_preconditions.intersection(next_action_pos_preconditions)) > 0 or \
-                len(positive_preconditions.intersection(next_action_neg_preconditions)) > 0 or \
-                len(add_effects.intersection(next_action_del_effects)) > 0 or \
-                len(delete_effects.intersection(next_action_add_effects)) > 0 or \
-                len(positive_preconditions.intersection(next_action_del_effects)) > 0 or \
-                len(negative_preconditions.intersection(next_action_add_effects)) > 0 or \
-                len(next_action_pos_preconditions.intersection(delete_effects)) > 0 or \
-                len(next_action_neg_preconditions.intersection(add_effects)) > 0:
-            return False
-
-        return True
-
     def _validate_well_defined_action_literals(self, combined_actions: List[ActionCall], next_action: Operator) -> bool:
         """Validates whether the actions' grounded literals are well-defined.
 
@@ -86,10 +56,8 @@ class PlanConverter:
         :return: whether the grounded literals are well-defined.
         """
         self.logger.debug("Validating that the literals are well-defined!")
-        positive_preconditions = set()
-        negative_preconditions = set()
-        add_effects = set()
-        delete_effects = set()
+        accumulated_add_effects = set()
+        accumulated_delete_effects = set()
 
         for action_call in combined_actions:
             if action_call.name == NOP_ACTION:
@@ -97,21 +65,14 @@ class PlanConverter:
 
             op = Operator(self.ma_domain.actions[action_call.name], self.ma_domain, action_call.parameters)
             op.ground()
-            positive_preconditions.update([p.untyped_representation for p in op.grounded_positive_preconditions])
-            negative_preconditions.update([p.untyped_representation for p in op.grounded_negative_preconditions])
-            add_effects.update([p.untyped_representation for p in op.grounded_add_effects])
-            delete_effects.update([p.untyped_representation for p in op.grounded_delete_effects])
+            accumulated_add_effects.update([p.untyped_representation for p in op.grounded_add_effects])
+            accumulated_delete_effects.update([p.untyped_representation for p in op.grounded_delete_effects])
 
-        next_action_pos_preconditions = set(
-            [p.untyped_representation for p in next_action.grounded_positive_preconditions])
-        next_action_neg_preconditions = set(
-            [p.untyped_representation for p in next_action.grounded_negative_preconditions])
         next_action_add_effects = [p.untyped_representation for p in next_action.grounded_add_effects]
         next_action_del_effects = [p.untyped_representation for p in next_action.grounded_delete_effects]
 
-        return self._validate_two_sided_relation(
-            positive_preconditions, negative_preconditions, add_effects, delete_effects, next_action_pos_preconditions,
-            next_action_neg_preconditions, next_action_add_effects, next_action_del_effects)
+        return not (len(accumulated_add_effects.intersection(next_action_del_effects)) > 0 or
+                    len(accumulated_delete_effects.intersection(next_action_add_effects)) > 0)
 
     def _validate_well_defined_joint_action(self, current_state: State,
                                             combined_actions: List[ActionCall], next_action: ActionCall,
@@ -185,6 +146,7 @@ class PlanConverter:
                                                            agent_names, should_validate_concurrency_constraint):
                 joint_action[agent_names.index(next_executing_agent)] = plan_actions.pop(0)[0]
 
+            self.logger.debug(f"Created the joint action {[str(action) for action in joint_action]}")
             current_state = apply_actions(self.ma_domain, current_state, [action for action in joint_action
                                                                           if action.name != NOP_ACTION])
             joint_actions.append(JointActionCall(joint_action))

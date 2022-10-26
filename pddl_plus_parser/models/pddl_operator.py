@@ -1,7 +1,7 @@
 """module to represent an operator that can apply actions and change state objects."""
 import logging
 from collections import defaultdict
-from typing import List, Set, Dict, NoReturn, Tuple, Optional
+from typing import List, Set, Dict, Tuple, Optional
 
 from anytree import AnyNode
 
@@ -14,7 +14,7 @@ from .pddl_predicate import GroundedPredicate, Predicate, SignatureType
 from .pddl_state import State
 
 
-def set_expression_value(expression_node: AnyNode, state_fluents: Dict[str, PDDLFunction]) -> NoReturn:
+def set_expression_value(expression_node: AnyNode, state_fluents: Dict[str, PDDLFunction]) -> None:
     """Set the value of the expression according to the fluents present in the state.
 
     :param expression_node: the node that is currently being observed.
@@ -116,7 +116,7 @@ class Operator:
         return output_grounded_predicates
 
     def _fix_grounded_predicate_types(self, lifted_predicate_params: List[str],
-                                      predicate_signature: SignatureType) -> NoReturn:
+                                      predicate_signature: SignatureType) -> None:
         """Fix the types of the grounded predicate to match those in the action itself.
 
         :param lifted_predicate_params: the names of the lifted predicate parameters.
@@ -223,7 +223,7 @@ class Operator:
         """
         return {(parameters_map[obj1], parameters_map[obj2]) for obj1, obj2 in equality_preconditions}
 
-    def ground(self) -> NoReturn:
+    def ground(self) -> None:
         """grounds the operator's preconditions and effects."""
         # First matching the lifted action signature to the grounded objects.
         parameters_map = {lifted_param: grounded_object
@@ -259,12 +259,12 @@ class Operator:
         """
         positive_conditions = conditions or self.grounded_positive_preconditions
         self.logger.info(
-            "Validating whether or not the positive state variables match the operator's grounded predicates.")
+            f"Validating whether or not the positive state variables matching {self.__str__()} grounded predicates.")
         for positive_precondition in positive_conditions:
             try:
                 state_grounded_predicates = state.state_predicates[positive_precondition.lifted_untyped_representation]
                 untyped_predicates = [p.untyped_representation for p in state_grounded_predicates]
-                if not positive_precondition.untyped_representation in untyped_predicates:
+                if positive_precondition.untyped_representation not in untyped_predicates:
                     self.logger.debug(f"Did not find the grounded predicate "
                                       f"{positive_precondition.untyped_representation}")
                     return False
@@ -376,7 +376,7 @@ class Operator:
 
     @staticmethod
     def _update_single_numeric_expression(numeric_expression: NumericalExpressionTree,
-                                          previous_values: Dict[str, PDDLFunction]) -> NoReturn:
+                                          previous_values: Dict[str, PDDLFunction]) -> None:
         """Updates the numeric value of a single numeric expression.
 
         :param numeric_expression: the expression that represents the change to the state.
@@ -393,7 +393,7 @@ class Operator:
         :return: a set of predicates representing the next state.
         """
         self.logger.info("Applying the action on the state predicates.")
-        next_state_predicates = {}
+        next_state_predicates = defaultdict(set)
         for lifted_predicate_name, grounded_predicates in previous_state.state_predicates.items():
             next_state_predicates[lifted_predicate_name] = \
                 set([GroundedPredicate(p.name, p.signature, p.object_mapping) for p in grounded_predicates])
@@ -401,14 +401,14 @@ class Operator:
         grouped_delete_effects = self._group_effect_predicates(self.grounded_delete_effects)
         self.logger.debug("Removing state predicates according to the delete effects.")
         for lifted_predicate_str, grounded_predicates in grouped_delete_effects.items():
-            next_state_grounded_predicates = next_state_predicates.get(lifted_predicate_str, set())
+            next_state_grounded_predicates = next_state_predicates[lifted_predicate_str]
             if len(next_state_grounded_predicates) == 0:
-                next_state_predicates[lifted_predicate_str] = next_state_grounded_predicates
+                next_state_predicates[lifted_predicate_str] = set()
                 continue
 
             for predicate_to_remove in grounded_predicates:
                 for next_state_predicate in next_state_grounded_predicates:
-                    if predicate_to_remove == next_state_predicate:
+                    if predicate_to_remove.untyped_representation == next_state_predicate.untyped_representation:
                         next_state_grounded_predicates.discard(next_state_predicate)
                         break
 
@@ -417,7 +417,7 @@ class Operator:
         grouped_add_effects = self._group_effect_predicates(self.grounded_add_effects)
         self.logger.debug("Adding the new predicates according to the add effects.")
         for lifted_predicate_str, grounded_predicates in grouped_add_effects.items():
-            updated_predicates = next_state_predicates.get(lifted_predicate_str, set()).union(grounded_predicates)
+            updated_predicates = next_state_predicates[lifted_predicate_str].union(grounded_predicates)
             next_state_predicates[lifted_predicate_str] = updated_predicates
 
         self.logger.debug("Applying the conditional discrete effects!")
@@ -426,7 +426,7 @@ class Operator:
         return next_state_predicates
 
     def update_discrete_conditional_effects(
-            self, previous_state: State, next_state_predicates: Dict[str, Set[GroundedPredicate]]) -> NoReturn:
+            self, previous_state: State, next_state_predicates: Dict[str, Set[GroundedPredicate]]) -> None:
         """Checks whether the conditions for the conditional effects hold and updates the discrete state accordingly.
 
         :param previous_state: the state that the action is being applied on.
@@ -451,7 +451,7 @@ class Operator:
                 next_state_predicates[predicate.lifted_untyped_representation].discard(predicate)
 
     def update_numeric_conditional_effects(
-            self, previous_state: State, new_state_numeric_fluents: Dict[str, PDDLFunction]) -> NoReturn:
+            self, previous_state: State, new_state_numeric_fluents: Dict[str, PDDLFunction]) -> None:
         """Checks whether the conditions for the conditional effects hold and updates the discrete state accordingly.
 
         :param previous_state: the state that the action is being applied on.

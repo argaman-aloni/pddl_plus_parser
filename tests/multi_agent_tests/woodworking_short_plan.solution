@@ -1,4 +1,4 @@
-[(nop ),(do-grind grinder0 p0 smooth red varnished colourfragments),(nop ),(nop ),(do-plane planer0 p2 verysmooth natural varnished),(nop ),(nop )]
-[(do-glaze glazer0 p2 red),(nop ),(nop ),(nop ),(nop ),(do-saw-medium saw0 b0 p1 pine rough s3 s2 s1),(nop )]
-[(nop ),(nop ),(nop ),(nop ),(do-plane planer0 p1 rough natural untreated),(nop ),(nop )]
-[(nop ),(nop ),(nop ),(do-immersion-varnish immersion-varnisher0 p1 natural smooth),(nop ),(nop ),(nop )]
+[(nop ), (do-grind grinder0 p0 smooth red varnished colourfragments), (nop ), (nop ), (nop ), (nop ), (nop )]
+[(nop ), (nop ), (nop ), (nop ), (do-plane planer0 p2 verysmooth natural varnished), (do-saw-medium saw0 b0 p1 pine rough s3 s2 s1), (nop )]
+[(do-glaze glazer0 p2 red), (nop ), (nop ), (nop ), (do-plane planer0 p1 rough natural untreated), (nop ), (nop )]
+[(nop ), (nop ), (nop ), (do-immersion-varnish immersion-varnisher0 p1 natural smooth), (nop ), (nop ), (nop )]
