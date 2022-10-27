@@ -1,5 +1,5 @@
 """Module test for the single agent plan converter."""
-
+import pytest
 from pytest import fixture
 
 from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser
@@ -7,7 +7,8 @@ from pddl_plus_parser.models import Domain, Problem
 from pddl_plus_parser.multi_agent import PlanConverter
 from tests.multi_agent_tests.consts import SOKOBAN_DOMAIN_FILE_PATH, SOKOBAN_UNPARSED_PLAN_PATH, \
     WOODWORKING_UNPARSED_PLAN_PATH, WOODWORKING_AGENT_NAMES, COMBINED_PROBLEM_PATH, \
-    SOKOBAN_PROBLEM_PATH, COMBINED_DOMAIN_PATH
+    SOKOBAN_PROBLEM_PATH, COMBINED_DOMAIN_PATH, SOKOBAN_PROBLEM_WITH_INTERACTING_ACTIONS_PATH, \
+    SOKOBAN_UNPARSED_PLAN_WITH_INTERACTING_ACTIONS_PATH
 
 SOKOBAN_AGENT_NAMES = ["player-01", "player-02"]
 
@@ -40,6 +41,12 @@ def sokoban_problem(sokoban_domain: Domain) -> Problem:
 
 
 @fixture()
+def sokoban_problem_with_interacting_actions(sokoban_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=SOKOBAN_PROBLEM_WITH_INTERACTING_ACTIONS_PATH,
+                         domain=sokoban_domain).parse_problem()
+
+
+@fixture()
 def woodworking_plan_converter(woodworking_domain: Domain) -> PlanConverter:
     return PlanConverter(woodworking_domain)
 
@@ -64,6 +71,18 @@ def test_convert_plan_does_not_have_joint_actions_with_same_agent(sokoban_plan_c
     for joint_action in joint_actions:
         assert len([param for param in joint_action.joint_parameters if param == SOKOBAN_AGENT_NAMES[0]]) <= 1
         assert len([param for param in joint_action.joint_parameters if param == SOKOBAN_AGENT_NAMES[1]]) <= 1
+
+
+def test_convert_plan_allows_fully_interacting_actions_to_be_executed_concurrently(
+        sokoban_plan_converter: PlanConverter, sokoban_problem_with_interacting_actions: Problem):
+    try:
+        joint_actions = sokoban_plan_converter.convert_plan(
+            sokoban_problem_with_interacting_actions, SOKOBAN_UNPARSED_PLAN_WITH_INTERACTING_ACTIONS_PATH,
+            agent_names=SOKOBAN_AGENT_NAMES, should_validate_concurrency_constraint=False)
+        for joint_action in joint_actions:
+            print([str(action) for action in joint_action.actions])
+    except Exception:
+        pytest.fail("Exception raised when converting plan with fully interacting actions")
 
 
 def test_convert_plan_does_not_remove_actions_from_original_plan_when_domain_contains_constants(

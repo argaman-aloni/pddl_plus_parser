@@ -33,7 +33,13 @@ class MultiAgentProblemsConverter:
             combined_problem.objects.update(agent_problem.objects)
             combined_problem.initial_state_fluents.update(agent_problem.initial_state_fluents)
             for predicate, grounded_predicates in agent_problem.initial_state_predicates.items():
-                combined_problem.initial_state_predicates[predicate].update(grounded_predicates)
+                combined_state_predicates = [p.untyped_representation for p in
+                                             combined_problem.initial_state_predicates[predicate]]
+                for grounded_predicate in grounded_predicates:
+                    if grounded_predicate.untyped_representation in combined_state_predicates:
+                        continue
+
+                    combined_problem.initial_state_predicates[predicate].add(grounded_predicate)
 
             combined_problem.goal_state_predicates.extend(agent_problem.goal_state_predicates)
             combined_problem.goal_state_predicates = list(set(combined_problem.goal_state_predicates))
