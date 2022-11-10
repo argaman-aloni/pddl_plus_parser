@@ -178,4 +178,5 @@ class PlanConverter:
         :param plan_actions: the list of joint actions to export.
         """
         with open(plan_file_path, "wt") as plan_file:
-            plan_file.writelines([f"{str(joint_action)}\n" for joint_action in plan_actions])
+            plan_file.writelines([f"{str(joint_action)}\n" for joint_action in plan_actions[:-1]])
+            plan_file.write(str(plan_actions[-1]))

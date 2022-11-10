@@ -48,14 +48,15 @@ def apply_actions(domain: Domain, current_state: State, joint_action: List[Actio
         accumulative_numeric_effects.update(partial_next_state.state_fluents)
         # since there are multiple actions being executed at once, we need to take the difference between the
         # current state and the next state and accumulate it.
-        for add_effect in operator.grounded_add_effects:
-            accumulative_discrete_effects[add_effect.lifted_untyped_representation].add(add_effect)
-
         for delete_effect in operator.grounded_delete_effects:
             for grounded_predicate in accumulative_discrete_effects[delete_effect.lifted_untyped_representation]:
                 if grounded_predicate.untyped_representation == delete_effect.untyped_representation:
-                    accumulative_discrete_effects[delete_effect.lifted_untyped_representation].remove(grounded_predicate)
+                    accumulative_discrete_effects[delete_effect.lifted_untyped_representation].remove(
+                        grounded_predicate)
                     break
+
+        for add_effect in operator.grounded_add_effects:
+            accumulative_discrete_effects[add_effect.lifted_untyped_representation].add(add_effect)
 
         operators.append(operator)
 
