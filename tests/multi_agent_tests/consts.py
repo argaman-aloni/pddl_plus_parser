@@ -17,6 +17,7 @@ COMBINED_PROBLEM_PATH = Path(CWD, "combined_problem.pddl")
 COMBINED_DOMAIN_PATH = Path(CWD, "combined_domain.pddl")
 
 MULTI_AGENT_DATA_DIRECTORY = Path(CWD, "multi_agent_problem")
+BLOCKS_MULTI_AGENT_DATA_DIRECTORY = Path(CWD, "blocks_ma_problem")
 ANOTHER_MULTI_AGENT_DATA_DIRECTORY = Path(CWD, "another_multi_agent_problem")
 
 WOODWORKING_AGENT_NAMES = ["glazer0", "grinder0", "highspeed-saw0", "immersion-varnisher0", "planer0", "saw0",

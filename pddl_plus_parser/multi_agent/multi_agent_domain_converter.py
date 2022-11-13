@@ -25,7 +25,7 @@ class MultiAgentDomainsConverter:
             self.logger.debug(f"Working on the domain - {domain_path.stem}")
             domain_file_name = domain_path.stem
             agent_domain = DomainParser(domain_path=domain_path, partial_parsing=False,
-                                        enable_conjunctions=True).parse_domain()
+                                        enable_disjunctions=True).parse_domain()
 
             combined_domain.name = agent_domain.name
             combined_domain.requirements = agent_domain.requirements

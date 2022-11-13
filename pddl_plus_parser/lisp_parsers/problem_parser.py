@@ -169,7 +169,7 @@ class ProblemParser:
     def parse_initial_state(self, init_ast: List[List[Union[str, List[str]]]]) -> NoReturn:
         """Parse the initial state of the problem.
 
-        :param init_ast: the AST representation of the inital state.
+        :param init_ast: the AST representation of the initial state.
         """
         self.logger.info("Starting to parse the initial state!")
         for expression in init_ast:
