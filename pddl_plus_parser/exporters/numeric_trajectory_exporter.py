@@ -1,9 +1,9 @@
 """Module that encapsulates the numeric trajectory functionalities."""
 import logging
 from pathlib import Path
-from typing import List, NoReturn, Optional
+from typing import List, NoReturn, Optional, Dict
 
-from pddl_plus_parser.models import Domain, Problem, Operator, State, ActionCall
+from pddl_plus_parser.models import Domain, Problem, Operator, State, ActionCall, PDDLObject
 
 
 def parse_action_call(action_call: str) -> ActionCall:
@@ -54,18 +54,21 @@ class TrajectoryExporter:
         with open(plan_file_path, "rt") as plan_file:
             return plan_file.readlines()
 
-    def create_single_triplet(self, previous_state: State, action_call: str) -> TrajectoryTriplet:
+    def create_single_triplet(self, previous_state: State, action_call: str,
+                              problem_objects: Dict[str, PDDLObject]) -> TrajectoryTriplet:
         """Create a single trajectory triplet by applying the action on the input state.
 
         :param previous_state: the state that the action is being applied on.
         :param action_call: the string representation of the grounded action call.
+        :param problem_objects: the objects of the problem.
         :return: the new triplet containing (s,a,s').
         """
         self.logger.info(f"Trying to apply the action - {action_call} on the state - {previous_state.serialize()}")
         action_descriptor = parse_action_call(action_call)
         operator = Operator(action=self.domain.actions[action_descriptor.name],
                             domain=self.domain,
-                            grounded_action_call=action_descriptor.parameters)
+                            grounded_action_call=action_descriptor.parameters,
+                            problem_objects=problem_objects)
         next_state = operator.apply(previous_state)
         return TrajectoryTriplet(previous_state=previous_state,
                                  op=operator,
@@ -85,7 +88,7 @@ class TrajectoryExporter:
         triplets = []
         self.logger.debug("Starting to create the trajectory triplets.")
         for grounded_action_call in plan_actions:
-            triplet = self.create_single_triplet(previous_state, grounded_action_call)
+            triplet = self.create_single_triplet(previous_state, grounded_action_call, problem.objects)
             triplets.append(triplet)
             previous_state = triplet.next_state
 

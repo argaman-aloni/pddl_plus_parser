@@ -6,7 +6,8 @@ from pytest import fixture, fail
 from pddl_plus_parser.lisp_parsers import DomainParser, PDDLTokenizer, ProblemParser
 from pddl_plus_parser.models import Domain, Action, Operator, GroundedPredicate, PDDLFunction, State, Problem
 from tests.lisp_parsers_tests.consts import SPIDER_PROBLEM_PATH
-from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, TEST_NUMERIC_DOMAIN, SPIDER_DOMAIN_PATH
+from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, TEST_NUMERIC_DOMAIN, SPIDER_DOMAIN_PATH, \
+    NURIKABE_DOMAIN_PATH, NURIKABE_PROBLEM_PATH
 
 TEST_LIFTED_SIGNATURE_ITEMS = ["?s", "?d", "?i", "?m"]
 TEST_GROUNDED_ACTION_CALL = ["s1", "test_direction", "test_instrument", "test_mode"]
@@ -16,6 +17,8 @@ AGRICOLA_GROUNDED_ACTION_CALL = ["noworker", "w1", "w2", "round1", "n1", "n2"]
 
 SPIDER_START_DEALING_CALL = []
 SPIDER_DEAL_CARD_CALL = ["card-d0-s1-v3", "card-d0-s0-v3", "deal-0", "card-d0-s3-v1", "pile-0"]
+NURIKABE_START_PAINTING_CALL = ["pos-0-0", "g0", "n1", "n0"]
+NURIKABE_MOVE_PAINTING_CALL = ["pos-2-0", "pos-3-0", "g1", "n1", "n0"]
 
 
 @fixture()
@@ -37,8 +40,19 @@ def spider_domain() -> Domain:
 
 
 @fixture()
+def nurikabe_domain() -> Domain:
+    domain_parser = DomainParser(NURIKABE_DOMAIN_PATH)
+    return domain_parser.parse_domain()
+
+
+@fixture()
 def spider_problem(spider_domain: Domain) -> Problem:
     return ProblemParser(problem_path=SPIDER_PROBLEM_PATH, domain=spider_domain).parse_problem()
+
+
+@fixture()
+def nurikabe_problem(nurikabe_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=NURIKABE_PROBLEM_PATH, domain=nurikabe_domain).parse_problem()
 
 
 @fixture()
@@ -62,6 +76,16 @@ def spider_conditional_action(spider_domain: Domain) -> Action:
 
 
 @fixture()
+def nurikabe_unconditional_action(nurikabe_domain: Domain) -> Action:
+    return nurikabe_domain.actions["start-painting"]
+
+
+@fixture()
+def nurikabe_conditional_action(nurikabe_domain: Domain) -> Action:
+    return nurikabe_domain.actions["move-painting"]
+
+
+@fixture()
 def operator(domain: Domain, numeric_action: Action) -> Operator:
     return Operator(numeric_action, domain, TEST_GROUNDED_ACTION_CALL)
 
@@ -79,6 +103,18 @@ def spider_start_dealing_operator(spider_domain: Domain, spider_unconditional_ac
 @fixture()
 def spider_deal_card_operator(spider_domain: Domain, spider_conditional_action: Action) -> Operator:
     return Operator(spider_conditional_action, spider_domain, SPIDER_DEAL_CARD_CALL)
+
+
+@fixture()
+def nurikabe_start_painting_operator(nurikabe_domain: Domain, nurikabe_unconditional_action: Action) -> Operator:
+    return Operator(nurikabe_unconditional_action, nurikabe_domain, NURIKABE_START_PAINTING_CALL)
+
+
+@fixture()
+def nurikabe_move_painting_operator(nurikabe_domain: Domain, nurikabe_conditional_action: Action,
+                                    nurikabe_problem: Problem) -> Operator:
+    return Operator(nurikabe_conditional_action, nurikabe_domain, NURIKABE_MOVE_PAINTING_CALL,
+                    problem_objects=nurikabe_problem.objects)
 
 
 @fixture()
@@ -160,8 +196,8 @@ def test_ground_predicates_creates_grounded_version_of_lifted_predicates_with_ob
         lifted_param: grounded_object for lifted_param, grounded_object in zip(
             TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
-    grounded_predicates = operator.ground_predicates(lifted_predicates=test_lifted_predicates,
-                                                     parameters_map=test_parameters_map)
+    grounded_predicates = operator._ground_predicates(lifted_predicates=test_lifted_predicates,
+                                                      parameters_map=test_parameters_map)
 
     expected_grounded_preconditions = ['(on_board test_instrument s1)',
                                        '(power_on test_instrument)',
@@ -184,8 +220,8 @@ def test_ground_predicates_when_domain_contains_constants_grounds_action_correct
         lifted_param: grounded_object for lifted_param, grounded_object in zip(
             AGRICOLA_LIFTED_SIGNATURE_ITEMS, AGRICOLA_GROUNDED_ACTION_CALL)
     }
-    grounded_predicates = agricola_operator.ground_predicates(lifted_predicates=test_lifted_predicates,
-                                                              parameters_map=test_parameters_map)
+    grounded_predicates = agricola_operator._ground_predicates(lifted_predicates=test_lifted_predicates,
+                                                               parameters_map=test_parameters_map)
 
     expected_grounded_preconditions = ['(available_action act_labor)',
                                        '(current_worker noworker)',
@@ -206,7 +242,7 @@ def test_ground_numeric_function_when_domain_contains_constants_grounds_action_c
         lifted_param: grounded_object for lifted_param, grounded_object in zip(
             AGRICOLA_LIFTED_SIGNATURE_ITEMS, test_grounded_call)
     }
-    grounded_expression_tree = agricola_operator.ground_numeric_calculation_tree(
+    grounded_expression_tree = agricola_operator._ground_numeric_calculation_tree(
         lifted_numeric_exp_tree=test_lifted_function, parameters_map=test_parameters_map)
     print(grounded_expression_tree)
 
@@ -218,23 +254,23 @@ def test_ground_predicates_creates_grounded_version_of_lifted_predicates_with_co
         lifted_param: grounded_object for lifted_param, grounded_object in zip(
             TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
-    grounded_predicates = operator.ground_predicates(lifted_predicates=test_lifted_predicates,
-                                                     parameters_map=test_parameters_map)
+    grounded_predicates = operator._ground_predicates(lifted_predicates=test_lifted_predicates,
+                                                      parameters_map=test_parameters_map)
 
     for predicate in grounded_predicates:
         if predicate.name == "calibrated":
             assert predicate.object_mapping == {"?i": "test_instrument"}
 
 
-def test_ground_numeric_calculation_tree_extracts_correct_grounded_tree_data_from_lifted_calc_tree(operator: Operator,
-                                                                                                   numeric_action: Action):
+def test_ground_numeric_calculation_tree_extracts_correct_grounded_tree_data_from_lifted_calc_tree(
+        operator: Operator, numeric_action: Action):
     test_lifted_expression_tree = numeric_action.numeric_preconditions.pop()
     test_parameters_map = {
         lifted_param: grounded_object for lifted_param, grounded_object in zip(
             TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
 
-    expression_tree = operator.ground_numeric_calculation_tree(test_lifted_expression_tree, test_parameters_map)
+    expression_tree = operator._ground_numeric_calculation_tree(test_lifted_expression_tree, test_parameters_map)
 
     root = expression_tree.root
     assert root.id == ">="
@@ -245,7 +281,7 @@ def test_ground_numeric_calculation_tree_extracts_correct_grounded_tree_data_fro
 def test_ground_equality_objects_returns_correct_grounded_objects(operator: Operator):
     equality_precondition = {("?size_before", "?size_after")}
     parameter_map = {"?size_before": "size1", "?size_after": "size2"}
-    grounded_objects = operator.ground_equality_objects(equality_precondition, parameter_map)
+    grounded_objects = operator._ground_equality_objects(equality_precondition, parameter_map)
     assert grounded_objects == {("size1", "size2")}
 
 
@@ -268,7 +304,7 @@ def test_ground_numeric_expressions_extracts_all_numeric_expressions(operator: O
             TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
 
-    expression_tree_set = operator.ground_numeric_expressions(test_lifted_expression_tree, test_parameters_map)
+    expression_tree_set = operator._ground_numeric_expressions(test_lifted_expression_tree, test_parameters_map)
 
     assert len(expression_tree_set) == 2
 
@@ -549,3 +585,19 @@ def test_apply_with_conditional_effects_outputs_conditional_effects_in_successiv
 
     assert "(currently-updating-unmovable )" in [p.untyped_representation for p in state_predicates]
     assert "(make-unmovable card-d0-s3-v1)" in [p.untyped_representation for p in state_predicates]
+
+
+def test_apply_with_action_with_universal_quantifier_applies_effects_on_all_objects_that_match_conditions(
+        nurikabe_domain: Domain, nurikabe_move_painting_operator: Operator, nurikabe_problem: Problem):
+    initial_state = State(nurikabe_problem.initial_state_predicates, nurikabe_problem.initial_state_fluents)
+    serialized_initial_state = initial_state.serialize()
+    assert "(blocked pos-2-0)" not in serialized_initial_state
+    assert "(blocked pos-4-0)" not in serialized_initial_state
+    new_state = nurikabe_move_painting_operator.apply(initial_state, allow_inapplicable_actions=True)
+    serialized_state = new_state.serialize()
+    assert "(available pos-2-0)" not in serialized_state
+    assert "(available pos-4-0)" not in serialized_state
+    assert "(part-of pos-2-0 g1)" not in serialized_state
+    assert "(part-of pos-4-0 g1)" not in serialized_state
+    assert "(blocked pos-2-0)" in serialized_state
+    assert "(blocked pos-4-0)" in serialized_state
