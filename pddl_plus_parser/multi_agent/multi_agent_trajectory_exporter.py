@@ -2,10 +2,10 @@
 import logging
 import re
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict
 
 from pddl_plus_parser.models import Domain, Problem, Operator, State, JointActionCall, ActionCall, NOP_ACTION, \
-    NOPOperator
+    NOPOperator, PDDLObject
 from pddl_plus_parser.multi_agent.common import create_initial_state, apply_actions
 
 JOINT_ACTION_REGEX = r"\(([\w+\s?-]+)\)"
@@ -49,10 +49,12 @@ class MultiAgentTrajectoryExporter:
     """Export multi-agent trajectories in the appropriate format."""
 
     domain: Domain
+    allow_invalid_actions: bool
     logger: logging.Logger
 
-    def __init__(self, domain: Domain):
+    def __init__(self, domain: Domain, allow_invalid_actions: bool = False):
         self.domain = domain
+        self.allow_invalid_actions = allow_invalid_actions
         self.logger = logging.getLogger(__name__)
 
     def _read_plan(self, plan_file_path: Path) -> List[str]:
@@ -65,11 +67,13 @@ class MultiAgentTrajectoryExporter:
         with open(plan_file_path, "rt") as plan_file:
             return plan_file.readlines()
 
-    def create_multi_agent_triplet(self, previous_state: State, action_call: str) -> MultiAgentTrajectoryTriplet:
+    def create_multi_agent_triplet(self, previous_state: State, action_call: str,
+                                   problem_objects: Dict[str, PDDLObject]) -> MultiAgentTrajectoryTriplet:
         """Create a single trajectory triplet by applying the joint action on the input state and combining the effects.
 
         :param previous_state: the state that the action is being applied on.
         :param action_call: the string representation of the grounded joint action call.
+        :param problem_objects: the objects in the problem.
         :return: the new triplet containing (s,<a1, a2,..., am>,s').
         """
         self.logger.info(f"Trying to apply the action - {action_call} on the state - {previous_state.serialize()}")
@@ -83,7 +87,7 @@ class MultiAgentTrajectoryExporter:
                 continue
 
             operators.append(Operator(action=self.domain.actions[sa_action.name], domain=self.domain,
-                                      grounded_action_call=sa_action.parameters))
+                                      grounded_action_call=sa_action.parameters, problem_objects=problem_objects))
         next_state = apply_actions(self.domain, previous_state, executed_actions)
         return MultiAgentTrajectoryTriplet(previous_state=previous_state, ops=operators, next_state=next_state)
 
@@ -99,7 +103,8 @@ class MultiAgentTrajectoryExporter:
         triplets = []
         self.logger.debug("Starting to create the trajectory triplets.")
         for grounded_action_call in plan_actions:
-            triplet = self.create_multi_agent_triplet(previous_state, grounded_action_call)
+            triplet = self.create_multi_agent_triplet(previous_state, grounded_action_call,
+                                                      problem_objects=problem.objects)
             triplets.append(triplet)
             previous_state = triplet.next_state
 

@@ -102,12 +102,14 @@ def create_state_from_predicate_components(
 
 
 def test_create_single_triplet_with_single_state_and_single_call_creates_next_state_correctly(
-        discrete_trajectory_exporter: TrajectoryExporter, discrete_problem_parser: ProblemParser):
+        discrete_trajectory_exporter: TrajectoryExporter, discrete_problem_parser: ProblemParser,
+        discrete_problem: Problem):
     test_simple_state_components = [["lift-at", "slow2-0", "n17"], ["above", "n16", "n17"],
                                     ["reachable-floor", "slow2-0", "n16"]]
     test_action_call = "(move-down-slow slow2-0 n17 n16)"
     state = create_state_from_predicate_components(test_simple_state_components, discrete_problem_parser)
-    result_triplet = discrete_trajectory_exporter.create_single_triplet(state, test_action_call)
+    result_triplet = discrete_trajectory_exporter.create_single_triplet(
+        state, test_action_call, discrete_problem.objects)
     result_next_state = result_triplet.next_state
     lift_at_predicate = result_next_state.state_predicates["(lift-at ?lift ?floor)"]
     untyped_predicates = [p.untyped_representation for p in lift_at_predicate]
@@ -119,7 +121,8 @@ def test_create_single_triplet_with_complete_initial_state_removes_correct_predi
         discrete_trajectory_exporter: TrajectoryExporter, discrete_problem: Problem):
     state = State(predicates=discrete_problem.initial_state_predicates, fluents={})
     test_action_call = "(move-down-slow slow2-0 n17 n16)"
-    result_triplet = discrete_trajectory_exporter.create_single_triplet(state, test_action_call)
+    result_triplet = discrete_trajectory_exporter.create_single_triplet(state, test_action_call,
+                                                                        discrete_problem.objects)
     lift_at_predicate = result_triplet.next_state.state_predicates["(lift-at ?lift ?floor)"]
     untyped_predicates = [p.untyped_representation for p in lift_at_predicate]
     assert "(lift-at slow2-0 n16)" in untyped_predicates
@@ -130,7 +133,7 @@ def test_create_single_triplet_with_complete_numeric_initial_state_removes_corre
         numeric_trajectory_exporter: TrajectoryExporter, numeric_problem: Problem):
     state = State(predicates=numeric_problem.initial_state_predicates, fluents=numeric_problem.initial_state_fluents)
     test_action_call = "(DRIVE TRUCK0 DEPOT0 DISTRIBUTOR0)"
-    result_triplet = numeric_trajectory_exporter.create_single_triplet(state, test_action_call)
+    result_triplet = numeric_trajectory_exporter.create_single_triplet(state, test_action_call, numeric_problem.objects)
     test_next_state = result_triplet.next_state
     fuel_level_fluent = test_next_state.state_fluents["(fuel-cost )"]
     assert fuel_level_fluent.value == 10

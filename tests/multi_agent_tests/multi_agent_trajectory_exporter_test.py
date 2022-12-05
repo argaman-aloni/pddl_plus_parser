@@ -52,7 +52,8 @@ def test_create_single_triplet_with_single_state_and_single_call_creates_next_st
     test_action_call = "[(nop ),(do-grind grinder0 p0 smooth red varnished colourfragments),(nop ),(nop ),(nop ),(nop ),(nop )]"
     initial_state = State(predicates=combined_problem.initial_state_predicates,
                           fluents=combined_problem.initial_state_fluents)
-    result_triplet = multi_agent_trajectory_exporter.create_multi_agent_triplet(initial_state, test_action_call)
+    result_triplet = multi_agent_trajectory_exporter.create_multi_agent_triplet(initial_state, test_action_call,
+                                                                                problem_objects=combined_problem.objects)
     result_next_state = result_triplet.next_state
     grind_cost = initial_state.state_fluents["(grind-cost p0)"].value
     assert result_next_state.state_fluents["(total-cost )"].value == initial_state.state_fluents[
@@ -65,11 +66,12 @@ def test_create_single_triplet_with_single_state_and_single_call_with_two_execut
     two_agent_action_call = "[(nop ),(nop ),(nop ),(nop ),(do-plane planer0 p2 verysmooth natural varnished),(do-saw-medium saw0 b0 p1 pine rough s3 s2 s1),(nop )]"
     initial_state = State(predicates=combined_problem.initial_state_predicates,
                           fluents=combined_problem.initial_state_fluents)
-    result_triplet = multi_agent_trajectory_exporter.create_multi_agent_triplet(initial_state, test_action_call)
+    result_triplet = multi_agent_trajectory_exporter.create_multi_agent_triplet(
+        initial_state, test_action_call, problem_objects=combined_problem.objects)
     result_next_state = result_triplet.next_state
 
-    result_triplet = multi_agent_trajectory_exporter.create_multi_agent_triplet(result_next_state,
-                                                                                two_agent_action_call)
+    result_triplet = multi_agent_trajectory_exporter.create_multi_agent_triplet(
+        result_next_state, two_agent_action_call, problem_objects=combined_problem.objects)
     total_cost_pre_action = 15
     assert result_triplet.next_state.state_fluents["(total-cost )"].value == total_cost_pre_action + 30 + \
            result_triplet.previous_state.state_fluents["(plane-cost p2)"].value
@@ -82,11 +84,12 @@ def test_create_single_triplet_with_single_state_and_single_call_with_two_execut
                             "(do-saw-medium saw0 b0 p1 pine rough s3 s2 s1),(nop )]"
     initial_state = State(predicates=combined_problem.initial_state_predicates,
                           fluents=combined_problem.initial_state_fluents)
-    result_triplet = multi_agent_trajectory_exporter.create_multi_agent_triplet(initial_state, test_action_call)
+    result_triplet = multi_agent_trajectory_exporter.create_multi_agent_triplet(
+        initial_state, test_action_call, problem_objects=combined_problem.objects)
     result_next_state = result_triplet.next_state
 
-    result_triplet = multi_agent_trajectory_exporter.create_multi_agent_triplet(result_next_state,
-                                                                                two_agent_action_call)
+    result_triplet = multi_agent_trajectory_exporter.create_multi_agent_triplet(
+        result_next_state, two_agent_action_call, problem_objects=combined_problem.objects)
     next_state_predicates = result_triplet.next_state.state_predicates
     unused_parts_predicates = [p.untyped_representation for p in next_state_predicates["(unused ?obj)"]]
     available_parts_predicates = [p.untyped_representation for p in next_state_predicates["(available ?obj)"]]
@@ -141,8 +144,10 @@ def test_create_trajectory_triplet_applies_action_on_state_and_removes_delete_ef
     previous_state = State(predicates=ma_depot_problem2.initial_state_predicates,
                            fluents=ma_depot_problem2.initial_state_fluents)
     action_call = "[(nop ),(nop ),(lift hoist2 crate1 pallet2 distributor1),(nop ),(nop ),(nop ),(drive truck1 distributor0 depot0),(nop ),(nop )]"
-    triplet = multi_agent_depots_trajectory_exporter.create_multi_agent_triplet(previous_state=previous_state,
-                                                                                action_call=action_call)
+    triplet = multi_agent_depots_trajectory_exporter.create_multi_agent_triplet(
+        previous_state=previous_state,
+        action_call=action_call,
+        problem_objects=ma_depot_problem2.objects)
     print(triplet)
     at_item_predicates = triplet.next_state.state_predicates["(at ?x ?y)"]
     at_predicates_str = [p.untyped_representation for p in at_item_predicates]

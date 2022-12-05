@@ -16,19 +16,22 @@ def create_initial_state(problem: Problem) -> State:
     return State(predicates=initial_state_predicates, fluents=initial_state_numeric_fluents, is_init=True)
 
 
-def apply_actions(domain: Domain, current_state: State, joint_action: List[ActionCall]) -> State:
+def apply_actions(domain: Domain, current_state: State, joint_action: List[ActionCall],
+                  allow_inapplicable_actions: bool = False) -> State:
     """
 
     :param domain: the domain with the action scheme.
     :param current_state: the current state that the action is being applied on.
     :param joint_action: the executable actions of the agents.
+    :param allow_inapplicable_actions: whether to allow inapplicable actions.
     :return: The state resulting from applying the actions.
     """
     operators = []
     if len(joint_action) == 1:
         action_call = joint_action[0]
         action = domain.actions[action_call.name]
-        return Operator(action=action, domain=domain, grounded_action_call=action_call.parameters).apply(current_state)
+        return Operator(action=action, domain=domain, grounded_action_call=action_call.parameters).apply(
+            previous_state=current_state, allow_inapplicable_actions=allow_inapplicable_actions)
 
     accumulative_discrete_effects = defaultdict(set)
     accumulative_numeric_effects = current_state.state_fluents.copy()
