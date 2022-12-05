@@ -4,7 +4,8 @@ from pddl_plus_parser.lisp_parsers import DomainParser, PDDLTokenizer
 from pddl_plus_parser.models import PDDLType, Predicate, Action
 from tests.lisp_parsers_tests.consts import TEST_PARSING_FILE_PATH, TEST_WOODWORKING_DOMAIN_PATH, \
     TEST_NUMERIC_DEPOT_DOMAIN_PATH, PLANT_WATERING_DOMAIN, TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN, \
-    TEST_TYPES_FOR_CONDITIONAL_DOMAIN, TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN, SPIDER_DOMAIN_PATH
+    TEST_TYPES_FOR_CONDITIONAL_DOMAIN, TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN, SPIDER_DOMAIN_PATH, \
+    TYPES_FOR_UNIVERSAL_CONDITIONAL_DOMAIN, TEST_PREDICATES_FOR_UNIVERSAL_QUANTIFIER_DOMAIN
 
 test_types_with_no_parent = ['acolour', 'awood', 'woodobj', 'machine', 'surface', 'treatmentstatus', 'aboardsize',
                              'apartsize']
@@ -328,6 +329,7 @@ def test_parse_effects_with_conditional_effects_with_one_condition_and_one_effec
                                 domain_constants=domain_consts)
     conditional_effect = new_action.conditional_effects.pop()
     assert conditional_effect is not None
+    print(str(conditional_effect))
     assert str(
         conditional_effect) == "(when (and (not (CAN-CONTINUE-GROUP ?c ?to))) (and (make-unmovable ?to)))".lower()
 
@@ -407,7 +409,8 @@ def test_parse_effects_with_conditional_effects_with_two_conditions_and_two_effe
     assert effects_str == {"(currently-updating-unmovable )", "(make-unmovable ?to)"}
 
 
-def test_parse_action_with_conditional_effects(domain_parser: DomainParser):
+def test_parse_action_with_conditional_effects_succeeds_in_parsing_action_and_returns_correct_fields(
+        domain_parser: DomainParser):
     test_action_with_conditional_effects = """(deal-card
     :parameters (?c - card ?from - cardposition ?fromdeal - deal ?to - card ?totableau - tableau)
     :precondition
@@ -471,6 +474,66 @@ def test_parse_conditional_effect_raises_error_if_conditional_effect_not_in_corr
     with raises(SyntaxError):
         domain_parser.parse_conditional_effect(conditional_effect_tokens, action, domain_functions, domain_consts)
 
+
+def test_parse_action_with_universal_quantifier_in_conditional_effect_returns_correct_universal_quantifier_data(
+        domain_parser: DomainParser):
+    test_action_with_universal_quantifier = """
+    (stop
+      :parameters (?f - floor)
+      :precondition (lift-at ?f)
+      :effect (and 
+                   (forall (?p - passenger) 
+                      (when (and (boarded ?p) 
+                                 (destin ?p ?f))
+                            (and (not (boarded ?p)) 
+                                 (served  ?p))))
+    ))"""
+    types_tokens = PDDLTokenizer(pddl_str=TYPES_FOR_UNIVERSAL_CONDITIONAL_DOMAIN).parse()
+    predicate_tokens = PDDLTokenizer(pddl_str=TEST_PREDICATES_FOR_UNIVERSAL_QUANTIFIER_DOMAIN).parse()
+    action_tokens = PDDLTokenizer(pddl_str=test_action_with_universal_quantifier).parse()
+    domain_types = domain_parser.parse_types(types_tokens)
+    domain_predicates = domain_parser.parse_predicates(predicate_tokens, domain_types)
+    domain_functions = {}
+    action = domain_parser.parse_action(action_ast=action_tokens, domain_types=domain_types,
+                                        domain_functions=domain_functions, domain_predicates=domain_predicates)
+    assert action is not None
+    universal_effects = action.universal_effects
+    assert len(universal_effects) == 1
+    universal_effect = universal_effects.pop()
+    assert universal_effect.quantified_parameter == "?p"
+    assert universal_effect.quantified_type.name == "passenger"
+    assert len(universal_effect.conditional_effect.add_effects) == 1
+    assert len(universal_effect.conditional_effect.delete_effects) == 1
+    assert len(universal_effect.conditional_effect.positive_conditions) == 2
+    print(str(universal_effect))
+
+
+def test_parse_action_with_two_universal_quantifiers_in_effect_extract_all_universal_effects(
+        domain_parser: DomainParser):
+    test_action_with_universal_quantifier = """
+    (stop
+      :parameters (?f - floor)
+      :precondition (lift-at ?f)
+      :effect (and 
+               (forall (?p - passenger) 
+                  (when (and (boarded ?p) 
+                             (destin ?p ?f))
+                        (and (not (boarded ?p)) 
+                             (served  ?p))))
+               (forall (?p - passenger)                
+                   (when (and (origin ?p ?f) (not (served ?p)))
+                              (boarded ?p)))))"""
+    types_tokens = PDDLTokenizer(pddl_str=TYPES_FOR_UNIVERSAL_CONDITIONAL_DOMAIN).parse()
+    predicate_tokens = PDDLTokenizer(pddl_str=TEST_PREDICATES_FOR_UNIVERSAL_QUANTIFIER_DOMAIN).parse()
+    action_tokens = PDDLTokenizer(pddl_str=test_action_with_universal_quantifier).parse()
+    domain_types = domain_parser.parse_types(types_tokens)
+    domain_predicates = domain_parser.parse_predicates(predicate_tokens, domain_types)
+    domain_functions = {}
+    action = domain_parser.parse_action(action_ast=action_tokens, domain_types=domain_types,
+                                        domain_functions=domain_functions, domain_predicates=domain_predicates)
+    assert action is not None
+    universal_effects = action.universal_effects
+    assert len(universal_effects) == 2
 
 
 def test_parse_simple_action_with_numeric_preconditions_and_effects_extracts_the_calculation_tree_correctly(

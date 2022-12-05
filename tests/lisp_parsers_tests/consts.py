@@ -50,12 +50,26 @@ TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN = """((on ?c1 - card ?c2 - cardposition)
 )
 """
 
+TEST_PREDICATES_FOR_UNIVERSAL_QUANTIFIER_DOMAIN = """(
+    (origin ?person - passenger ?floor - floor)
+    (destin ?person - passenger ?floor - floor)
+    (above ?floor1 - floor  ?floor2 - floor)
+    (boarded ?person - passenger)
+    (served ?person - passenger)
+    (lift-at ?floor - floor)
+)
+"""
+
+
 TEST_TYPES_FOR_CONDITIONAL_DOMAIN = """(cardposition - object
     card_or_tableau - cardposition
     card - card_or_tableau
     tableau - card_or_tableau
     deal - cardposition
 )"""
+
+TYPES_FOR_UNIVERSAL_CONDITIONAL_DOMAIN = """(passenger - object
+          floor - object)"""
 
 TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN = """(discard - cardposition)"""
 

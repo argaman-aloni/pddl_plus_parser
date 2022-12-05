@@ -216,7 +216,7 @@ class DomainParser:
             self.logger.warning("Received an action with no preconditions.")
             return
 
-        if preconditions_ast[0] != "and" and not self.enable_disjunctions:
+        if preconditions_ast[0] != "and" and not self.enable_disjunctions and len(preconditions_ast[1:]) > 1:
             raise SyntaxError(f"Only accepting conjunctive preconditions! Action - {new_action.name} does not conform!")
 
         for precondition_node in preconditions_ast[1:]:
@@ -281,14 +281,13 @@ class DomainParser:
         else:
             positive_conditionals.append(self.parse_untyped_predicate(conditional, signature, domain_constants))
 
-    def _parse_conditionals(
-            self, conditional_ast: List[Union[str, List[str]]],
-            signature: Dict[str, PDDLType], domain_functions: Dict[str, PDDLFunction],
-            domain_constants: Dict[str, PDDLConstant]) -> Tuple[
+    def _parse_antecedents(self, antecedent_ast: List[Union[str, List[str]]],
+                           signature: Dict[str, PDDLType], domain_functions: Dict[str, PDDLFunction],
+                           domain_constants: Dict[str, PDDLConstant]) -> Tuple[
         List[Predicate], List[Predicate], List[NumericalExpressionTree]]:
-        """Parse the conditionals for a conditional effect of an action.
+        """Parse the antecedents for a conditional effect of an action.
 
-        :param conditional_ast: the AST representation of the conditionals.
+        :param antecedent_ast: the AST representation of the conditionals.
         :param signature: the action's signature.
         :param domain_functions: the functions that exist in the domain.
         :param domain_constants: the constants that exist in the domain.
@@ -297,14 +296,14 @@ class DomainParser:
         positive_conditionals = []
         negative_conditionals = []
         numeric_conditionals = []
-        if conditional_ast[0] == "and":
+        if antecedent_ast[0] == "and":
             self.logger.debug("Received a conjunctive conditional effect with more than one condition.")
-            for conditional in conditional_ast[1:]:
+            for conditional in antecedent_ast[1:]:
                 self._parse_single_conditional(conditional, positive_conditionals, negative_conditionals,
                                                numeric_conditionals, signature, domain_functions, domain_constants)
 
         else:
-            self._parse_single_conditional(conditional_ast, positive_conditionals, negative_conditionals,
+            self._parse_single_conditional(antecedent_ast, positive_conditionals, negative_conditionals,
                                            numeric_conditionals, signature, domain_functions, domain_constants)
 
         return positive_conditionals, negative_conditionals, numeric_conditionals
@@ -333,11 +332,14 @@ class DomainParser:
         else:
             add_effects.append(self.parse_untyped_predicate(conditional_effect_ast, action.signature, domain_constants))
 
-    def _construct_conditional_effects(self, conditional_effect_ast: List[Union[str, List[str]]],
-                                       positive_conditionals: List[Predicate], negative_conditionals: List[Predicate],
-                                       numeric_conditionals: List[NumericalExpressionTree],
-                                       action: Action, domain_functions: Dict[str, PDDLFunction],
-                                       domain_constants: Dict[str, PDDLConstant]) -> ConditionalEffect:
+    def _construct_conditional_effects(
+            self, conditional_effect_ast: List[Union[str, List[str]]],
+            positive_conditionals: List[Predicate],
+            negative_conditionals: List[Predicate],
+            numeric_conditionals: List[NumericalExpressionTree],
+            action: Action,
+            domain_functions: Dict[str, PDDLFunction],
+            domain_constants: Dict[str, PDDLConstant]) -> ConditionalEffect:
         """Parse all the conditional effects that are under the same when statement - can be composite.
 
         :param conditional_effect_ast: the AST representation of the conditional effects.
@@ -369,6 +371,21 @@ class DomainParser:
         conditional_effect.numeric_conditions = set(numeric_conditionals)
         return conditional_effect
 
+    def _extend_action_to_contain_quantified_objects(
+            self, action: Action, quantified_parameter_name: str, quantified_type: PDDLType) -> Action:
+        """Extends the relevant parts of the action to include the quantified object.
+
+        :param action: the action to extend.
+        :param quantified_parameter_name: the name of the parameter that is added to the extended action.
+        :param quantified_type: the type of the quatified object.
+        :return: the extended action.
+        """
+        combined_signature = {**action.signature, quantified_parameter_name: quantified_type}
+        extended_action = Action()
+        extended_action.name = action.name
+        extended_action.signature = combined_signature
+        return extended_action
+
     def parse_conditional_effect(
             self, conditional_effect_ast: List[Union[str, List[str]]], action: Action,
             domain_functions: Dict[str, PDDLFunction],
@@ -384,7 +401,7 @@ class DomainParser:
         if len(conditional_effect_ast[1:]) != 2:
             raise SyntaxError(f"Conditional effect scheme does not match for action {action.name}!")
 
-        positive_conditionals, negative_conditionals, numeric_conditionals = self._parse_conditionals(
+        positive_conditionals, negative_conditionals, numeric_conditionals = self._parse_antecedents(
             conditional_effect_ast[1], action.signature, domain_functions, domain_constants)
         conditional_effect = self._construct_conditional_effects(conditional_effect_ast[2], positive_conditionals,
                                                                  negative_conditionals,
@@ -407,10 +424,10 @@ class DomainParser:
         :param domain_constants: the constants that exist in the domain.
         """
         self.logger.debug("Parsing universally quantified effect node.")
-        if len(universal_quantifier_ast[1:]) != 2:
+        if len(universal_quantifier_ast) != 2:
             raise SyntaxError(f"Universal quantifier scheme does not match for action {action.name}!")
 
-        quantified_object_components = universal_quantifier_ast[1]
+        quantified_object_components = universal_quantifier_ast[0]
         # quantified object components are of the form ( ?x - type )
         if len(quantified_object_components) != 3:
             raise SyntaxError(f"Quantified object scheme does not match for action {action.name}!"
@@ -418,13 +435,18 @@ class DomainParser:
 
         quantified_parameter_name = quantified_object_components[0]
         quantified_type = domain_types[quantified_object_components[2]]
+        extended_action = self._extend_action_to_contain_quantified_objects(
+            action, quantified_parameter_name, quantified_type)
 
-        conditional_effect_ast = universal_quantifier_ast[2]
-        positive_conditionals, negative_conditionals, numeric_conditionals = self._parse_conditionals(
-            conditional_effect_ast[1], action.signature, domain_functions, domain_constants)
-        conditional_effect = self._construct_conditional_effects(conditional_effect_ast[2], positive_conditionals,
+        conditional_effect_ast = universal_quantifier_ast[1]
+        positive_conditionals, negative_conditionals, numeric_conditionals = self._parse_antecedents(
+            conditional_effect_ast[1], extended_action.signature, domain_functions, domain_constants)
+        conditional_effect = self._construct_conditional_effects(conditional_effect_ast[2],
+                                                                 positive_conditionals,
                                                                  negative_conditionals,
-                                                                 numeric_conditionals, action, domain_functions,
+                                                                 numeric_conditionals,
+                                                                 extended_action,
+                                                                 domain_functions,
                                                                  domain_constants)
 
         universal_quantifier = UniversalQuantifiedEffect(quantified_parameter=quantified_parameter_name,
@@ -561,3 +583,5 @@ class DomainParser:
                 # TODO: complete once I finish numeric actions support
 
         return domain
+
+
