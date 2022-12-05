@@ -38,10 +38,12 @@ class TrajectoryExporter:
     """Export trajectories in the appropriate format."""
 
     domain: Domain
+    allow_invalid_actions: bool
     logger: logging.Logger
 
-    def __init__(self, domain: Domain):
+    def __init__(self, domain: Domain, allow_invalid_actions: bool = False):
         self.domain = domain
+        self.allow_invalid_actions = allow_invalid_actions
         self.logger = logging.getLogger(__name__)
 
     def _read_plan(self, plan_file_path: Path) -> List[str]:
@@ -69,7 +71,7 @@ class TrajectoryExporter:
                             domain=self.domain,
                             grounded_action_call=action_descriptor.parameters,
                             problem_objects=problem_objects)
-        next_state = operator.apply(previous_state)
+        next_state = operator.apply(previous_state, allow_inapplicable_actions=self.allow_invalid_actions)
         return TrajectoryTriplet(previous_state=previous_state,
                                  op=operator,
                                  next_state=next_state)
