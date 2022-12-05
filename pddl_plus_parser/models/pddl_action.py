@@ -1,6 +1,7 @@
 """Module that represents a PDDL+ action."""
 from typing import Set, List, Tuple
 
+from .universal_quantifier import UniversalQuantifiedEffect
 from .conditional_effect import ConditionalEffect
 from .numerical_expression import NumericalExpressionTree
 from .pddl_predicate import SignatureType, Predicate
@@ -19,6 +20,7 @@ class Action:
     add_effects: Set[Predicate]
     delete_effects: Set[Predicate]
     conditional_effects: Set[ConditionalEffect]
+    universal_effects: Set[UniversalQuantifiedEffect]
     numeric_effects: Set[NumericalExpressionTree]
     # currently only supporting disjunction of numeric preconditions
     disjunctive_numeric_preconditions: List[Set[NumericalExpressionTree]]
@@ -34,6 +36,7 @@ class Action:
         self.numeric_effects = set()
         self.disjunctive_numeric_preconditions = []
         self.conditional_effects = set()
+        self.universal_effects = set()
 
     def __str__(self):
         signature_str_items = []

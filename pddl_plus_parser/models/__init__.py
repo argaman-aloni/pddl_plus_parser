@@ -1,3 +1,5 @@
+from .action_call import ActionCall, JointActionCall, NOP_ACTION
+from .conditional_effect import ConditionalEffect
 from .numerical_expression import construct_expression_tree, calculate, evaluate_expression, NumericalExpressionTree
 from .observation import ActionCall, Observation, ObservedComponent, MultiAgentObservation, MultiAgentComponent
 from .pddl_action import Action
@@ -9,5 +11,4 @@ from .pddl_predicate import SignatureType, Predicate, GroundedPredicate
 from .pddl_problem import Problem
 from .pddl_state import State
 from .pddl_type import PDDLType
-from .action_call import ActionCall, JointActionCall, NOP_ACTION
-from .conditional_effect import ConditionalEffect
+from .universal_quantifier import UniversalQuantifiedPrecondition, UniversalQuantifiedEffect

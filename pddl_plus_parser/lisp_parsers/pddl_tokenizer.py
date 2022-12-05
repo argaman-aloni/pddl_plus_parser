@@ -26,7 +26,7 @@ class PDDLTokenizer:
         """Indicates whither or not a line is a comment line
 
         :param line: the line to test.
-        :return: whether or not the line is indeed a comment line.
+        :return: whether the line is indeed a comment line.
         """
         return line.strip().startswith(";")
 

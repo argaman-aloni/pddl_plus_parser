@@ -1,9 +1,9 @@
 """Module to represent an observed trajectory. Compared to a trajectory, this contains only the observed data."""
-from typing import List, NoReturn, Dict
+from typing import List, Dict
 
+from pddl_plus_parser.models.action_call import ActionCall, JointActionCall
 from pddl_plus_parser.models.pddl_object import PDDLObject
 from pddl_plus_parser.models.pddl_state import State
-from pddl_plus_parser.models.action_call import ActionCall, JointActionCall, NOP_ACTION
 
 
 class ObservedComponent:
@@ -52,14 +52,14 @@ class Observation:
         self.components = []
         self.grounded_objects = {}
 
-    def add_problem_objects(self, objects: Dict[str, PDDLObject]) -> NoReturn:
+    def add_problem_objects(self, objects: Dict[str, PDDLObject]) -> None:
         """Add the objects from the problem to the observation data.
 
         :param objects: the objects from the problem.
         """
         self.grounded_objects = objects
 
-    def add_component(self, previous_state: State, call: ActionCall, next_state: State) -> NoReturn:
+    def add_component(self, previous_state: State, call: ActionCall, next_state: State) -> None:
         """Add a new component to the observation data.
 
         :param previous_state: the state observed before the action call.
@@ -81,14 +81,14 @@ class MultiAgentObservation:
         self.grounded_objects = {}
         self.agents_in_observation = executing_agents
 
-    def add_problem_objects(self, objects: Dict[str, PDDLObject]) -> NoReturn:
+    def add_problem_objects(self, objects: Dict[str, PDDLObject]) -> None:
         """Add the objects from the problem to the observation data.
 
         :param objects: the objects from the problem.
         """
         self.grounded_objects = objects
 
-    def add_component(self, previous_state: State, joint_action: List[ActionCall], next_state: State) -> NoReturn:
+    def add_component(self, previous_state: State, joint_action: List[ActionCall], next_state: State) -> None:
         """Add a new component to the observation data.
 
         :param previous_state: the state observed before the action call.

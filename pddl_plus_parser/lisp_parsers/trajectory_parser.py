@@ -6,7 +6,7 @@ from typing import List, Union
 
 from pddl_plus_parser.lisp_parsers.pddl_tokenizer import PDDLTokenizer
 from pddl_plus_parser.models import Domain, Observation, State, ActionCall, PDDLFunction, Predicate, GroundedPredicate, \
-    Problem, MultiAgentObservation, JointActionCall, NOP_ACTION
+    Problem, MultiAgentObservation, NOP_ACTION
 
 
 class TrajectoryParser:

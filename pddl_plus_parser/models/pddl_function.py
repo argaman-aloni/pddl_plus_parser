@@ -1,5 +1,5 @@
 """Module that represents a numerical in a PDDL+ model."""
-from typing import Optional, NoReturn, Dict
+from typing import Optional, Dict
 
 from .pddl_predicate import SignatureType
 
@@ -44,7 +44,7 @@ class PDDLFunction:
     def value(self) -> float:
         return self.stored_value
 
-    def set_value(self, value: float) -> NoReturn:
+    def set_value(self, value: float) -> None:
         """Set the value of a function to be the input value.
 
         :param value: the value to set to the function.

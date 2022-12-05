@@ -486,10 +486,11 @@ class Operator:
 
         return new_state_numeric_fluents
 
-    def apply(self, previous_state: State) -> State:
+    def apply(self, previous_state: State, allow_inapplicable_actions: bool = False) -> State:
         """Applies an action on a state and changes the state according to the action's effects.
 
         :param previous_state: the state in which the operator is being applied on.
+        :param allow_inapplicable_actions: whether to allow inapplicable actions to be applied.
         :return: the new state that was created by applying the operator.
         """
         # First need to apply the operator's discrete effects.
@@ -498,7 +499,8 @@ class Operator:
 
         if not self.is_applicable(previous_state):
             self.logger.warning("Tried to apply an action to a state where the action's preconditions don't hold!")
-            raise ValueError()
+            if not allow_inapplicable_actions:
+                raise ValueError()
 
         self.logger.debug(f"Applying the grounded action - {self.name} on the current state.")
         next_state_predicates = self.update_state_predicates(previous_state)

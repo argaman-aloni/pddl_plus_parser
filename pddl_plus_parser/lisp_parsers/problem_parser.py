@@ -2,7 +2,7 @@
 import logging
 from collections import Counter
 from pathlib import Path
-from typing import NoReturn, List, Union, Dict
+from typing import List, Union, Dict
 
 from pddl_plus_parser.lisp_parsers import PDDLTokenizer
 from pddl_plus_parser.models import Domain, PDDLObject, Problem, PDDLFunction, Predicate, GroundedPredicate, \
@@ -25,7 +25,7 @@ class ProblemParser:
         self.logger = logging.getLogger(__name__)
         self.problem = Problem(domain)
 
-    def _validate_object_types(self, lifted_predicate: Predicate, predicate_signature_items: List[str]) -> NoReturn:
+    def _validate_object_types(self, lifted_predicate: Predicate, predicate_signature_items: List[str]) -> None:
         """Validate that the grounded predicate objects match the lifted predicate signature's type.
 
         :param lifted_predicate: the lifted predicate that is being compared to.
@@ -38,7 +38,7 @@ class ProblemParser:
         for index, grounded_object_type in enumerate(objects_types):
             assert grounded_object_type.is_sub_type(lifted_predicate_types[index])
 
-    def parse_domain_name(self, domain_name: str) -> NoReturn:
+    def parse_domain_name(self, domain_name: str) -> None:
         """Parse the domain name in the problem file and verifies that the name given matches the inner domain.
 
         :param domain_name: the name of the domain given as input.
@@ -136,7 +136,7 @@ class ProblemParser:
         return GroundedPredicate(name=predicate_name, signature=lifted_predicate.signature,
                                  object_mapping=object_mapping)
 
-    def parse_state_component(self, expression: List[Union[str, List[str]]]) -> NoReturn:
+    def parse_state_component(self, expression: List[Union[str, List[str]]]) -> None:
         """Parse a single AST component that represents either a predicate or a numeric fluent.
 
         :param expression: the ast component that can represent either a predicate or a numeric fluent.
@@ -166,7 +166,7 @@ class ProblemParser:
 
         raise ValueError(f"Received illegal state component - {expression}")
 
-    def parse_initial_state(self, init_ast: List[List[Union[str, List[str]]]]) -> NoReturn:
+    def parse_initial_state(self, init_ast: List[List[Union[str, List[str]]]]) -> None:
         """Parse the initial state of the problem.
 
         :param init_ast: the AST representation of the initial state.
@@ -175,7 +175,7 @@ class ProblemParser:
         for expression in init_ast:
             self.parse_state_component(expression)
 
-    def parse_goal_state(self, goal_state_ast: List[List[Union[str, List[str]]]]) -> NoReturn:
+    def parse_goal_state(self, goal_state_ast: List[List[Union[str, List[str]]]]) -> None:
         """Parse the goal state of the problem and extracts the list of grounded predicates from it.
 
         :param goal_state_ast: the AST representation of the goal state.

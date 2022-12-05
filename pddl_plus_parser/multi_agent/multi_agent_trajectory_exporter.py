@@ -2,7 +2,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import List, NoReturn, Optional, Union
+from typing import List, Optional, Union
 
 from pddl_plus_parser.models import Domain, Problem, Operator, State, JointActionCall, ActionCall, NOP_ACTION, \
     NOPOperator
@@ -124,7 +124,7 @@ class MultiAgentTrajectoryExporter:
         serialized_trajectory[-1] = f"{serialized_trajectory[-1]})"
         return serialized_trajectory
 
-    def export_to_file(self, triplets: List[MultiAgentTrajectoryTriplet], output_path: Path) -> NoReturn:
+    def export_to_file(self, triplets: List[MultiAgentTrajectoryTriplet], output_path: Path) -> None:
         """Export the trajectory to a file.
 
         :param triplets: the trajectory triples.

@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import List
 
-from pddl_plus_parser.models import Problem, State, ActionCall, Domain, Operator, PDDLFunction, GroundedPredicate, \
+from pddl_plus_parser.models import Problem, State, ActionCall, Domain, Operator, GroundedPredicate, \
     NOP_ACTION
 
 

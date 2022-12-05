@@ -1,7 +1,6 @@
 """Module to convert MA domains into single agent domains"""
 import logging
 from pathlib import Path
-from typing import NoReturn
 
 from pddl_plus_parser.exporters import DomainExporter
 from pddl_plus_parser.lisp_parsers import DomainParser
@@ -39,7 +38,7 @@ class MultiAgentDomainsConverter:
 
         return combined_domain
 
-    def export_combined_domain(self) -> NoReturn:
+    def export_combined_domain(self) -> None:
         """Export the multi-agent domains to a single PDDL domain file."""
         combined_domain = self.locate_domains()
         DomainExporter().export_domain(combined_domain, self.domains_directory_path / f"combined_domain.pddl")

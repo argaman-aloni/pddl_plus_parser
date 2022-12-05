@@ -320,8 +320,11 @@ def test_parse_effects_with_conditional_effects_with_one_condition_and_one_effec
     new_action.signature = {"?c": domain_types["card"], "?from": domain_types["cardposition"],
                             "?fromdeal": domain_types["deal"], "?to": domain_types["card"],
                             "?totableau": domain_types["tableau"]}
-    domain_parser.parse_effects(effects_ast=effects_tokens, new_action=new_action,
-                                domain_functions=domain_functions, domain_predicates=domain_predicates,
+    domain_parser.parse_effects(effects_ast=effects_tokens,
+                                new_action=new_action,
+                                domain_types=domain_types,
+                                domain_functions=domain_functions,
+                                domain_predicates=domain_predicates,
                                 domain_constants=domain_consts)
     conditional_effect = new_action.conditional_effects.pop()
     assert conditional_effect is not None
@@ -351,8 +354,11 @@ def test_parse_effects_with_conditional_effects_with_one_condition_and_two_effec
     new_action.signature = {"?c": domain_types["card"], "?from": domain_types["cardposition"],
                             "?fromdeal": domain_types["deal"], "?to": domain_types["card"],
                             "?totableau": domain_types["tableau"]}
-    domain_parser.parse_effects(effects_ast=effects_tokens, new_action=new_action,
-                                domain_functions=domain_functions, domain_predicates=domain_predicates,
+    domain_parser.parse_effects(effects_ast=effects_tokens,
+                                new_action=new_action,
+                                domain_types=domain_types,
+                                domain_functions=domain_functions,
+                                domain_predicates=domain_predicates,
                                 domain_constants=domain_consts)
     conditional_effect = new_action.conditional_effects.pop()
     assert conditional_effect is not None
@@ -383,8 +389,11 @@ def test_parse_effects_with_conditional_effects_with_two_conditions_and_two_effe
     new_action.signature = {"?c": domain_types["card"], "?from": domain_types["cardposition"],
                             "?fromdeal": domain_types["deal"], "?to": domain_types["card"],
                             "?totableau": domain_types["tableau"]}
-    domain_parser.parse_effects(effects_ast=effects_tokens, new_action=new_action,
-                                domain_functions=domain_functions, domain_predicates=domain_predicates,
+    domain_parser.parse_effects(effects_ast=effects_tokens,
+                                new_action=new_action,
+                                domain_types=domain_types,
+                                domain_functions=domain_functions,
+                                domain_predicates=domain_predicates,
                                 domain_constants=domain_consts)
     conditional_effect = new_action.conditional_effects.pop()
     assert conditional_effect is not None
@@ -445,6 +454,23 @@ def test_parse_action_with_conditional_effects(domain_parser: DomainParser):
     assert action is not None
     assert action.name == "deal-card"
     assert action.conditional_effects is not None
+
+
+def test_parse_conditional_effect_raises_error_if_conditional_effect_not_in_correct_format(
+        domain_parser: DomainParser):
+    conditional_effects_str = """
+    (when (and (currently-updating-unmovable) (make-unmovable ?to)))"""
+    types_tokens = PDDLTokenizer(pddl_str=TEST_TYPES_FOR_CONDITIONAL_DOMAIN).parse()
+    constants_tokens = PDDLTokenizer(pddl_str=TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN).parse()
+    conditional_effect_tokens = PDDLTokenizer(pddl_str=conditional_effects_str).parse()
+    domain_types = domain_parser.parse_types(types_tokens)
+    domain_consts = domain_parser.parse_constants(constants_tokens, domain_types)
+    domain_functions = {}  # Functions are irrelevant for this case.
+    action = Action()
+    action.name = "deal-card"
+    with raises(SyntaxError):
+        domain_parser.parse_conditional_effect(conditional_effect_tokens, action, domain_functions, domain_consts)
+
 
 
 def test_parse_simple_action_with_numeric_preconditions_and_effects_extracts_the_calculation_tree_correctly(

@@ -1,7 +1,6 @@
 """Module to convert MA problems into single agent domains"""
 import logging
 from pathlib import Path
-from typing import NoReturn
 
 from pddl_plus_parser.exporters import ProblemExporter
 from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser
@@ -47,7 +46,7 @@ class MultiAgentProblemsConverter:
 
         return combined_problem
 
-    def export_combined_problem(self, combined_domain_path: Path) -> NoReturn:
+    def export_combined_problem(self, combined_domain_path: Path) -> None:
         """Export the combined multi-agent problem to a single PDDL file.
 
         :param combined_domain_path: the path to the combined domain (containing the agents' data).

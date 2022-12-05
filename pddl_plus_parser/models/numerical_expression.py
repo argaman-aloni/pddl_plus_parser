@@ -1,5 +1,5 @@
 """Class that represents a numerical expression that can be evaluated."""
-from typing import List, Union, Dict, Optional, NoReturn
+from typing import List, Union, Dict, Optional
 
 from anytree import AnyNode, RenderTree
 
@@ -47,7 +47,7 @@ def construct_expression_tree(expression_ast: List[Union[str, List[str]]],
     return node
 
 
-def increase(value_to_increase: PDDLFunction, increase_by: float) -> NoReturn:
+def increase(value_to_increase: PDDLFunction, increase_by: float) -> None:
     """Increase the value of the first numerical fluent by the value of the other.
 
     :param value_to_increase: the parameter that is to be increased
@@ -57,7 +57,7 @@ def increase(value_to_increase: PDDLFunction, increase_by: float) -> NoReturn:
     value_to_increase.set_value(previous_value + increase_by)
 
 
-def decrease(value_to_decrease: PDDLFunction, decrease_by: float) -> NoReturn:
+def decrease(value_to_decrease: PDDLFunction, decrease_by: float) -> None:
     """Decrease the value of the first numerical fluent by the value of the other.
 
     :param value_to_decrease: the parameter that is to be decreased
@@ -67,7 +67,7 @@ def decrease(value_to_decrease: PDDLFunction, decrease_by: float) -> NoReturn:
     value_to_decrease.set_value(previous_value - decrease_by)
 
 
-def assign(assigned_variable: PDDLFunction, value_to_assign: float) -> NoReturn:
+def assign(assigned_variable: PDDLFunction, value_to_assign: float) -> None:
     """assigns the value of one numeric variable to another variable.
 
     :param assigned_variable: the variable that is being assigned a new value.
