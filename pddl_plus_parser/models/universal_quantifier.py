@@ -34,13 +34,17 @@ class UniversalQuantifiedEffect:
 
     quantified_parameter: str
     quantified_type: PDDLType
-    conditional_effect: ConditionalEffect
+    conditional_effects: Set[ConditionalEffect]
 
-    def __init__(self, quantified_parameter: str, quantified_type: PDDLType, conditional_effect: ConditionalEffect):
+    def __init__(self, quantified_parameter: str, quantified_type: PDDLType):
         self.quantified_parameter = quantified_parameter
         self.quantified_type = quantified_type
-        self.conditional_effect = conditional_effect
+        self.conditional_effects = set()
 
     def __str__(self):
+        if len(self.conditional_effects) == 0:
+            return ""
+
+        conditional_effects = "\n\t".join([str(conditional_effect) for conditional_effect in self.conditional_effects])
         return f"(forall ({self.quantified_parameter} - {self.quantified_type.name})" \
-               f"\n\t\t{str(self.conditional_effect)})"
+               f"\n\t\t{conditional_effects})"

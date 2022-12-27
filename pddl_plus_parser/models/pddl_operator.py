@@ -423,7 +423,7 @@ class Operator:
                                           for lifted_param, grounded_object in
                                           zip(self.action.signature, self.grounded_call_objects)}
                 extended_parameter_map[universal_effect.quantified_parameter] = pddl_object.name
-                grounded_conditional_effect = self._ground_conditional_effect(universal_effect.conditional_effect,
+                grounded_conditional_effect = self._ground_conditional_effect(universal_effect.conditional_effects,
                                                                               extended_parameter_map)
                 self.update_discrete_conditional_effects(previous_state, next_state_predicates,
                                                          {grounded_conditional_effect})

@@ -450,8 +450,8 @@ class DomainParser:
                                                                  domain_constants)
 
         universal_quantifier = UniversalQuantifiedEffect(quantified_parameter=quantified_parameter_name,
-                                                         quantified_type=quantified_type,
-                                                         conditional_effect=conditional_effect)
+                                                         quantified_type=quantified_type)
+        universal_quantifier.conditional_effects.add(conditional_effect)
         action.universal_effects.add(universal_quantifier)
 
     def parse_effects(self, effects_ast: List[Union[str, List[str]]],

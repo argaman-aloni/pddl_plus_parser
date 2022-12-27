@@ -68,12 +68,14 @@ class MultiAgentTrajectoryExporter:
             return plan_file.readlines()
 
     def create_multi_agent_triplet(self, previous_state: State, action_call: str,
-                                   problem_objects: Dict[str, PDDLObject]) -> MultiAgentTrajectoryTriplet:
+                                   problem_objects: Dict[str, PDDLObject],
+                                   allow_inapplicable_actions: bool=False) -> MultiAgentTrajectoryTriplet:
         """Create a single trajectory triplet by applying the joint action on the input state and combining the effects.
 
         :param previous_state: the state that the action is being applied on.
         :param action_call: the string representation of the grounded joint action call.
         :param problem_objects: the objects in the problem.
+        :param allow_inapplicable_actions: whether to allow inapplicable actions.
         :return: the new triplet containing (s,<a1, a2,..., am>,s').
         """
         self.logger.info(f"Trying to apply the action - {action_call} on the state - {previous_state.serialize()}")
@@ -88,11 +90,13 @@ class MultiAgentTrajectoryExporter:
 
             operators.append(Operator(action=self.domain.actions[sa_action.name], domain=self.domain,
                                       grounded_action_call=sa_action.parameters, problem_objects=problem_objects))
-        next_state = apply_actions(self.domain, previous_state, executed_actions)
+        next_state = apply_actions(self.domain, previous_state, executed_actions,
+                                   allow_inapplicable_actions=allow_inapplicable_actions)
         return MultiAgentTrajectoryTriplet(previous_state=previous_state, ops=operators, next_state=next_state)
 
     def parse_plan(self, problem: Problem, plan_path: Optional[Path] = None,
-                   action_sequence: Optional[List[str]] = None) -> List[MultiAgentTrajectoryTriplet]:
+                   action_sequence: Optional[List[str]] = None,
+                   allow_inapplicable_actions: bool=False) -> List[MultiAgentTrajectoryTriplet]:
         """Parse the input plan file to create the trajectory.
 
         :return: the list of triplets that was generated using the plan.
@@ -104,7 +108,8 @@ class MultiAgentTrajectoryExporter:
         self.logger.debug("Starting to create the trajectory triplets.")
         for grounded_action_call in plan_actions:
             triplet = self.create_multi_agent_triplet(previous_state, grounded_action_call,
-                                                      problem_objects=problem.objects)
+                                                      problem_objects=problem.objects,
+                                                      allow_inapplicable_actions=allow_inapplicable_actions)
             triplets.append(triplet)
             previous_state = triplet.next_state
 

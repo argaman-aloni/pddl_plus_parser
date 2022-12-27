@@ -18,4 +18,5 @@
 * version 2.2.0 - Added support for domains with disjunctive numeric preconditions.
 * version 3.0.0 - Added support for conditional effect without existential quantification and only conjunctive conditions.
 * version 3.1.0 - Added support for universal effects containing only conjunctive conditions.
+* version 3.1.4 - Added support for inapplicable actions and fixed a minor logical bug in the universal effects.
 
