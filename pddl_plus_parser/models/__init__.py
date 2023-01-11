@@ -12,3 +12,4 @@ from .pddl_problem import Problem
 from .pddl_state import State
 from .pddl_type import PDDLType
 from .universal_quantifier import UniversalQuantifiedPrecondition, UniversalQuantifiedEffect
+from .disjunctive_precondition import DisjunctivePrecondition

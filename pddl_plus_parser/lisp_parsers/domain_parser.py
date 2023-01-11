@@ -112,14 +112,15 @@ class DomainParser:
         return extracted_predicate
 
     def parse_untyped_predicate(self, untyped_predicate: List[str], action_signature: SignatureType,
-                                domain_constants: Dict[str, PDDLConstant] = {}) -> Predicate:
+                                domain_constants: Dict[str, PDDLConstant] = {}, is_positive: bool = True) -> Predicate:
         """Parse an untyped predicate that appears in actions.
 
         :param untyped_predicate: the untyped predicate that needs to be matched to the typed predicate from the
             predicates definitions.
         :param action_signature: the signed signature of the action.
-        :return: the predicate including the relevant types.
         :param domain_constants: the constants that are defined in the domain.
+        :param is_positive: whether the predicate is positive or negative.
+        :return: the predicate including the relevant types.
         """
         self.logger.info(f"Parsing the untyped action predicate represented by the AST - {untyped_predicate}")
         predicate_name = untyped_predicate[0]
@@ -129,7 +130,7 @@ class DomainParser:
         signed_signature = {parameter_name: possible_signed_objects[parameter_name] for
                             parameter_name in untyped_predicate[1:]}
 
-        signed_action_predicate = Predicate(name=predicate_name, signature=signed_signature)
+        signed_action_predicate = Predicate(name=predicate_name, signature=signed_signature, is_positive=is_positive)
         self.logger.debug(f"Extracted the predicate - {signed_action_predicate}")
         return signed_action_predicate
 
@@ -176,17 +177,89 @@ class DomainParser:
 
         return functions
 
-    def parse_disjunctive_numeric_preconditions(
-            self, numeric_preconditions_node: List[Union[str, List[str]]],
+    def _parse_conjunction(
+            self, conjunction_node: List[Union[str, List[str]]],
+            new_action: Action,
+            domain_functions: Dict[str, PDDLFunction],
+            domain_predicates: Dict[str, Predicate],
+            domain_constants: Dict[str, PDDLConstant]) -> List[Union[Predicate, NumericalExpressionTree]]:
+        """
+
+        :param conjunction_node:
+        :param new_action:
+        :param domain_functions:
+        :param domain_predicates:
+        :param domain_constants:
+        :return:
+        """
+        conjunctions = []
+        for conjunction_item in conjunction_node:
+            if conjunction_item in domain_predicates:
+                conjunctions.append(self.parse_untyped_predicate(
+                    conjunction_item, new_action.signature, domain_constants))
+                continue
+
+            if conjunction_item[0] == "or":
+                conjunctions.append(self._parse_disjunction(conjunction_item[1:], new_action, domain_functions,
+                                                            domain_predicates, domain_constants))
+                continue
+
+            if conjunction_item[0] == "not":
+                inner_node = conjunction_item[1]
+                if inner_node[0] == EQUALITY_OPERATOR:
+                    self.logger.debug("Adding new lifted objects that should be tested for inequality")
+
+                    continue
+
+                conjunctions.append(self.parse_untyped_predicate(
+                    conjunction_item, new_action.signature, domain_constants, is_positive=False))
+
+
+
+
+    def _parse_disjunction(
+            self, disjunction_node: List[Union[str, List[str]]], new_action: Action,
+            domain_functions: Dict[str, PDDLFunction],
+            domain_predicates: Dict[str, Predicate],
+            domain_constants: Dict[str, PDDLConstant]) -> List[Union[Predicate, NumericalExpressionTree]]:
+        """
+
+        :param disjunction_node:
+        :param new_action:
+        :param domain_functions:
+        :param domain_predicates:
+        :param domain_constants:
+        :return:
+        """
+        disjunctions = []
+        for disjunction_item in disjunction_node:
+            if disjunction_item in domain_predicates:
+                disjunctions.append(self.parse_untyped_predicate(
+                    disjunction_item, new_action.signature, domain_constants))
+                continue
+
+            if disjunction_item[0] == "and":
+                disjunctions.append(self._parse_conjunction(disjunction_item[1:], new_action, domain_functions,
+                                                            domain_predicates, domain_constants))
+
+    def parse_disjunctive_preconditions(
+            self, disjunctive_preconditions_node: List[Union[str, List[str]]],
             new_action: Action, domain_functions: Dict[str, PDDLFunction]) -> None:
         """Parse a set of disjunctive numeric preconditions.
 
-        :param numeric_preconditions_node: the node that contains the numeric preconditions.
+        :param disjunctive_preconditions_node: the node that contains the disjunctive preconditions.
         :param new_action: the action that is currently being parsed.
         :param domain_functions: the functions that are defined in the domain.
         """
-        self.logger.info("Starting to parse the disjunctive numeric preconditions!")
-        for conditions_set_ast in numeric_preconditions_node:
+        self.logger.info("Starting to parse the disjunctive preconditions!")
+        for conditions_set_ast in disjunctive_preconditions_node:
+            for disjunctive_item in conditions_set_ast:
+                if disjunctive_item[0] == "and":
+                    if
+                        for condition_ast in disjunctive_item[1:]:
+                            self.parse_condition(condition_ast, new_action, domain_functions)
+                else:
+                    self.parse_condition(disjunctive_item, new_action, domain_functions)
             if conditions_set_ast[0] != "and":
                 raise SyntaxError(
                     f"Only accepting conjunctive preconditions! Action - {new_action.name} does not conform!")
@@ -244,7 +317,7 @@ class DomainParser:
 
             if precondition_node[0] == "or":
                 self.logger.debug("Assuming that the OR operator is used for the disjunction of numeric preconditions.")
-                self.parse_disjunctive_numeric_preconditions(precondition_node[1:], new_action, domain_functions)
+                self.parse_disjunctive_preconditions(precondition_node[1:], new_action, domain_functions)
 
             if precondition_node[0] in COMPARISON_OPS:
                 numerical_precondition = NumericalExpressionTree(
@@ -583,5 +656,3 @@ class DomainParser:
                 # TODO: complete once I finish numeric actions support
 
         return domain
-
-

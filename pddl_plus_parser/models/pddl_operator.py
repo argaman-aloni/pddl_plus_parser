@@ -1,11 +1,12 @@
 """module to represent an operator that can apply actions and change state objects."""
 import logging
 from collections import defaultdict
-from typing import List, Set, Dict, Tuple, Optional
+from typing import List, Set, Dict, Tuple, Optional, Union
 
 from anytree import AnyNode
 
-from . import PDDLObject
+from .disjunctive_precondition import DisjunctivePrecondition
+from .pddl_object import PDDLObject
 from .conditional_effect import ConditionalEffect
 from .numerical_expression import NumericalExpressionTree, evaluate_expression
 from .pddl_action import Action
@@ -58,6 +59,7 @@ class Operator:
     grounded_conditional_effects: Set[ConditionalEffect]
     lifted_universal_effects: Set[UniversalQuantifiedEffect]
     grounded_disjunctive_numeric_preconditions: List[Set[NumericalExpressionTree]]
+    grounded_disjunctive_preconditions: List[DisjunctivePrecondition]
     problem_objects: Dict[str, PDDLObject]
 
     def __init__(self, action: Action, domain: Domain, grounded_action_call: List[str],
@@ -377,6 +379,61 @@ class Operator:
             updated_predicates = next_state_predicates[lifted_predicate_str].union(grounded_predicates)
             next_state_predicates[lifted_predicate_str] = updated_predicates
 
+    def _disjunctive_condition_hold(self, state: State, condition: DisjunctivePrecondition) -> bool:
+        """
+
+        :param state:
+        :param condition:
+        :return:
+        """
+        conjunctions_states = []
+        for conjunctive_condition in condition.conjunctions:
+            single_conjunction_value = []
+            for clause in conjunctive_condition:
+                if isinstance(clause, GroundedPredicate) and clause.is_positive:
+                    single_conjunction_value.append(self._positive_preconditions_hold(state, {clause}))
+                elif isinstance(clause, GroundedPredicate) and not clause.is_positive:
+                    single_conjunction_value.append(self._negative_preconditions_hold(state, {clause}))
+                elif isinstance(clause, NumericalExpressionTree):
+                    single_conjunction_value.append(self._numeric_conditions_set_hold(state, {clause}))
+
+            conjunctions_states.append(all(single_conjunction_value))
+
+        return any(conjunctions_states)
+
+    def _ground_single_disjunctive_component(
+            self, component: List[Union[Predicate, NumericalExpressionTree]],
+            parameters_map: Dict[str, str]) -> List[Union[GroundedPredicate, NumericalExpressionTree]]:
+        """
+
+        :param component:
+        :param parameters_map:
+        :return:
+        """
+        grounded_conjunction = []
+        for element in component:
+            if isinstance(element, Predicate):
+                grounded_conjunction.extend(self._ground_predicates({element}, parameters_map))
+
+            else:
+                grounded_conjunction.append(self._ground_numeric_expressions({element}, parameters_map))
+
+        return grounded_conjunction
+
+    def _ground_disjunctive_preconditions(self, parameters_map: Dict[str, str]) -> None:
+        """
+
+        :param parameters_map:
+        :return:
+        """
+        for disjunctive_precondition in self.action.disjunctive_preconditions:
+            grounded_disjunctive_precondition = DisjunctivePrecondition()
+            for conjunction in disjunctive_precondition.conjunctions:
+                grounded_disjunctive_precondition.conjunctions.append(
+                    self._ground_single_disjunctive_component(conjunction, parameters_map))
+
+            self.grounded_disjunctive_preconditions.append(grounded_disjunctive_precondition)
+
     def update_state_predicates(self, previous_state: State) -> Dict[str, Set[GroundedPredicate]]:
         """Updates the state predicates based on the action that is being applied.
 
@@ -515,10 +572,10 @@ class Operator:
         if not self._numeric_conditions_set_hold(state, self.grounded_numeric_preconditions):
             return False
 
-        if len(self.grounded_disjunctive_numeric_preconditions) > 0 and \
-                not any([self._numeric_conditions_set_hold(state, disjunctive_numeric_preconditions)
-                         for disjunctive_numeric_preconditions in self.grounded_disjunctive_numeric_preconditions]):
-            self.logger.debug("None of the disjunctive numeric preconditions hold.")
+        if len(self.grounded_disjunctive_preconditions) > 0 and not all(
+                [self._disjunctive_condition_hold(state, condition) for condition in
+                 self.grounded_disjunctive_preconditions]):
+            self.logger.debug("None of the disjunctive preconditions hold.")
             return False
 
         return True
@@ -563,9 +620,7 @@ class Operator:
 
         self.grounded_numeric_preconditions = self._ground_numeric_expressions(self.action.numeric_preconditions,
                                                                                parameters_map)
-        self.grounded_disjunctive_numeric_preconditions = [
-            self._ground_numeric_expressions(expressions, parameters_map) for expressions in
-            self.action.disjunctive_numeric_preconditions]
+        self._ground_disjunctive_preconditions(parameters_map)
         self.grounded_numeric_effects = self._ground_numeric_expressions(self.action.numeric_effects, parameters_map)
         self.grounded_conditional_effects = {self._ground_conditional_effect(condition, parameters_map) for condition in
                                              self.action.conditional_effects}
