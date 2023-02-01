@@ -502,9 +502,10 @@ def test_parse_action_with_universal_quantifier_in_conditional_effect_returns_co
     universal_effect = universal_effects.pop()
     assert universal_effect.quantified_parameter == "?p"
     assert universal_effect.quantified_type.name == "passenger"
-    assert len(universal_effect.conditional_effects.add_effects) == 1
-    assert len(universal_effect.conditional_effects.delete_effects) == 1
-    assert len(universal_effect.conditional_effects.positive_conditions) == 2
+    conditional_effect = universal_effect.conditional_effects.pop()
+    assert len(conditional_effect.add_effects) == 1
+    assert len(conditional_effect.delete_effects) == 1
+    assert len(conditional_effect.positive_conditions) == 2
     print(str(universal_effect))
 
 

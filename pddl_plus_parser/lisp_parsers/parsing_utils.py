@@ -1,6 +1,5 @@
 """Module containing utility functionality for the parsing process."""
-from collections import Iterator
-from typing import Dict
+from typing import Dict, Iterator
 
 from pddl_plus_parser.models import PDDLType, SignatureType
 

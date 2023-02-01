@@ -423,10 +423,11 @@ class Operator:
                                           for lifted_param, grounded_object in
                                           zip(self.action.signature, self.grounded_call_objects)}
                 extended_parameter_map[universal_effect.quantified_parameter] = pddl_object.name
-                grounded_conditional_effect = self._ground_conditional_effect(universal_effect.conditional_effects,
-                                                                              extended_parameter_map)
-                self.update_discrete_conditional_effects(previous_state, next_state_predicates,
-                                                         {grounded_conditional_effect})
+                for conditional_effect in universal_effect.conditional_effects:
+                    grounded_conditional_effect = self._ground_conditional_effect(conditional_effect,
+                                                                                  extended_parameter_map)
+                    self.update_discrete_conditional_effects(previous_state, next_state_predicates,
+                                                             {grounded_conditional_effect})
 
             self.logger.debug("Removing the temporarily added signature item from the action.")
             self.action.signature.pop(universal_effect.quantified_parameter)
