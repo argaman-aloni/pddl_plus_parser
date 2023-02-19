@@ -34,6 +34,10 @@ class JointActionCall:
         return len([action for action in self.actions if action.name != NOP_ACTION])
 
     @property
+    def operational_actions(self) -> List[ActionCall]:
+        return [action for action in self.actions if action.name != NOP_ACTION]
+
+    @property
     def joint_parameters(self) -> List[str]:
         params = []
         for action in self.actions:
