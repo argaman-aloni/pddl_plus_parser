@@ -119,7 +119,7 @@ class TrajectoryParser:
         }
 
         return GroundedPredicate(name=predicate_name, signature=lifted_predicate.signature,
-                                 object_mapping=object_mapping)
+                                 object_mapping=object_mapping, is_positive=True)
 
     def parse_action_call(self, action_call_ast: List[List[str]]) -> ActionCall:
         """Parse the grounded action call in the trajectory.
