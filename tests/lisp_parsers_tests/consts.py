@@ -79,3 +79,7 @@ SPIDER_PROBLEM_PATH = Path(CWD, "pfile04.pddl")
 DEPOT_MA_DOMAIN_PATH = Path(CWD, "Depots.pddl")
 DEPOT_MA_PROBLEM_PATH = Path(CWD, "pfile1_depot.pddl")
 DEPOT_MA_TRAJECTORY_PATH = Path(CWD, "test_joint_trajectory_with_potential_bug")
+
+LOGISTICS_MA_DOMAIN_PATH = Path(CWD, "logistics_combined_domain.pddl")
+LOGISTICS_MA_PROBLEM_PATH = Path(CWD, "pfile_probLOGISTICS-14-0.pddl")
+LOGISTICS_MA_TRAJECTORY_PATH = Path(CWD, "ma_logistics_trajectory.trajectory")
