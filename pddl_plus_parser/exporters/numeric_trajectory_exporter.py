@@ -90,9 +90,12 @@ class TrajectoryExporter:
         triplets = []
         self.logger.debug("Starting to create the trajectory triplets.")
         for grounded_action_call in plan_actions:
-            triplet = self.create_single_triplet(previous_state, grounded_action_call, problem.objects)
-            triplets.append(triplet)
-            previous_state = triplet.next_state
+            try:
+                triplet = self.create_single_triplet(previous_state, grounded_action_call, problem.objects)
+                triplets.append(triplet)
+                previous_state = triplet.next_state
+            except ValueError:
+                continue
 
         return triplets
 
