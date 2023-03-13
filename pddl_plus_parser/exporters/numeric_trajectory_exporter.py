@@ -71,7 +71,13 @@ class TrajectoryExporter:
                             domain=self.domain,
                             grounded_action_call=action_descriptor.parameters,
                             problem_objects=problem_objects)
-        next_state = operator.apply(previous_state, allow_inapplicable_actions=self.allow_invalid_actions)
+        try:
+            next_state = operator.apply(previous_state, allow_inapplicable_actions=self.allow_invalid_actions)
+
+        except ValueError:
+            self.logger.debug("In case an action is inappliable, the state remains unchanged.")
+            next_state = previous_state
+
         return TrajectoryTriplet(previous_state=previous_state,
                                  op=operator,
                                  next_state=next_state)
@@ -90,12 +96,9 @@ class TrajectoryExporter:
         triplets = []
         self.logger.debug("Starting to create the trajectory triplets.")
         for grounded_action_call in plan_actions:
-            try:
-                triplet = self.create_single_triplet(previous_state, grounded_action_call, problem.objects)
-                triplets.append(triplet)
-                previous_state = triplet.next_state
-            except ValueError:
-                continue
+            triplet = self.create_single_triplet(previous_state, grounded_action_call, problem.objects)
+            triplets.append(triplet)
+            previous_state = triplet.next_state
 
         return triplets
 
