@@ -18,6 +18,7 @@ TEST_DISCRETE_PLAN_PATH = Path(CWD, "elevators_p03_plan.solution")
 TEST_NUMERIC_DOMAIN_PATH = Path(CWD, "depot_numeric.pddl")
 TEST_NUMERIC_PROBLEM_PATH = Path(CWD, "pfile2.pddl")
 TEST_NUMERIC_PLAN_PATH = Path(CWD, "depot_numeric.solution")
+TEST_FAULTY_NUMERIC_PLAN_PATH = Path(CWD, "depot_numeric_faulty.solution")
 TEST_DISCRETE_TRAJECTORY_FILE_PATH = Path(CWD, "test_trajectory")
 TEST_NUMERIC_TRAJECTORY_FILE_PATH = Path(CWD, "test_numeric_trajectory")
 
@@ -152,6 +153,15 @@ def test_export_numeric_trajectory(numeric_trajectory_exporter: TrajectoryExport
     with open(TEST_NUMERIC_TRAJECTORY_FILE_PATH, "wt") as trajectory_file:
         trajectory_file.writelines(exportable_triplets)
 
+
+def test_export_numeric_trajectory_with_faulty_action_creates_trajectory_with_action_but_with_unchanged_states(
+        numeric_trajectory_exporter: TrajectoryExporter, numeric_problem: Problem):
+    triplets = numeric_trajectory_exporter.parse_plan(numeric_problem, TEST_FAULTY_NUMERIC_PLAN_PATH)
+    exportable_triplets = numeric_trajectory_exporter.export(triplets)
+    pre_state = exportable_triplets[4]
+    post_state = exportable_triplets[6]
+    assert pre_state == post_state
+    assert "(lift hoist1 crate3 pallet1 distributor0)" in exportable_triplets[5]
 
 def test_export_trajectory_with_conditional_effects(
         conditional_trajectory_exporter: TrajectoryExporter, conditional_problem: Problem):
