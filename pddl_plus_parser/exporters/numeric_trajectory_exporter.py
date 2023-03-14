@@ -75,8 +75,9 @@ class TrajectoryExporter:
             next_state = operator.apply(previous_state, allow_inapplicable_actions=self.allow_invalid_actions)
 
         except ValueError:
-            self.logger.debug("In case an action is inappliable, the state remains unchanged.")
-            next_state = previous_state
+            self.logger.debug("In case an action is inapplicable, the state remains unchanged.")
+            next_state = State(predicates=previous_state.state_predicates,
+                               fluents=previous_state.state_fluents, is_init=False)
 
         return TrajectoryTriplet(previous_state=previous_state,
                                  op=operator,
