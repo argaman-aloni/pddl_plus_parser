@@ -26,6 +26,10 @@ TEST_CONDITIONAL_DOMAIN_PATH = Path(CWD, "domain_spider.pddl")
 TEST_CONDITIONAL_PROBLEM_PATH = Path(CWD, "pfile01_spider.pddl")
 TEST_CONDITIONAL_PLAN_PATH = Path(CWD, "pfile01_spider.solution")
 
+TEST_MINECRAFT_DOMAIN_PATH = Path(CWD, "minecraft_domain.pddl")
+TEST_MINECRAFT_PROBLEM_PATH = Path(CWD, "minecraft_problem.pddl")
+TEST_MINECRAFT_PLAN_PATH = Path(CWD, "minecraft_pfile0.solution")
+
 
 @fixture()
 def discrete_domain() -> Domain:
@@ -42,6 +46,12 @@ def numeric_domain() -> Domain:
 @fixture()
 def conditional_domain() -> Domain:
     domain_parser = DomainParser(TEST_CONDITIONAL_DOMAIN_PATH)
+    return domain_parser.parse_domain()
+
+
+@fixture()
+def minecraft_domain() -> Domain:
+    domain_parser = DomainParser(TEST_MINECRAFT_DOMAIN_PATH)
     return domain_parser.parse_domain()
 
 
@@ -76,6 +86,11 @@ def conditional_problem(conditional_problem_parser: ProblemParser) -> Problem:
 
 
 @fixture()
+def minecraft_problem(minecraft_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=TEST_MINECRAFT_PROBLEM_PATH, domain=minecraft_domain).parse_problem()
+
+
+@fixture()
 def discrete_trajectory_exporter(discrete_domain: Domain) -> TrajectoryExporter:
     return TrajectoryExporter(domain=discrete_domain)
 
@@ -88,6 +103,11 @@ def numeric_trajectory_exporter(numeric_domain: Domain) -> TrajectoryExporter:
 @fixture()
 def conditional_trajectory_exporter(conditional_domain: Domain) -> TrajectoryExporter:
     return TrajectoryExporter(domain=conditional_domain)
+
+
+@fixture()
+def minecraft_trajectory_exporter(minecraft_domain: Domain) -> TrajectoryExporter:
+    return TrajectoryExporter(domain=minecraft_domain)
 
 
 def create_state_from_predicate_components(
@@ -158,10 +178,18 @@ def test_export_numeric_trajectory_with_faulty_action_creates_trajectory_with_ac
         numeric_trajectory_exporter: TrajectoryExporter, numeric_problem: Problem):
     triplets = numeric_trajectory_exporter.parse_plan(numeric_problem, TEST_FAULTY_NUMERIC_PLAN_PATH)
     exportable_triplets = numeric_trajectory_exporter.export(triplets)
-    pre_state = exportable_triplets[4]
-    post_state = exportable_triplets[6]
+    pre_state = exportable_triplets[6]
+    post_state = exportable_triplets[8]
     assert pre_state == post_state
     assert "(lift hoist1 crate3 pallet1 distributor0)" in exportable_triplets[5]
+
+
+def test_export_numeric_trajectory_with_faulty_action_creates_but_does_not_duplicate_the_initial_state_multiple_times(
+        minecraft_trajectory_exporter: TrajectoryExporter, minecraft_problem: Problem):
+    triplets = minecraft_trajectory_exporter.parse_plan(minecraft_problem, TEST_MINECRAFT_PLAN_PATH)
+    exportable_triplets = minecraft_trajectory_exporter.export(triplets)
+    assert len([triplet for triplet in exportable_triplets if triplet.startswith("((:init")]) == 1
+
 
 def test_export_trajectory_with_conditional_effects(
         conditional_trajectory_exporter: TrajectoryExporter, conditional_problem: Problem):
