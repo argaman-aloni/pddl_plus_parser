@@ -1,10 +1,9 @@
 """Module that represents a PDDL+ action."""
-from typing import Set, List, Tuple, Union
+from typing import Set, List
 
-from .pddl_precondition import CompoundPrecondition
-from .universal_quantifier import UniversalQuantifiedEffect
 from .conditional_effect import ConditionalEffect, UniversalEffect
 from .numerical_expression import NumericalExpressionTree
+from .pddl_precondition import CompoundPrecondition
 from .pddl_predicate import SignatureType, Predicate
 
 

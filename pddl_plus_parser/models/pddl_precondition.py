@@ -2,7 +2,7 @@
 from typing import Union, Set, Tuple
 
 from pddl_plus_parser.models.numerical_expression import NumericalExpressionTree
-from pddl_plus_parser.models.pddl_predicate import Predicate
+from pddl_plus_parser.models.pddl_predicate import Predicate, GroundedPredicate
 from pddl_plus_parser.models.pddl_type import PDDLType
 
 
@@ -40,7 +40,14 @@ class Precondition:
     def __str__(self):
         return self._print_self()
 
-    def add_condition(self, condition: Union["Precondition", Predicate, NumericalExpressionTree]) -> None:
+    def __iter__(self) -> Tuple[str, Union["Precondition", Predicate, NumericalExpressionTree]]:
+        for operand in self.operands:
+            if isinstance(operand, Precondition):
+                yield from operand
+            else:
+                yield self.binary_operator, operand
+
+    def add_condition(self, condition: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]) -> None:
         self.operands.add(condition)
 
     def add_equality_condition(self, condition: Tuple[str, str], inequality: bool = False) -> None:
@@ -80,3 +87,6 @@ class CompoundPrecondition:
 
     def __str__(self):
         return str(self.root)
+
+    def __iter__(self) -> Tuple[str, Union[Precondition, UniversalPrecondition]]:
+        yield from self.root

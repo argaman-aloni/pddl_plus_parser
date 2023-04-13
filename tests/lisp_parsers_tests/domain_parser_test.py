@@ -475,6 +475,30 @@ def test_parse_action_with_universal_quantifier_in_preconditions_returns_correct
     assert universal_precondition.quantified_type == domain_types["passenger"]
 
 
+def test_parse_action_with_both_universal_preconditions_and_regular_ones_creates_correct_preconditions(
+        domain_parser: DomainParser):
+    test_action_with_universal_precondition = """
+    (stop
+      :parameters (?f1 - floor ?f2 - floor)
+      :precondition (and (above ?f1 ?f2) (forall (?p - passenger) (and (lift-at ?f1) (not (boarded ?p)))))
+      :effect (and (not (lift-at ?f1)))
+    ))"""
+    types_tokens = PDDLTokenizer(pddl_str=TYPES_FOR_UNIVERSAL_CONDITIONAL_DOMAIN).parse()
+    predicate_tokens = PDDLTokenizer(pddl_str=TEST_PREDICATES_FOR_UNIVERSAL_QUANTIFIER_DOMAIN).parse()
+    action_tokens = PDDLTokenizer(pddl_str=test_action_with_universal_precondition).parse()
+    domain_types = domain_parser.parse_types(types_tokens)
+    domain_predicates = domain_parser.parse_predicates(predicate_tokens, domain_types)
+    domain_functions = {}
+    action = domain_parser.parse_action(action_ast=action_tokens, domain_types=domain_types,
+                                        domain_functions=domain_functions, domain_predicates=domain_predicates)
+    assert action is not None
+    preconditions = action.preconditions.root.operands
+    assert preconditions is not None
+    assert len(preconditions) == 2
+    for op, cond in action.preconditions:
+        print(str(cond))
+
+
 def test_parse_action_with_universal_quantifier_in_conditional_effect_returns_correct_universal_quantifier_data(
         domain_parser: DomainParser):
     test_action_with_universal_quantifier = """
@@ -535,6 +559,7 @@ def test_parse_action_with_two_universal_quantifiers_in_effect_extract_all_unive
     universal_effects = action.universal_effects
     assert len(universal_effects) == 2
 
+
 def test_parse_simple_action_with_only_numeric_preconditions_and_effects_extracts_the_correct_preconditions_tree(
         domain_parser: DomainParser):
     test_simple_types = """(place locatable - object
@@ -571,7 +596,6 @@ def test_parse_simple_action_with_only_numeric_preconditions_and_effects_extract
     precond_expression = action.preconditions.root.operands.pop()
     assert precond_expression.root.id == "<="
     assert precond_expression.root.height == 2
-
 
 
 def test_parse_simple_action_with_numeric_preconditions_and_effects_extracts_the_calculation_tree_correctly(
