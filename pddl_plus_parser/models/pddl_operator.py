@@ -13,7 +13,7 @@ from .pddl_domain import Domain
 from .pddl_function import PDDLFunction
 from .pddl_predicate import GroundedPredicate, Predicate, SignatureType
 from .pddl_state import State
-from .universal_quantifier import UniversalQuantifiedEffect
+from .universal_quantifier import UniversalQuantifiedEffect, UniversalQuantifiedPrecondition
 
 
 def set_expression_value(expression_node: AnyNode, state_fluents: Dict[str, PDDLFunction]) -> None:
@@ -47,17 +47,17 @@ class Operator:
     logger: logging.Logger
 
     # These fields are constructed after the grounding process.
-    grounded_positive_preconditions: Set[GroundedPredicate]
-    grounded_negative_preconditions: Set[GroundedPredicate]
+    grounded_discrete_preconditions: Set[GroundedPredicate]
     grounded_equality_preconditions: Set[Tuple[str, str]]
     grounded_inequality_preconditions: Set[Tuple[str, str]]
     grounded_numeric_preconditions: Set[NumericalExpressionTree]
-    grounded_add_effects: Set[GroundedPredicate]
-    grounded_delete_effects: Set[GroundedPredicate]
+    grounded_discrete_effects: Set[GroundedPredicate]
     grounded_numeric_effects: Set[NumericalExpressionTree]
     grounded_conditional_effects: Set[ConditionalEffect]
+    grounded_disjunctive_preconditions: List[Set[NumericalExpressionTree]]
+
     lifted_universal_effects: Set[UniversalQuantifiedEffect]
-    grounded_disjunctive_numeric_preconditions: List[Set[NumericalExpressionTree]]
+    lifted_universal_preconditions: Set[UniversalQuantifiedPrecondition]
     problem_objects: Dict[str, PDDLObject]
 
     def __init__(self, action: Action, domain: Domain, grounded_action_call: List[str],
@@ -118,7 +118,8 @@ class Operator:
 
             output_grounded_predicates.add(GroundedPredicate(name=predicate_name,
                                                              signature=predicate_signature,
-                                                             object_mapping=predicate_object_mapping))
+                                                             object_mapping=predicate_object_mapping,
+                                                             is_positive=predicate.is_positive))
         return output_grounded_predicates
 
     def _fix_grounded_predicate_types(self, lifted_predicate_params: List[str],
@@ -205,17 +206,14 @@ class Operator:
         :return: a grounded conditional effect.
         """
         grounded_conditional_effect = ConditionalEffect()
-        grounded_conditional_effect.positive_conditions = self._ground_predicates(
-            lifted_condition.positive_conditions, parameters_map)
-        grounded_conditional_effect.negative_conditions = self._ground_predicates(lifted_condition.negative_conditions,
-                                                                                  parameters_map)
+        grounded_conditional_effect.discrete_conditions = self._ground_predicates(
+            lifted_condition.discrete_conditions, parameters_map)
         grounded_conditional_effect.numeric_conditions = self._ground_numeric_expressions(
             lifted_condition.numeric_conditions, parameters_map)
-        grounded_conditional_effect.add_effects = self._ground_predicates(lifted_condition.add_effects, parameters_map)
-        grounded_conditional_effect.delete_effects = self._ground_predicates(lifted_condition.delete_effects,
-                                                                             parameters_map)
-        grounded_conditional_effect.numeric_effects = self._ground_numeric_expressions(lifted_condition.numeric_effects,
-                                                                                       parameters_map)
+        grounded_conditional_effect.discrete_effects = self._ground_predicates(
+            lifted_condition.discrete_effects, parameters_map)
+        grounded_conditional_effect.numeric_effects = self._ground_numeric_expressions(
+            lifted_condition.numeric_effects, parameters_map)
         return grounded_conditional_effect
 
     @staticmethod
@@ -229,54 +227,30 @@ class Operator:
         """
         return {(parameters_map[obj1], parameters_map[obj2]) for obj1, obj2 in equality_preconditions}
 
-    def _positive_preconditions_hold(self, state: State, conditions: Optional[Set[GroundedPredicate]] = None) -> bool:
-        """Check whether the positive preconditions hold in the given state.
+    def _discrete_preconditions_hold(self, state: State, conditions: Set[GroundedPredicate]) -> bool:
+        """Check whether the discrete preconditions hold in the given state.
 
-        :param state: the state which the action is applied on.
-        :param conditions: the positive preconditions to check.
-        :return: whether the positive preconditions hold.
+        :param state: the state which the preconditions should hold in.
+        :param conditions: the discrete preconditions to check.
+        :return: whether the discrete preconditions hold.
         """
-        positive_conditions = conditions or self.grounded_positive_preconditions
         self.logger.info(
-            f"Validating whether or not the positive state variables matching {self.__str__()} grounded predicates.")
-        for positive_precondition in positive_conditions:
-            try:
-                state_grounded_predicates = state.state_predicates[positive_precondition.lifted_untyped_representation]
-                untyped_predicates = [p.untyped_representation for p in state_grounded_predicates]
-                if positive_precondition.untyped_representation not in untyped_predicates:
-                    self.logger.debug(f"Did not find the grounded predicate "
-                                      f"{positive_precondition.untyped_representation}")
+            f"Validating whether or not the discrete preconditions hold in the input state.")
+        for precondition in conditions:
+            state_grounded_predicates = state.state_predicates.get(precondition.lifted_untyped_representation, set())
+            untyped_state_predicates = [p.untyped_representation for p in state_grounded_predicates]
+            if precondition.is_positive:
+                if precondition not in untyped_state_predicates:
+                    self.logger.debug(f"Did not find the grounded predicate {precondition} "
+                                      f"in the state although it was required!")
                     return False
 
-            except KeyError:
-                self.logger.debug(f"Did not find the predicate {positive_precondition.lifted_untyped_representation}")
-                return False
-
-        self.logger.debug("All positive preconditions were found in the state.")
-        return True
-
-    def _negative_preconditions_hold(self, state: State, conditions: Optional[Set[GroundedPredicate]] = None) -> bool:
-        """Check whether the negative preconditions hold in the given state.
-
-        :param state: the state which the action is applied on.
-        :param conditions: the negative preconditions to check.
-        :return: whether the negative preconditions hold.
-        """
-        negative_conditions = conditions or self.grounded_negative_preconditions
-        self.logger.info("Validating that all of the negative preconditions don't exist in the state.")
-        for negative_precondition in negative_conditions:
-            try:
-                state_grounded_predicates = state.state_predicates[negative_precondition.lifted_untyped_representation]
-                untyped_predicates = [p.untyped_representation for p in state_grounded_predicates]
-                if negative_precondition.untyped_representation in untyped_predicates:
-                    self.logger.debug(
-                        f"Found the predicate {str(negative_precondition)} but it should not hold in the state!")
+            else:
+                if precondition in state.state_predicates[precondition.lifted_untyped_representation]:
+                    self.logger.debug(f"Found the grounded predicate {precondition} in the state "
+                                      f"although it should not have been found!")
                     return False
 
-            except KeyError:
-                continue
-
-        self.logger.debug("All negative preconditions do not hold in the state.")
         return True
 
     @staticmethod
@@ -341,8 +315,7 @@ class Operator:
         :param conditional_effect: the conditional effect to test.
         :return: whether the antecedent conditions hold.
         """
-        return (self._positive_preconditions_hold(state, conditional_effect.positive_conditions)
-                and self._negative_preconditions_hold(state, conditional_effect.negative_conditions) and
+        return (self._discrete_preconditions_hold(state, conditional_effect.discrete_conditions) and
                 self._numeric_conditions_set_hold(state, conditional_effect.numeric_conditions))
 
     def _update_delete_effects(self, next_state_predicates: Dict[str, Set[GroundedPredicate]]) -> None:
@@ -465,8 +438,7 @@ class Operator:
         :param new_state_numeric_fluents: the next state grounded numeric functions.
         """
         for effect in self.grounded_conditional_effects:
-            if not (self._positive_preconditions_hold(previous_state, effect.positive_conditions)
-                    and self._negative_preconditions_hold(previous_state, effect.negative_conditions) and
+            if not (self._discrete_preconditions_hold(previous_state, effect.discrete_effects) and
                     self._numeric_conditions_set_hold(previous_state, effect.numeric_conditions)):
                 continue
 
@@ -502,7 +474,7 @@ class Operator:
         if not self.grounded:
             self.ground()
 
-        if not self._positive_preconditions_hold(state) or not self._negative_preconditions_hold(state):
+        if not self._discrete_preconditions_hold(state, self.grounded_discrete_preconditions):
             return False
 
         # Checking for objects equality.
@@ -516,9 +488,9 @@ class Operator:
         if not self._numeric_conditions_set_hold(state, self.grounded_numeric_preconditions):
             return False
 
-        if len(self.grounded_disjunctive_numeric_preconditions) > 0 and \
+        if len(self.grounded_disjunctive_preconditions) > 0 and \
                 not any([self._numeric_conditions_set_hold(state, disjunctive_numeric_preconditions)
-                         for disjunctive_numeric_preconditions in self.grounded_disjunctive_numeric_preconditions]):
+                         for disjunctive_numeric_preconditions in self.grounded_disjunctive_preconditions]):
             self.logger.debug("None of the disjunctive numeric preconditions hold.")
             return False
 
@@ -551,22 +523,18 @@ class Operator:
         parameters_map = {lifted_param: grounded_object
                           for lifted_param, grounded_object in zip(self.action.signature, self.grounded_call_objects)}
 
-        self.grounded_positive_preconditions = self._ground_predicates(self.action.positive_preconditions,
-                                                                       parameters_map)
-        self.grounded_negative_preconditions = self._ground_predicates(self.action.negative_preconditions,
-                                                                       parameters_map)
-        self.grounded_add_effects = self._ground_predicates(self.action.add_effects, parameters_map)
-        self.grounded_delete_effects = self._ground_predicates(self.action.delete_effects, parameters_map)
-        self.grounded_equality_preconditions = self._ground_equality_objects(self.action.equality_preconditions,
-                                                                             parameters_map)
-        self.grounded_inequality_preconditions = self._ground_equality_objects(self.action.inequality_preconditions,
-                                                                               parameters_map)
-
-        self.grounded_numeric_preconditions = self._ground_numeric_expressions(self.action.numeric_preconditions,
-                                                                               parameters_map)
-        self.grounded_disjunctive_numeric_preconditions = [
+        self.grounded_discrete_preconditions = self._ground_predicates(
+            self.action.discrete_preconditions, parameters_map)
+        self.grounded_discrete_effects = self._ground_predicates(self.action.discrete_effects, parameters_map)
+        self.grounded_equality_preconditions = self._ground_equality_objects(
+            self.action.equality_preconditions, parameters_map)
+        self.grounded_inequality_preconditions = self._ground_equality_objects(
+            self.action.inequality_preconditions, parameters_map)
+        self.grounded_numeric_preconditions = self._ground_numeric_expressions(
+            self.action.numeric_preconditions, parameters_map)
+        self.grounded_disjunctive_preconditions = [
             self._ground_numeric_expressions(expressions, parameters_map) for expressions in
-            self.action.disjunctive_numeric_preconditions]
+            self.action.disjunctive_preconditions]
         self.grounded_numeric_effects = self._ground_numeric_expressions(self.action.numeric_effects, parameters_map)
         self.grounded_conditional_effects = {self._ground_conditional_effect(condition, parameters_map) for condition in
                                              self.action.conditional_effects}

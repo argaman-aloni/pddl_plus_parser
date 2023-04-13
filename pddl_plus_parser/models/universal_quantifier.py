@@ -11,22 +11,18 @@ class UniversalQuantifiedPrecondition:
 
     quantified_parameter: str
     quantified_type: PDDLType
-    positive_conditions: Set[Predicate]
-    negative_conditions: Set[Predicate]
+    discrete_conditions: Set[Predicate]
+    # TODO: Add numeric conditions
 
-    def __init__(self, quantified_parameter: str, quantified_type: PDDLType, positive_conditions: Set[Predicate],
-                 negative_conditions: Set[Predicate]):
+    def __init__(self, quantified_parameter: str, quantified_type: PDDLType, conditions: Set[Predicate]):
         self.quantified_parameter = quantified_parameter
         self.quantified_type = quantified_type
-        self.positive_conditions = positive_conditions
-        self.negative_conditions = negative_conditions
+        self.discrete_conditions = conditions
 
     def __str__(self):
-        positive_conditionals = "\n\t".join([cond.untyped_representation for cond in self.positive_conditions])
-        negative_conditionals = "\n\t".join([f"(not {negative_cond.untyped_representation})" for
-                                             negative_cond in self.negative_conditions])
+        conditions = "\n\t".join([cond.untyped_representation for cond in self.discrete_conditions])
         return f"(forall ({self.quantified_parameter} - {self.quantified_type.name})" \
-               f"\n\t{positive_conditionals}\n\t{negative_conditionals})"
+               f"\n\t{conditions})"
 
 
 class UniversalQuantifiedEffect:

@@ -1,7 +1,7 @@
 from pytest import fixture, raises
 
 from pddl_plus_parser.lisp_parsers import DomainParser, PDDLTokenizer
-from pddl_plus_parser.models import PDDLType, Predicate, Action
+from pddl_plus_parser.models import PDDLType, Predicate, Action, CompoundPrecondition
 from tests.lisp_parsers_tests.consts import TEST_PARSING_FILE_PATH, TEST_WOODWORKING_DOMAIN_PATH, \
     TEST_NUMERIC_DEPOT_DOMAIN_PATH, PLANT_WATERING_DOMAIN, TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN, \
     TEST_TYPES_FOR_CONDITIONAL_DOMAIN, TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN, SPIDER_DOMAIN_PATH, \
@@ -113,7 +113,7 @@ def test_parse_constants_with_nexted_constants_extract_correct_constants_data(do
 def test_parse_predicate_with_legal_predicate_data_is_successful(domain_parser: DomainParser):
     domain_types = domain_parser.parse_types(nested_types)
     test_predicate = ['available', '?obj', '-', 'woodobj']
-    predicate = domain_parser.parse_predicate(test_predicate, domain_types)
+    predicate = domain_parser._parse_predicate(test_predicate, domain_types)
     assert predicate.name == "available"
     assert "?obj" in predicate.signature
 
@@ -122,14 +122,14 @@ def test_parse_predicate_with_illegal_predicate_data_raises_error(domain_parser:
     domain_types = domain_parser.parse_types(nested_types)
     with raises(SyntaxError):
         test_predicate = ['available', '?obj', 'woodobj']
-        domain_parser.parse_predicate(test_predicate, domain_types)
+        domain_parser._parse_predicate(test_predicate, domain_types)
 
 
 def test_parse_predicate_with_no_parameters_returns_predicate_object_with_only_name_and_empty_signature(
         domain_parser: DomainParser):
     domain_types = domain_parser.parse_types(nested_types)
     test_predicate_no_params_ast = ["ok"]
-    predicate = domain_parser.parse_predicate(test_predicate_no_params_ast, domain_types)
+    predicate = domain_parser._parse_predicate(test_predicate_no_params_ast, domain_types)
     assert predicate is not None
     assert predicate.name == "ok"
     assert len(predicate.signature) == 0
@@ -208,7 +208,7 @@ def test_parse_action_with_inequality_precondition_adds_the_lifted_objects_corre
     action = domain_parser.parse_action(action_tokens, domain_types, domain_functions, domain_predicates, domain_consts)
 
     assert action.name == "cut-board-medium"
-    assert action.inequality_preconditions == {("?size_before", "?size_after")}
+    assert action.preconditions.root.inequality_preconditions == {("?size_before", "?size_after")}
 
 
 def test_parse_action_with_equality_precondition_adds_the_lifted_objects_correctly(domain_parser: DomainParser):
@@ -225,7 +225,7 @@ def test_parse_action_with_equality_precondition_adds_the_lifted_objects_correct
     action = domain_parser.parse_action(action_tokens, domain_types, domain_functions, domain_predicates, domain_consts)
 
     assert action.name == "cut-board-medium"
-    assert action.equality_preconditions == {("?size_before", "?size_after")}
+    assert action.preconditions.root.equality_preconditions == {("?size_before", "?size_after")}
 
 
 def test_parse_action_with_boolean_action_type_returns_action_data_correctly(domain_parser: DomainParser):
@@ -248,7 +248,6 @@ def test_parse_action_with_boolean_action_type_returns_action_data_correctly(dom
         "?newcolour": PDDLType("acolour"),
         "?surface": PDDLType("surface"),
     }
-    assert action.negative_preconditions == set()
     expected_preconditions = {
         Predicate(name="available", signature={"?x": PDDLType("part")}),
         Predicate(name="has-colour", signature={
@@ -268,41 +267,13 @@ def test_parse_action_with_boolean_action_type_returns_action_data_correctly(dom
         }),
 
     }
-    assert len(action.positive_preconditions) == len(expected_preconditions)
-    for precondition in expected_preconditions:
-        assert precondition in action.positive_preconditions
-
-    expected_add_effects = {
-        Predicate(name="colour", signature={
-            "?x": PDDLType("part"),
-            "?newcolour": PDDLType("acolour")
-        }),
-        Predicate(name="treatment", signature={
-            "?x": PDDLType("part"),
-            "varnished": PDDLType("treatmentstatus")
-        })
-    }
-    assert len(action.add_effects) == len(expected_add_effects)
-    for effect in expected_add_effects:
-        assert effect in action.add_effects
-
-    expected_delete_effects = {
-        Predicate(name="treatment", signature={
-            "?x": PDDLType("part"),
-            "untreated": PDDLType("treatmentstatus")
-        }),
-        Predicate(name="colour", signature={
-            "?x": PDDLType("part"),
-            "natural": PDDLType("acolour")
-        })
-    }
-
-    assert len(action.add_effects) == len(expected_delete_effects)
-    for effect in expected_delete_effects:
-        assert effect in action.delete_effects
+    assert expected_preconditions.issubset(action.preconditions.root.operands)
+    assert action.preconditions.root.operands.issubset(expected_preconditions)
+    print()
+    print(str(action.preconditions))
 
 
-def test_parse_effects_with_conditional_effects_with_one_condition_and_one_effect_parse_correctly(
+def test_parse_action_with_conditional_effects_with_one_condition_and_one_effect_parse_correctly(
         domain_parser: DomainParser):
     conditional_effects = """(and (when
             (not (CAN-CONTINUE-GROUP ?c ?to))
@@ -334,7 +305,7 @@ def test_parse_effects_with_conditional_effects_with_one_condition_and_one_effec
         conditional_effect) == "(when (and (not (CAN-CONTINUE-GROUP ?c ?to))) (and (make-unmovable ?to)))".lower()
 
 
-def test_parse_effects_with_conditional_effects_with_one_condition_and_two_effects_parse_correctly(
+def test_parse_action_with_conditional_effects_with_one_condition_and_two_effects_parse_correctly(
         domain_parser: DomainParser):
     conditional_effects = """(and (when
             (not (can-continue-group ?c ?to))
@@ -364,16 +335,16 @@ def test_parse_effects_with_conditional_effects_with_one_condition_and_two_effec
                                 domain_constants=domain_consts)
     conditional_effect = new_action.conditional_effects.pop()
     assert conditional_effect is not None
-    negative_condition = conditional_effect.negative_conditions.pop()
-    add_effects = conditional_effect.add_effects
-    assert negative_condition.untyped_representation == "(can-continue-group ?c ?to)"
+    negative_condition = str(conditional_effect.antecedents)
+    add_effects = conditional_effect.discrete_effects
+    assert negative_condition == "(and (not (can-continue-group ?c ?to)))"
     print([eff.untyped_representation for eff in add_effects])
     assert len(add_effects) == 2
     effects_str = {effect.untyped_representation for effect in add_effects}
     assert effects_str == {"(currently-updating-unmovable )", "(make-unmovable ?to)"}
 
 
-def test_parse_effects_with_conditional_effects_with_two_conditions_and_two_effects_parse_correctly(
+def test_parse_action_with_conditional_effects_with_two_conditions_and_two_effects_parse_correctly(
         domain_parser: DomainParser):
     conditional_effects = """(and (when
             (and (can-continue-group ?c ?to) (not (can-continue-group ?c ?from)))
@@ -399,11 +370,10 @@ def test_parse_effects_with_conditional_effects_with_two_conditions_and_two_effe
                                 domain_constants=domain_consts)
     conditional_effect = new_action.conditional_effects.pop()
     assert conditional_effect is not None
-    negative_condition = conditional_effect.negative_conditions.pop()
-    positive_condition = conditional_effect.positive_conditions.pop()
-    add_effects = conditional_effect.add_effects
-    assert negative_condition.untyped_representation == "(can-continue-group ?c ?from)"
-    assert positive_condition.untyped_representation == "(can-continue-group ?c ?to)"
+    antecedents = str(conditional_effect.antecedents)
+    add_effects = conditional_effect.discrete_effects
+    assert "(not (can-continue-group ?c ?from))" in antecedents
+    assert "(can-continue-group ?c ?to)" in antecedents
     assert len(add_effects) == 2
     effects_str = {effect.untyped_representation for effect in add_effects}
     assert effects_str == {"(currently-updating-unmovable )", "(make-unmovable ?to)"}
@@ -459,20 +429,50 @@ def test_parse_action_with_conditional_effects_succeeds_in_parsing_action_and_re
     assert action.conditional_effects is not None
 
 
-def test_parse_conditional_effect_raises_error_if_conditional_effect_not_in_correct_format(
+def test_parse_action_with_conditional_effect_raises_error_if_conditional_effect_not_in_correct_format(
         domain_parser: DomainParser):
-    conditional_effects_str = """
-    (when (and (currently-updating-unmovable) (make-unmovable ?to)))"""
+    conditional_effects_str = """(and 
+    (when (and (currently-updating-unmovable) (make-unmovable ?to))))"""
     types_tokens = PDDLTokenizer(pddl_str=TEST_TYPES_FOR_CONDITIONAL_DOMAIN).parse()
     constants_tokens = PDDLTokenizer(pddl_str=TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN).parse()
+    predicate_tokens = PDDLTokenizer(pddl_str=TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN).parse()
     conditional_effect_tokens = PDDLTokenizer(pddl_str=conditional_effects_str).parse()
     domain_types = domain_parser.parse_types(types_tokens)
     domain_consts = domain_parser.parse_constants(constants_tokens, domain_types)
+    domain_predicates = domain_parser.parse_predicates(predicate_tokens, domain_types)
     domain_functions = {}  # Functions are irrelevant for this case.
     action = Action()
     action.name = "deal-card"
+    action.signature = {"?c": domain_types["card"], "?from": domain_types["cardposition"],
+                        "?fromdeal": domain_types["deal"], "?to": domain_types["card"],
+                        "?totableau": domain_types["tableau"]}
     with raises(SyntaxError):
-        domain_parser.parse_conditional_effect(conditional_effect_tokens, action, domain_functions, domain_consts)
+        domain_parser.parse_effects(conditional_effect_tokens, action, domain_types, domain_functions,
+                                    domain_predicates, domain_consts)
+
+
+def test_parse_action_with_universal_quantifier_in_preconditions_returns_correct_universal_precondition(
+        domain_parser: DomainParser):
+    test_action_with_universal_precondition = """
+    (stop
+      :parameters (?f - floor)
+      :precondition (and (forall (?p - passenger) (and (lift-at ?f) (not (boarded ?p)))))
+      :effect (and (not (lift-at ?f)))
+    ))"""
+    types_tokens = PDDLTokenizer(pddl_str=TYPES_FOR_UNIVERSAL_CONDITIONAL_DOMAIN).parse()
+    predicate_tokens = PDDLTokenizer(pddl_str=TEST_PREDICATES_FOR_UNIVERSAL_QUANTIFIER_DOMAIN).parse()
+    action_tokens = PDDLTokenizer(pddl_str=test_action_with_universal_precondition).parse()
+    domain_types = domain_parser.parse_types(types_tokens)
+    domain_predicates = domain_parser.parse_predicates(predicate_tokens, domain_types)
+    domain_functions = {}
+    action = domain_parser.parse_action(action_ast=action_tokens, domain_types=domain_types,
+                                        domain_functions=domain_functions, domain_predicates=domain_predicates)
+    assert action is not None
+    universal_precondition = action.preconditions.root.operands.pop()
+    assert universal_precondition is not None
+    assert len(universal_precondition.operands) == 2
+    assert universal_precondition.quantified_parameter == "?p"
+    assert universal_precondition.quantified_type == domain_types["passenger"]
 
 
 def test_parse_action_with_universal_quantifier_in_conditional_effect_returns_correct_universal_quantifier_data(
@@ -503,10 +503,9 @@ def test_parse_action_with_universal_quantifier_in_conditional_effect_returns_co
     assert universal_effect.quantified_parameter == "?p"
     assert universal_effect.quantified_type.name == "passenger"
     conditional_effect = universal_effect.conditional_effects.pop()
-    assert len(conditional_effect.add_effects) == 1
-    assert len(conditional_effect.delete_effects) == 1
-    assert len(conditional_effect.positive_conditions) == 2
-    print(str(universal_effect))
+    assert len(conditional_effect.discrete_effects) == 2
+    antecedents = conditional_effect.antecedents.root.operands.pop()
+    assert len(antecedents.operands) == 2
 
 
 def test_parse_action_with_two_universal_quantifiers_in_effect_extract_all_universal_effects(
@@ -535,6 +534,44 @@ def test_parse_action_with_two_universal_quantifiers_in_effect_extract_all_unive
     assert action is not None
     universal_effects = action.universal_effects
     assert len(universal_effects) == 2
+
+def test_parse_simple_action_with_only_numeric_preconditions_and_effects_extracts_the_correct_preconditions_tree(
+        domain_parser: DomainParser):
+    test_simple_types = """(place locatable - object
+	    depot distributor - place
+        truck hoist surface - locatable
+        pallet crate - surface)"""
+    test_simple_predicates = """((at ?x - locatable ?y - place) 
+             (on ?x - crate ?y - surface)
+             (in ?x - crate ?y - truck)
+             (lifting ?x - hoist ?y - crate)
+             (available ?x - hoist)
+             (clear ?x - surface))"""
+    test_domain_simple_functions = """((load_limit ?t - truck) 
+	(current_load ?t - truck) 
+	(weight ?c - crate)
+	(fuel-cost))
+    """
+    test_simple_numeric_action = """(Load
+        :parameters (?x - hoist ?y - crate ?z - truck ?p - place)
+        :precondition (and (<= (+ (current_load ?z) (weight ?y)) (load_limit ?z)))
+        :effect (and (not (lifting ?x ?y)) (in ?y ?z) (available ?x)
+                (increase (current_load ?z) (weight ?x))))"""
+    types_tokens = PDDLTokenizer(pddl_str=test_simple_types).parse()
+    functions_tokens = PDDLTokenizer(pddl_str=test_domain_simple_functions).parse()
+    predicate_tokens = PDDLTokenizer(pddl_str=test_simple_predicates).parse()
+    action_tokens = PDDLTokenizer(pddl_str=test_simple_numeric_action).parse()
+
+    domain_types = domain_parser.parse_types(types_tokens)
+    domain_predicates = domain_parser.parse_predicates(predicate_tokens, domain_types)
+    domain_functions = domain_parser.parse_functions(functions_tokens, domain_types)
+
+    action = domain_parser.parse_action(action_tokens, domain_types, domain_functions, domain_predicates)
+    assert len(action.preconditions.root.operands) == 1
+    precond_expression = action.preconditions.root.operands.pop()
+    assert precond_expression.root.id == "<="
+    assert precond_expression.root.height == 2
+
 
 
 def test_parse_simple_action_with_numeric_preconditions_and_effects_extracts_the_calculation_tree_correctly(
@@ -570,10 +607,7 @@ def test_parse_simple_action_with_numeric_preconditions_and_effects_extracts_the
     domain_functions = domain_parser.parse_functions(functions_tokens, domain_types)
 
     action = domain_parser.parse_action(action_tokens, domain_types, domain_functions, domain_predicates)
-    assert len(action.numeric_preconditions) == 1
-    precond_expression = action.numeric_preconditions.pop()
-    assert precond_expression.root.id == "<="
-    assert precond_expression.root.height == 2
+    assert len(action.preconditions.root.operands) == 4
 
     assert len(action.numeric_effects) == 1
     effect_expression = action.numeric_effects.pop()
@@ -618,11 +652,10 @@ def test_parse_action_with_function_equality_precondition_sets_a_new_numeric_pre
     domain = domain_parser.parse_domain()
     assert domain is not None
     assert len(domain.actions) == 10
-    assert len(domain.actions["pour"].numeric_preconditions) == 5
+    assert len(domain.actions["pour"].preconditions.root.operands) == 5
     for action in domain.actions.values():
         print(action.name)
-        for numeric_precond in action.numeric_preconditions:
-            print(str(numeric_precond))
+        print(action.preconditions)
 
 
 def test_parse_preconditions_with_action_with_disjunctive_preconditions_extracts_different_set_of_preconditions():
@@ -646,11 +679,33 @@ def test_parse_preconditions_with_action_with_disjunctive_preconditions_extracts
     action_tokens = PDDLTokenizer(pddl_str=test_action_str).parse()
     action = domain_parser.parse_action(action_tokens, domain.types, domain.functions, domain.predicates,
                                         domain.constants)
-    disjunctive_preconditions = action.disjunctive_numeric_preconditions
-    assert len(disjunctive_preconditions) == 2
-    assert len(disjunctive_preconditions[0]) == 2
-    assert len(disjunctive_preconditions[1]) == 3
-    print(str(action))
+    preconditions = action.preconditions.root
+    assert "(>= (+ (* (fuel-cost ) -0.01) 0.78) 0.0)" in str(preconditions)
+    assert "(>= (+ (* (fuel-cost ) -0.02) 1.01) 0.0)" in str(preconditions)
+    assert "(>= (+ (* (fuel-cost ) 0.01) -1.79) 0.0)" in str(preconditions)
+    assert "(>= (+ (+ (* (weight ?y) 0.01) (* (fuel-cost ) 0.01)) -2.05) 0.0)" in str(preconditions)
+    assert "(>= (+ (* (fuel-cost ) -0.01) 0.78) 0.0)" in str(preconditions)
+    assert "or" in str(preconditions)
+    print(str(preconditions))
+
+
+def test_parse_preconditions_with_action_with_universal_preconditions_works():
+    test_action_str = """(lift
+	:parameters (?x - hoist ?y - crate ?z - surface ?p - place)
+	:precondition (and  (at ?y ?p)
+					    (not (lifting ?x ?y))
+					    (forall (?y1 - crate) (and (at ?y1 ?p)))
+				        (clear ?z))
+        :effect (and (clear ?z) (lifting ?x ?y) (not (available ?x)) (not (on ?y ?z)) (not (at ?y ?p))
+            (increase (fuel-cost ) 1.0)
+    ))"""
+    domain_parser = DomainParser(TEST_NUMERIC_DEPOT_DOMAIN_PATH)
+    domain = domain_parser.parse_domain()
+    action_tokens = PDDLTokenizer(pddl_str=test_action_str).parse()
+    action = domain_parser.parse_action(action_tokens, domain.types, domain.functions, domain.predicates,
+                                        domain.constants)
+    preconditions = action.preconditions.root
+    print(str(preconditions))
 
 
 def test_parse_domain_with_domain_with_conditional_effects_not_fail():

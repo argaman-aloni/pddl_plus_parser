@@ -1,8 +1,9 @@
 """Module that represents a PDDL+ action."""
-from typing import Set, List, Tuple
+from typing import Set, List, Tuple, Union
 
+from .pddl_precondition import CompoundPrecondition
 from .universal_quantifier import UniversalQuantifiedEffect
-from .conditional_effect import ConditionalEffect
+from .conditional_effect import ConditionalEffect, UniversalEffect
 from .numerical_expression import NumericalExpressionTree
 from .pddl_predicate import SignatureType, Predicate
 
@@ -12,29 +13,16 @@ class Action:
 
     name: str
     signature: SignatureType
-    positive_preconditions: Set[Predicate]
-    negative_preconditions: Set[Predicate]
-    numeric_preconditions: Set[NumericalExpressionTree]
-    equality_preconditions: Set[Tuple[str, str]]
-    inequality_preconditions: Set[Tuple[str, str]]
-    add_effects: Set[Predicate]
-    delete_effects: Set[Predicate]
+    preconditions: CompoundPrecondition
+
+    discrete_effects: Set[Predicate]
     conditional_effects: Set[ConditionalEffect]
-    universal_effects: Set[UniversalQuantifiedEffect]
+    universal_effects: Set[UniversalEffect]
     numeric_effects: Set[NumericalExpressionTree]
-    # currently only supporting disjunction of numeric preconditions
-    disjunctive_numeric_preconditions: List[Set[NumericalExpressionTree]]
 
     def __init__(self):
-        self.positive_preconditions = set()
-        self.negative_preconditions = set()
-        self.numeric_preconditions = set()
-        self.equality_preconditions = set()
-        self.inequality_preconditions = set()
-        self.add_effects = set()
-        self.delete_effects = set()
+        self.discrete_effects = set()
         self.numeric_effects = set()
-        self.disjunctive_numeric_preconditions = []
         self.conditional_effects = set()
         self.universal_effects = set()
 

@@ -40,6 +40,39 @@ def test_parse_action_yields_correct_action_ast():
                        ':effect', ['and', ['treatment', '?x', 'varnished'], ['colour', '?x', '?newcolour']]]
     assert tokens == expected_tokens
 
+
+def test_parse_simple_numeric_inequality_expression():
+    test_expression = "(>= (height-cap-l ?des) (height-v ?v))"
+    expression_tokenizer = PDDLTokenizer(pddl_str=test_expression)
+    tokens = expression_tokenizer.parse()
+    expected_tokens = ['>=', ['height-cap-l', '?des'], ['height-v', '?v']]
+    assert tokens == expected_tokens
+
+
+def test_parse_simple_numeric_equality_expression():
+    test_expression = "(= (height-cap-l ?des) (height-v ?v))"
+    expression_tokenizer = PDDLTokenizer(pddl_str=test_expression)
+    tokens = expression_tokenizer.parse()
+    expected_tokens = ['=', ['height-cap-l', '?des'], ['height-v', '?v']]
+    assert tokens == expected_tokens
+
+
+def test_parse_simple_object_equality_expression():
+    test_expression = "(= ?ori ?des)"
+    expression_tokenizer = PDDLTokenizer(pddl_str=test_expression)
+    tokens = expression_tokenizer.parse()
+    expected_tokens = ['=', '?ori', '?des']
+    assert tokens == expected_tokens
+
+
+def test_parse_simple_existential_expression():
+    test_expression = "(exists (?p - package) (and (at-packagev ?p ?v)))"
+    expression_tokenizer = PDDLTokenizer(pddl_str=test_expression)
+    tokens = expression_tokenizer.parse()
+    expected_tokens = ['exists', ['?p', '-', 'package'], ['and', ['at-packagev', '?p', '?v']]]
+    assert tokens == expected_tokens
+
+
 def test_parse_problem():
     test_problem_tokenizer = PDDLTokenizer(file_path=TEST_NUMERIC_PROBLEM)
     print(test_problem_tokenizer.parse())
