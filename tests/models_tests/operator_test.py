@@ -4,7 +4,9 @@ from typing import List, Dict, Set
 from pytest import fixture, fail
 
 from pddl_plus_parser.lisp_parsers import DomainParser, PDDLTokenizer, ProblemParser
-from pddl_plus_parser.models import Domain, Action, Operator, GroundedPredicate, PDDLFunction, State, Problem
+from pddl_plus_parser.models import Domain, Action, Operator, GroundedPredicate, PDDLFunction, State, Problem, \
+    NumericalExpressionTree
+from pddl_plus_parser.models.grounding_utils import ground_numeric_calculation_tree, ground_numeric_expressions
 from tests.lisp_parsers_tests.consts import SPIDER_PROBLEM_PATH
 from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, TEST_NUMERIC_DOMAIN, SPIDER_DOMAIN_PATH, \
     NURIKABE_DOMAIN_PATH, NURIKABE_PROBLEM_PATH
@@ -189,193 +191,53 @@ def valid_previous_state(domain: Domain,
     })
 
 
-def test_ground_predicates_creates_grounded_version_of_lifted_predicates_with_object_names_in_the_parameters(
-        operator: Operator, numeric_action: Action):
-    test_lifted_predicates = numeric_action.positive_preconditions
-    test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
-    }
-    grounded_predicates = operator._ground_predicates(lifted_predicates=test_lifted_predicates,
-                                                      parameters_map=test_parameters_map)
-
-    expected_grounded_preconditions = ['(on_board test_instrument s1)',
-                                       '(power_on test_instrument)',
-                                       '(pointing s1 test_direction)',
-                                       '(calibrated test_instrument)',
-                                       '(supports test_instrument test_mode)']
-    assert len(grounded_predicates) == len(test_lifted_predicates)
-    assert sorted([p.untyped_representation for p in grounded_predicates]) == sorted(expected_grounded_preconditions)
-
-
 def test_typed_action_call_returns_correct_string(operator: Operator):
     assert operator.typed_action_call == \
            "(take_image s1 - satellite test_direction - direction test_instrument - instrument test_mode - mode)"
 
 
-def test_ground_predicates_when_domain_contains_constants_grounds_action_correctly(
-        agricola_operator: Operator, agricola_numeric_action: Action):
-    test_lifted_predicates = agricola_numeric_action.positive_preconditions
-    test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            AGRICOLA_LIFTED_SIGNATURE_ITEMS, AGRICOLA_GROUNDED_ACTION_CALL)
-    }
-    grounded_predicates = agricola_operator._ground_predicates(lifted_predicates=test_lifted_predicates,
-                                                               parameters_map=test_parameters_map)
-
-    expected_grounded_preconditions = ['(available_action act_labor)',
-                                       '(current_worker noworker)',
-                                       '(next_worker noworker w1)',
-                                       '(max_worker w2)',
-                                       '(current_round round1)',
-                                       '(num_food n1)',
-                                       '(next_num n1 n2)']
-    assert len(grounded_predicates) == len(test_lifted_predicates)
-    assert sorted([p.untyped_representation for p in grounded_predicates]) == sorted(expected_grounded_preconditions)
-
-
 def test_ground_numeric_function_when_domain_contains_constants_grounds_action_correctly(
-        agricola_operator: Operator, agricola_numeric_action: Action):
+        agricola_operator: Operator, agricola_numeric_action: Action, agricola_domain: Domain):
     test_grounded_call = ["w1", "w2", "noworker", "round1", "n1", "n2"]
     test_lifted_function = agricola_numeric_action.numeric_effects.pop()
     test_parameters_map = {
         lifted_param: grounded_object for lifted_param, grounded_object in zip(
             AGRICOLA_LIFTED_SIGNATURE_ITEMS, test_grounded_call)
     }
-    grounded_expression_tree = agricola_operator._ground_numeric_calculation_tree(
-        lifted_numeric_exp_tree=test_lifted_function, parameters_map=test_parameters_map)
-    print(grounded_expression_tree)
-
-
-def test_ground_predicates_creates_grounded_version_of_lifted_predicates_with_correct_parameter_mapping(
-        operator: Operator, numeric_action: Action):
-    test_lifted_predicates = numeric_action.positive_preconditions
-    test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
-    }
-    grounded_predicates = operator._ground_predicates(lifted_predicates=test_lifted_predicates,
-                                                      parameters_map=test_parameters_map)
-
-    for predicate in grounded_predicates:
-        if predicate.name == "calibrated":
-            assert predicate.object_mapping == {"?i": "test_instrument"}
+    grounded_expression_tree = ground_numeric_calculation_tree(
+        lifted_numeric_exp_tree=test_lifted_function, parameters_map=test_parameters_map, domain=agricola_domain)
+    assert grounded_expression_tree.to_pddl() == "(increase (total-cost ) (group_worker_cost noworker))"
 
 
 def test_ground_numeric_calculation_tree_extracts_correct_grounded_tree_data_from_lifted_calc_tree(
-        operator: Operator, numeric_action: Action):
-    test_lifted_expression_tree = numeric_action.numeric_preconditions.pop()
-    test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
-    }
+        operator: Operator, numeric_action: Action, domain: Domain):
+    for precondition in numeric_action.preconditions:
+        if isinstance(precondition, NumericalExpressionTree):
+            test_lifted_expression_tree = precondition
+            test_parameters_map = {
+                lifted_param: grounded_object for lifted_param, grounded_object in zip(
+                    TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+            }
 
-    expression_tree = operator._ground_numeric_calculation_tree(test_lifted_expression_tree, test_parameters_map)
+            expression_tree = ground_numeric_calculation_tree(test_lifted_expression_tree, test_parameters_map, domain)
 
-    root = expression_tree.root
-    assert root.id == ">="
-    assert root.children[0].id == "(data_capacity s1 - satellite)"
-    assert root.children[1].id == "(data test_direction - direction test_mode - mode)"
-
-
-def test_ground_equality_objects_returns_correct_grounded_objects(operator: Operator):
-    equality_precondition = {("?size_before", "?size_after")}
-    parameter_map = {"?size_before": "size1", "?size_after": "size2"}
-    grounded_objects = operator._ground_equality_objects(equality_precondition, parameter_map)
-    assert grounded_objects == {("size1", "size2")}
+            root = expression_tree.root
+            assert root.id == ">="
+            assert root.children[0].id == "(data_capacity s1 - satellite)"
+            assert root.children[1].id == "(data test_direction - direction test_mode - mode)"
+            break
 
 
-def test_equality_holds_when_objects_not_equal_returns_false(operator: Operator):
-    assert not operator._equality_holds({("size1", "size2")})
-
-
-def test_equality_holds_when_not_all_objects_equal_returns_false(operator: Operator):
-    assert not operator._equality_holds({("size1", "size1"), ("size3", "size1")})
-
-
-def test_equality_holds_when_objects_equal_returns_true(operator: Operator):
-    assert operator._equality_holds({("size1", "size1")})
-
-
-def test_ground_numeric_expressions_extracts_all_numeric_expressions(operator: Operator, numeric_action: Action):
+def test_ground_numeric_expressions_extracts_all_numeric_expressions(
+        operator: Operator, numeric_action: Action, domain: Domain):
     test_lifted_expression_tree = numeric_action.numeric_effects
     test_parameters_map = {
         lifted_param: grounded_object for lifted_param, grounded_object in zip(
             TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
-
-    expression_tree_set = operator._ground_numeric_expressions(test_lifted_expression_tree, test_parameters_map)
+    expression_tree_set = ground_numeric_expressions(test_lifted_expression_tree, test_parameters_map, domain)
 
     assert len(expression_tree_set) == 2
-
-
-def test_ground_grounds_positive_preconditions_with_correct_objects(operator: Operator):
-    operator.ground()
-    positive_grounded_preconditions = operator.grounded_positive_preconditions
-
-    expected_grounded_preconditions = ['(on_board test_instrument s1)',
-                                       '(power_on test_instrument)',
-                                       '(pointing s1 test_direction)',
-                                       '(calibrated test_instrument)',
-                                       '(supports test_instrument test_mode)']
-
-    assert len(positive_grounded_preconditions) == len(expected_grounded_preconditions)
-    assert sorted([p.untyped_representation for p in positive_grounded_preconditions]) == sorted(
-        expected_grounded_preconditions)
-
-
-def test_ground_grounds_negative_preconditions_with_correct_objects(operator: Operator):
-    operator.ground()
-    positive_grounded_preconditions = operator.grounded_negative_preconditions
-
-    expected_grounded_preconditions = []
-    assert len(positive_grounded_preconditions) == len(expected_grounded_preconditions)
-
-
-def test_ground_grounds_numeric_preconditions_with_correct_objects(operator: Operator):
-    operator.ground()
-    positive_grounded_numeric_preconditions = operator.grounded_numeric_preconditions
-
-    assert len(positive_grounded_numeric_preconditions) == 1
-    numeric_expression = positive_grounded_numeric_preconditions.pop()
-
-    root = numeric_expression.root
-    assert root.id == ">="
-    assert root.children[0].id == "(data_capacity s1 - satellite)"
-    assert root.children[1].id == "(data test_direction - direction test_mode - mode)"
-
-
-def test_ground_grounds_numeric_effects_with_correct_objects(operator: Operator):
-    operator.ground()
-    positive_grounded_numeric_effects = operator.grounded_numeric_effects
-
-    assert len(positive_grounded_numeric_effects) == 2
-
-    first_expression = positive_grounded_numeric_effects.pop()
-    second_expression = positive_grounded_numeric_effects.pop()
-
-    expression_map = {
-        first_expression.root.id: first_expression.root,
-        second_expression.root.id: second_expression.root
-    }
-
-    root = expression_map["decrease"]
-    assert root.children[0].id == "(data_capacity s1 - satellite)"
-    assert root.children[1].id == "(data test_direction - direction test_mode - mode)"
-
-    root = expression_map["increase"]
-    assert root.children[0].id == "(data-stored )"
-    assert root.children[1].id == "(data test_direction - direction test_mode - mode)"
-
-
-def test_ground_grounds_boolean_effects_with_correct_objects(operator: Operator):
-    operator.ground()
-    grounded_add_effects = operator.grounded_add_effects
-
-    assert len(grounded_add_effects) == 1
-    expected_grounded_add_effect = ['(have_image test_direction test_mode)']
-    assert [p.untyped_representation for p in grounded_add_effects] == expected_grounded_add_effect
-    assert len(operator.grounded_delete_effects) == 0
 
 
 def test_is_applicable_return_false_when_one_predicate_missing_in_state_predicates(
@@ -440,72 +302,6 @@ def test_is_applicable_return_true_when_given_correct_fluents_with_negative_valu
     numeric_state_variables[data_function.untyped_representation].set_value(-15.32)
     state_with_complete_predicates = State(predicates=complete_state_predicates, fluents=numeric_state_variables)
     assert operator.is_applicable(state_with_complete_predicates)
-
-
-def test_update_state_functions_does_not_raise_error_when_all_functions_are_present_in_state(
-        operator: Operator, valid_previous_state: State):
-    try:
-        operator.ground()
-        operator.update_state_functions(valid_previous_state)
-    except Exception:
-        fail()
-
-
-def test_update_state_functions_returns_state_variables_with_correct_new_values(
-        domain: Domain, operator: Operator, valid_previous_state: State):
-    operator.ground()
-    new_state_numeric_fluents = operator.update_state_functions(valid_previous_state)
-
-    data_function = PDDLFunction(name="data", signature={
-        "test_direction": domain.types["direction"],
-        "test_mode": domain.types["mode"]
-    })
-    data_capacity_function = PDDLFunction(name="data_capacity", signature={"s1": domain.types["satellite"]})
-    data_stored_function = PDDLFunction(name="data-stored", signature={})
-
-    assert new_state_numeric_fluents[data_function.untyped_representation].value == 5.3
-    assert new_state_numeric_fluents[data_capacity_function.untyped_representation].value == 18.3 - 5.3
-    assert new_state_numeric_fluents[data_stored_function.untyped_representation].value == 10 + 5.3
-
-
-def test_update_state_functions_does_not_add_redundant_numeric_state_variables(
-        operator: Operator, valid_previous_state: State):
-    operator.ground()
-    new_state_numeric_fluents = operator.update_state_functions(valid_previous_state)
-
-    assert len(new_state_numeric_fluents) == 3
-
-
-def test_update_state_predicates_adds_new_predicate_to_the_new_state(
-        operator: Operator, valid_previous_state: State):
-    operator.ground()
-    new_state_predicates = operator.update_state_predicates(valid_previous_state)
-
-    assert len(new_state_predicates) == len(valid_previous_state.state_predicates) + 1
-
-
-def test_update_state_predicates_adds_the_correct_predicate(
-        operator: Operator, valid_previous_state: State):
-    operator.ground()
-    new_state_predicates = operator.update_state_predicates(valid_previous_state)
-
-    assert "(have_image ?d ?m)" in new_state_predicates
-
-
-def test_update_state_predicates_removed_predicate_when_predicate_in_delete_effects(
-        domain: Domain, operator: Operator, valid_previous_state: State):
-    pointing_predicate_str = "(pointing ?s ?d)"
-    assert len(valid_previous_state.state_predicates[pointing_predicate_str]) == 1
-    pointing_predicate = domain.predicates["pointing"]
-
-    operator.ground()
-    operator.grounded_delete_effects = {
-        GroundedPredicate(name="pointing", signature=pointing_predicate.signature,
-                          object_mapping={"?s": "s1", "?d": "test_direction"})}
-
-    new_state_predicates = operator.update_state_predicates(valid_previous_state)
-
-    assert len(new_state_predicates[pointing_predicate_str]) == 0
 
 
 def test_apply_returns_new_state_with_correct_values(

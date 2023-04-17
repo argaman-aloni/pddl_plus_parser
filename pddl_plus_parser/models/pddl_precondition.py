@@ -40,7 +40,7 @@ class Precondition:
     def __str__(self):
         return self._print_self()
 
-    def __iter__(self) -> Tuple[str, Union["Precondition", Predicate, NumericalExpressionTree]]:
+    def __iter__(self) -> Tuple[str, Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]]:
         for operand in self.operands:
             if isinstance(operand, Precondition):
                 yield from operand

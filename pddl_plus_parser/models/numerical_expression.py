@@ -135,6 +135,29 @@ def evaluate_expression(expression_tree: AnyNode) -> Optional[Union[bool, PDDLFu
     return COMPARISON_OPERATORS[expression_tree.value](compared_operator, evaluated_operand)
 
 
+def set_expression_value(expression_node: AnyNode, state_fluents: Dict[str, PDDLFunction]) -> None:
+    """Set the value of the expression according to the fluents present in the state.
+
+    :param expression_node: the node that is currently being observed.
+    :param state_fluents: the grounded numeric fluents present in the state.
+    """
+    if expression_node.is_leaf:
+        if not isinstance(expression_node.value, PDDLFunction):
+            return
+
+        grounded_fluent: PDDLFunction = expression_node.value
+        try:
+            grounded_fluent.set_value(state_fluents[grounded_fluent.untyped_representation].value)
+
+        except KeyError:
+            grounded_fluent.set_value(0.0)
+
+        return
+
+    set_expression_value(expression_node.children[0], state_fluents)
+    set_expression_value(expression_node.children[1], state_fluents)
+
+
 class NumericalExpressionTree:
     root: AnyNode
 

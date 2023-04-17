@@ -46,6 +46,10 @@ class Predicate:
 
         return True
 
+    def copy(self) -> "Predicate":
+        """Creates a copy of the predicate."""
+        return Predicate(self.name, self.signature, is_positive=self.is_positive)
+
     @property
     def untyped_representation(self) -> str:
         untyped_signature_str = " ".join(self.signature.keys())
@@ -88,6 +92,10 @@ class GroundedPredicate(Predicate):
 
     def __ne__(self, other: "GroundedPredicate") -> bool:
         return not self.__eq__(other)
+
+    def copy(self) -> "GroundedPredicate":
+        """Creates a copy of the grounded predicate."""
+        return GroundedPredicate(self.name, self.signature, self.object_mapping, self.is_positive)
 
     @property
     def untyped_representation(self) -> str:

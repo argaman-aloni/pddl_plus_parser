@@ -377,6 +377,7 @@ def test_parse_action_with_conditional_effects_with_two_conditions_and_two_effec
     assert len(add_effects) == 2
     effects_str = {effect.untyped_representation for effect in add_effects}
     assert effects_str == {"(currently-updating-unmovable )", "(make-unmovable ?to)"}
+    print(conditional_effect)
 
 
 def test_parse_action_with_conditional_effects_succeeds_in_parsing_action_and_returns_correct_fields(
@@ -528,8 +529,8 @@ def test_parse_action_with_universal_quantifier_in_conditional_effect_returns_co
     assert universal_effect.quantified_type.name == "passenger"
     conditional_effect = universal_effect.conditional_effects.pop()
     assert len(conditional_effect.discrete_effects) == 2
-    antecedents = conditional_effect.antecedents.root.operands.pop()
-    assert len(antecedents.operands) == 2
+    antecedents = conditional_effect.antecedents.root.operands
+    assert len(antecedents) == 2
 
 
 def test_parse_action_with_two_universal_quantifiers_in_effect_extract_all_universal_effects(

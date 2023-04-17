@@ -40,6 +40,12 @@ class PDDLFunction:
 
         return True
 
+    def copy(self) -> "PDDLFunction":
+        """Creates a copy of the function."""
+        copied_function = PDDLFunction(self.name, self.signature, self.repeating_variables)
+        copied_function.stored_value = self.stored_value
+        return copied_function
+
     @property
     def value(self) -> float:
         return self.stored_value

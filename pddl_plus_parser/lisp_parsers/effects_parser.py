@@ -97,8 +97,13 @@ class EffectsParser:
             raise SyntaxError(f"Conditional effect scheme does not match schema! {conditional_effect_ast}")
 
         effect_antecedents = CompoundPrecondition()
+        if conditional_effect_ast[1][0] == "and":
+            antecedents_ast = conditional_effect_ast[1][1:]
+        else:
+            antecedents_ast = [conditional_effect_ast[1]]
+
         self.preconditions_parser.parse(precondition_root=effect_antecedents.root,
-                                        preconditions_ast=[conditional_effect_ast[1]],
+                                        preconditions_ast=antecedents_ast,
                                         domain_functions=domain_functions,
                                         domain_types=domain_types,
                                         domain_predicates=domain_predicates, domain_constants=domain_constants,

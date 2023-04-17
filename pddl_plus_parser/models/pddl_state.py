@@ -56,3 +56,11 @@ class State:
         return f"({':init' if self.is_init else ':state'}" \
                f" {self._serialize_numeric_fluents()}" \
                f"{self._serialize_predicates()})\n"
+
+    def copy(self) -> "State":
+        """Creates a copy of the state."""
+        copied_predicates = {predicate_name: {predicate.copy() for predicate in predicates} for
+                             predicate_name, predicates
+                             in self.state_predicates.items()}
+        copied_fluents = {fluent_name: fluent.copy() for fluent_name, fluent in self.state_fluents.items()}
+        return State(copied_predicates, copied_fluents, is_init=self.is_init)
