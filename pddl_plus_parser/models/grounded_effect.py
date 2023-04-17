@@ -73,7 +73,13 @@ class GroundedEffect:
             if not predicate.is_positive:
                 positive_predicate = predicate.copy()
                 positive_predicate.is_positive = True
-                next_state_predicates[positive_predicate.lifted_untyped_representation].discard(positive_predicate)
+                if positive_predicate.lifted_untyped_representation not in next_state_predicates:
+                    continue
+
+                for state_predicate in next_state_predicates[positive_predicate.lifted_untyped_representation]:
+                    if state_predicate.untyped_representation == positive_predicate.untyped_representation:
+                        next_state_predicates[positive_predicate.lifted_untyped_representation].discard(state_predicate)
+                        break
 
             else:
                 next_state_grounded_predicates = next_state_predicates.get(lifted_predicate_str, set())

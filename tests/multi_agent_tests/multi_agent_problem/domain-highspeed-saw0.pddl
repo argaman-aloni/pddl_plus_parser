@@ -55,7 +55,7 @@
 (:action unload-highspeed-saw
 	:parameters (?m - highspeed-saw ?b - board)
 	:precondition 
-		(in-highspeed-saw ?b ?m)
+		(and (in-highspeed-saw ?b ?m))
 	:effect (and
 		(increase ( total-cost ) 10)
 		(available ?b)

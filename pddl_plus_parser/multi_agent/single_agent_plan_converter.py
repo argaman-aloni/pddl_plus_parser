@@ -2,7 +2,7 @@
 import logging
 import re
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Set
 
 from pddl_plus_parser.models import Domain, ActionCall, Operator, JointActionCall, NOP_ACTION, Problem, State
 from pddl_plus_parser.multi_agent.common import create_initial_state, apply_actions
@@ -42,6 +42,24 @@ class PlanConverter:
 
         return plan_seq
 
+    def _extract_grounded_effects(self, operator: Operator) -> Tuple[Set[str], Set[str]]:
+        """Extracts the grounded add and delete effects of the operator.
+
+        :param operator: the operator.
+        :return: the grounded add and delete effects.
+        """
+        self.logger.debug("Extracting the grounded add and delete effects of the operator!")
+        add_effects = set()
+        delete_effects = set()
+        for effect in operator.grounded_effects:
+            for discrete_effect in effect.grounded_discrete_effects:
+                if discrete_effect.is_positive:
+                    add_effects.add(discrete_effect.untyped_representation)
+                else:
+                    delete_effects.add(discrete_effect.untyped_representation)
+
+        return add_effects, delete_effects
+
     def _validate_well_defined_action_literals(self, combined_actions: List[ActionCall], next_action: Operator) -> bool:
         """Validates whether the actions' grounded literals are well-defined.
 
@@ -65,11 +83,11 @@ class PlanConverter:
 
             op = Operator(self.ma_domain.actions[action_call.name], self.ma_domain, action_call.parameters)
             op.ground()
-            accumulated_add_effects.update([p.untyped_representation for p in op.grounded_add_effects])
-            accumulated_delete_effects.update([p.untyped_representation for p in op.grounded_delete_effects])
+            action_add_effect, action_del_effect = self._extract_grounded_effects(op)
+            accumulated_add_effects.update(action_add_effect)
+            accumulated_delete_effects.update(action_del_effect)
 
-        next_action_add_effects = [p.untyped_representation for p in next_action.grounded_add_effects]
-        next_action_del_effects = [p.untyped_representation for p in next_action.grounded_delete_effects]
+        next_action_add_effects, next_action_del_effects = self._extract_grounded_effects(next_action)
 
         return not (len(accumulated_add_effects.intersection(next_action_del_effects)) > 0 or
                     len(accumulated_delete_effects.intersection(next_action_add_effects)) > 0)

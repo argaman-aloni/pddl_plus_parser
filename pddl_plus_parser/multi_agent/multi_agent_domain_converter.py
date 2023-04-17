@@ -7,7 +7,8 @@ from pddl_plus_parser.lisp_parsers import DomainParser
 from pddl_plus_parser.models import Domain, Predicate, Action
 
 DUMMY_PREDICATE_NAME = "dummy-additional-predicate"
-DUMMY_PREDICATE = Predicate(name=DUMMY_PREDICATE_NAME, signature={}, is_positive=True)
+DUMMY_ADD_PREDICATE = Predicate(name=DUMMY_PREDICATE_NAME, signature={}, is_positive=True)
+DUMMY_DEL_PREDICATE = Predicate(name=DUMMY_PREDICATE_NAME, signature={}, is_positive=False)
 
 
 class MultiAgentDomainsConverter:
@@ -29,13 +30,13 @@ class MultiAgentDomainsConverter:
         add_action = Action()
         add_action.name = "dummy-add-predicate-action"
         add_action.signature = {"?agent": domain.types["object"]}
-        add_action.add_effects = {DUMMY_PREDICATE}
+        add_action.discrete_effects = {DUMMY_ADD_PREDICATE}
         domain.actions[add_action.name] = add_action
 
         delete_action = Action()
         delete_action.name = "dummy-del-predicate-action"
         delete_action.signature = {"?agent": domain.types["object"]}
-        delete_action.delete_effects = {DUMMY_PREDICATE}
+        delete_action.discrete_effects = {DUMMY_DEL_PREDICATE}
         domain.actions[delete_action.name] = delete_action
 
     def locate_domains(self) -> Domain:
@@ -57,7 +58,7 @@ class MultiAgentDomainsConverter:
 
             self.logger.debug(f"extracted the domain - {domain_file_name}")
 
-        combined_domain.predicates[DUMMY_PREDICATE.name] = DUMMY_PREDICATE
+        combined_domain.predicates[DUMMY_ADD_PREDICATE.name] = DUMMY_ADD_PREDICATE
         self._add_dummy_actions(combined_domain)
         return combined_domain
 

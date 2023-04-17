@@ -26,7 +26,7 @@ def test_locate_domains_returns_all_private_and_public_predicates(domain_convert
     domain = domain_converter.locate_domains()
     assert "grind-treatment-change" in domain.predicates
     assert "boardsize-successor" in domain.predicates
-    assert len(domain.predicates) == 14
+    assert len(domain.predicates) == 14 + 1 # 14 original predicates + 1 dummy predicate
 
 
 def test_locate_domains_returns_agents_actions(domain_converter: MultiAgentDomainsConverter):
@@ -42,4 +42,4 @@ def test_locate_domains_returns_actions_with_correct_information(blocks_domain_c
     """Test that the locate_domains method returns a domain with all agents' actions."""
     domain = blocks_domain_converter.locate_domains()
     assert "put-down" in domain.actions
-    assert len(domain.actions["put-down"].positive_preconditions) > 0
+    assert len(domain.actions["put-down"].preconditions.root.operands) > 0

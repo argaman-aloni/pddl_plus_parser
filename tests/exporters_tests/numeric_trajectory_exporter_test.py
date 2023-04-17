@@ -198,5 +198,6 @@ def test_export_trajectory_with_conditional_effects(
         exportable_triplets = conditional_trajectory_exporter.export(triplets)
         for triplet in exportable_triplets:
             print(triplet)
+
     except Exception as e:
         pytest.fail("Exporting a trajectory with conditional effects failed with the following error: " + str(e))
