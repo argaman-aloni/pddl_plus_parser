@@ -47,8 +47,26 @@ class Precondition:
             else:
                 yield self.binary_operator, operand
 
-    def add_condition(self, condition: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]) -> None:
-        self.operands.add(condition)
+    def add_condition(self,
+                      condition: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]) -> None:
+        """Add a condition to the precondition.
+
+        :param condition: the condition to add.
+        """
+        if isinstance(condition, (Predicate, GroundedPredicate)):
+            current_predicates = [cond.untyped_representation for cond in self.__iter__() if
+                                  isinstance(cond, Predicate)]
+            if condition.untyped_representation not in current_predicates:
+                self.operands.add(condition)
+        elif isinstance(condition, NumericalExpressionTree):
+            current_expressions = [cond.to_pddl() for cond in self.__iter__() if
+                                   isinstance(cond, NumericalExpressionTree)]
+            if condition.to_pddl() not in current_expressions:
+                self.operands.add(condition)
+        else:
+            current_compound_conditions = [str(cond) for cond in self.__iter__() if isinstance(cond, Precondition)]
+            if str(condition) not in current_compound_conditions:
+                self.operands.add(condition)
 
     def add_equality_condition(self, condition: Tuple[str, str], inequality: bool = False) -> None:
         """Add an equality condition to the precondition.
