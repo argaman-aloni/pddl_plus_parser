@@ -1,11 +1,11 @@
-from pytest import fixture, raises
+from pytest import fixture, raises, fail
 
 from pddl_plus_parser.lisp_parsers import DomainParser, PDDLTokenizer
 from pddl_plus_parser.models import PDDLType, Predicate, Action, CompoundPrecondition
 from tests.lisp_parsers_tests.consts import TEST_PARSING_FILE_PATH, TEST_WOODWORKING_DOMAIN_PATH, \
     TEST_NUMERIC_DEPOT_DOMAIN_PATH, PLANT_WATERING_DOMAIN, TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN, \
     TEST_TYPES_FOR_CONDITIONAL_DOMAIN, TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN, SPIDER_DOMAIN_PATH, \
-    TYPES_FOR_UNIVERSAL_CONDITIONAL_DOMAIN, TEST_PREDICATES_FOR_UNIVERSAL_QUANTIFIER_DOMAIN
+    TYPES_FOR_UNIVERSAL_CONDITIONAL_DOMAIN, TEST_PREDICATES_FOR_UNIVERSAL_QUANTIFIER_DOMAIN, UMT2_DOMAIN_PATH
 
 test_types_with_no_parent = ['acolour', 'awood', 'woodobj', 'machine', 'surface', 'treatmentstatus', 'aboardsize',
                              'apartsize']
@@ -737,3 +737,16 @@ def test_parse_domain_with_domain_with_conditional_effects_not_fail():
     domain_parser = DomainParser(SPIDER_DOMAIN_PATH)
     domain = domain_parser.parse_domain()
     print(str(domain))
+
+
+def test_parse_domain_nested_action_schema_does_not_fail():
+    domain_parser = DomainParser(UMT2_DOMAIN_PATH)
+    try:
+        domain = domain_parser.parse_domain()
+        for action in domain.actions.values():
+            print(action.name)
+            print(action.preconditions)
+            print()
+    except Exception:
+        fail("Parsing domain with nested action schema failed.")
+
