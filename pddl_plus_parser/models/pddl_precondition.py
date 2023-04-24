@@ -37,6 +37,44 @@ class Precondition:
         inequality_conditions = "\n\t".join([f"(not (= {o1} {o2}))" for o1, o2 in self.inequality_preconditions])
         return f"({self.binary_operator} {combined_conditions}{equality_conditions}{inequality_conditions})"
 
+    def _validate_equality(self, other: "Precondition") -> bool:
+        """Validates if the two preconditions are logically equivalent.
+
+        :param other: the other precondition to compare to.
+        """
+        if self.binary_operator != other.binary_operator:
+            return False
+
+        self_nested_conditions = [cond for cond in self.operands if isinstance(cond, Precondition)]
+        self_primitive_predicates = {cond.untyped_representation for cond in self.operands if
+                                     isinstance(cond, Predicate)}
+        self_primitive_numeric_conditions = {cond.to_pddl() for cond in self.operands if
+                                             isinstance(cond, NumericalExpressionTree)}
+
+        other_nested_conditions = [cond for cond in other.operands if isinstance(cond, Precondition)]
+        other_primitive_predicates = {cond.untyped_representation for cond in other.operands if
+                                      isinstance(cond, Predicate)}
+        other_primitive_numeric_conditions = {cond.to_pddl() for cond in other.operands if
+                                              isinstance(cond, NumericalExpressionTree)}
+        if self_primitive_predicates != other_primitive_predicates:
+            return False
+        if self_primitive_numeric_conditions != other_primitive_numeric_conditions:
+            return False
+
+        for nested_condition in self_nested_conditions:
+            matched_condition = None
+            for other_condition in other_nested_conditions:
+                if nested_condition == other_condition:
+                    matched_condition = other_condition
+                    break
+
+            if not matched_condition:
+                return False
+
+            other_nested_conditions.remove(matched_condition)
+
+        return True
+
     def __str__(self):
         return self._print_self()
 
@@ -46,6 +84,15 @@ class Precondition:
                 yield from operand
             else:
                 yield self.binary_operator, operand
+
+    def __eq__(self, other: "Precondition") -> bool:
+        return self.binary_operator == other.binary_operator and \
+            self.operands == other.operands and \
+            self.equality_preconditions == other.equality_preconditions and \
+            self.inequality_preconditions == other.inequality_preconditions
+
+    def __hash__(self) -> int:
+        return hash(str(self))
 
     def add_condition(self,
                       condition: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]) -> None:
@@ -95,6 +142,11 @@ class UniversalPrecondition(Precondition):
         return f"(forall ({self.quantified_parameter} - {self.quantified_type.name})" \
                f"\n\t{super()._print_self()})"
 
+    def __eq__(self, other: "UniversalPrecondition") -> bool:
+        return super().__eq__(other) and \
+            self.quantified_parameter == other.quantified_parameter and \
+            self.quantified_type == other.quantified_type
+
 
 class CompoundPrecondition:
     """class representing a single precondition in a PDDL+ action."""
@@ -108,3 +160,6 @@ class CompoundPrecondition:
 
     def __iter__(self) -> Tuple[str, Union[Precondition, UniversalPrecondition]]:
         yield from self.root
+
+    def __eq__(self, other: "CompoundPrecondition") -> bool:
+        return self.root == other.root
