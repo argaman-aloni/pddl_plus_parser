@@ -139,8 +139,15 @@ class UniversalPrecondition(Precondition):
         super().__init__(binary_operator)
 
     def __str__(self):
+        internal_condition_string = super()._print_self()
+        if internal_condition_string == "(and ))":  # there are no internal conditions at all
+            return ""
+
         return f"(forall ({self.quantified_parameter} - {self.quantified_type.name})" \
-               f"\n\t{super()._print_self()})"
+               f"\n\t{internal_condition_string})"
+
+    def __hash__(self) -> int:
+        return hash(str(self))
 
     def __eq__(self, other: "UniversalPrecondition") -> bool:
         return super().__eq__(other) and \
