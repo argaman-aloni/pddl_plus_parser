@@ -115,6 +115,34 @@ class Precondition:
             if str(condition) not in current_compound_conditions:
                 self.operands.add(condition)
 
+    @staticmethod
+    def _remove_condition(
+            condition_to_remove: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree],
+            searched_condition: "Precondition") -> bool:
+        """Tries to remove the input precondition from the searched precondition.
+
+        :param condition_to_remove: the condition to remove.
+        :param searched_condition: the precondition to search in.
+        :return: True if the condition was removed, False otherwise.
+        """
+        for operand in searched_condition.operands:
+            if type(operand) == type(condition_to_remove) and operand == condition_to_remove:
+                searched_condition.operands.remove(operand)
+                return True
+
+            elif isinstance(operand, Precondition):
+                if Precondition._remove_condition(condition_to_remove, operand):
+                    return True
+
+    def remove_condition(
+            self, condition: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]) -> bool:
+        """Remove a condition from the precondition.
+
+        :param condition: the condition to remove.
+        :return: True if the condition was removed, False otherwise.
+        """
+        return self._remove_condition(condition, self)
+
     def add_equality_condition(self, condition: Tuple[str, str], inequality: bool = False) -> None:
         """Add an equality condition to the precondition.
 
@@ -170,3 +198,20 @@ class CompoundPrecondition:
 
     def __eq__(self, other: "CompoundPrecondition") -> bool:
         return self.root == other.root
+
+    def add_condition(
+            self, condition: Union[
+                Precondition, UniversalPrecondition, Predicate, GroundedPredicate, NumericalExpressionTree]) -> None:
+        """Add a condition to the compound precondition.
+
+        :param condition: the condition to add.
+        """
+        self.root.add_condition(condition)
+
+    def remove_condition(self, condition: Union[
+        Precondition, UniversalPrecondition, Predicate, GroundedPredicate, NumericalExpressionTree]) -> None:
+        """Remove a condition from the compound precondition.
+
+        :param condition: the condition to remove.
+        """
+        self.root.remove_condition(condition)

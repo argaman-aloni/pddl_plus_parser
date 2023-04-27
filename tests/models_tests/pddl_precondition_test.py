@@ -1,10 +1,9 @@
 """Module that tests the functionality of the pddl_precondition module."""
+from pytest import fixture
+
 from pddl_plus_parser.lisp_parsers import DomainParser
-from pddl_plus_parser.models import Predicate, Domain, construct_expression_tree, NumericalExpressionTree
-from pddl_plus_parser.models.pddl_precondition import CompoundPrecondition, Precondition
-
-from pytest import fixture, fail
-
+from pddl_plus_parser.models import Domain, construct_expression_tree, NumericalExpressionTree
+from pddl_plus_parser.models.pddl_precondition import Precondition
 from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN
 
 
@@ -92,3 +91,40 @@ def test_eq_returns_false_for_unnested_preconditions_when_they_contain_a_predica
 
     assert not simple_precondition == other_precondition
 
+
+def test_remove_condition_returns_true_and_removes_precondition_from_a_non_nested_precondition_that_includes_only_predicates(
+        simple_precondition: Precondition, domain: Domain):
+    test_predicate = domain.predicates["on_board"]
+    simple_precondition.add_condition(test_predicate)
+    assert test_predicate in simple_precondition.operands
+
+    assert simple_precondition.remove_condition(test_predicate)
+    assert test_predicate not in simple_precondition.operands
+
+
+def test_remove_condition_returns_false_when_predicate_not_in_non_nested_precondition_that_includes_only_predicates(
+        simple_precondition: Precondition, domain: Domain):
+    test_predicate = domain.predicates["on_board"]
+    test_predicate_to_remove = domain.predicates["power_avail"]
+    simple_precondition.add_condition(test_predicate)
+    assert test_predicate in simple_precondition.operands
+    assert test_predicate_to_remove not in simple_precondition.operands
+
+    assert not simple_precondition.remove_condition(test_predicate_to_remove)
+
+
+def test_remove_condition_returns_true_and_removes_precondition_from_a_non_nested_precondition_that_a_precondition(
+        simple_precondition: Precondition, domain: Domain):
+    test_predicate = domain.predicates["on_board"]
+    test_predicate_to_remove = domain.predicates["power_avail"]
+    test_predicate_to_remove2 = domain.predicates["power_on"]
+    simple_precondition.add_condition(test_predicate)
+    test_inner_precondition = Precondition("and")
+    test_inner_precondition.add_condition(test_predicate_to_remove)
+    test_inner_precondition.add_condition(test_predicate_to_remove2)
+    simple_precondition.add_condition(test_inner_precondition)
+    assert test_predicate in simple_precondition.operands
+    assert test_inner_precondition in simple_precondition.operands
+
+    assert simple_precondition.remove_condition(test_inner_precondition)
+    assert test_inner_precondition not in simple_precondition.operands
