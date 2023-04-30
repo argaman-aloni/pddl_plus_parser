@@ -119,9 +119,12 @@ class GroundedPrecondition:
         """
         self.logger.debug(f"Validating if the predicate {condition.untyped_representation} "
                           f"is applicable in the state")
+        positive_condition_predicate = condition.copy()
+        positive_condition_predicate.is_positive = True
+
         is_applicable = BinaryOperator[preconditions.binary_operator](
             prev_is_applicable, condition.untyped_representation in state.serialize() if condition.is_positive else
-            condition.untyped_representation not in state.serialize())
+            positive_condition_predicate.untyped_representation not in state.serialize())
         return is_applicable
 
     def _ground_universal_condition(self, condition: UniversalPrecondition,

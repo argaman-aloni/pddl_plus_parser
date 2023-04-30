@@ -31,6 +31,11 @@ TEST_MINECRAFT_PROBLEM_PATH = Path(CWD, "minecraft_problem.pddl")
 TEST_MINECRAFT_PLAN_PATH = Path(CWD, "minecraft_pfile0.solution")
 
 
+TEST_MICONIC_DOMAIN_PATH = Path(CWD, "domain_miconic.pddl")
+TEST_MICONIC_PROBLEM_PATH = Path(CWD, "miconic_problem.pddl")
+TEST_MICONIC_PLAN_PATH = Path(CWD, "miconic_solution.solution")
+
+
 @fixture()
 def discrete_domain() -> Domain:
     domain_parser = DomainParser(TEST_DISCRETE_DOMAIN_PATH)
@@ -52,6 +57,12 @@ def conditional_domain() -> Domain:
 @fixture()
 def minecraft_domain() -> Domain:
     domain_parser = DomainParser(TEST_MINECRAFT_DOMAIN_PATH)
+    return domain_parser.parse_domain()
+
+
+@fixture()
+def miconic_domain() -> Domain:
+    domain_parser = DomainParser(TEST_MICONIC_DOMAIN_PATH)
     return domain_parser.parse_domain()
 
 
@@ -90,6 +101,12 @@ def minecraft_problem(minecraft_domain: Domain) -> Problem:
     return ProblemParser(problem_path=TEST_MINECRAFT_PROBLEM_PATH, domain=minecraft_domain).parse_problem()
 
 
+
+@fixture()
+def miconic_problem(miconic_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=TEST_MICONIC_PROBLEM_PATH, domain=miconic_domain).parse_problem()
+
+
 @fixture()
 def discrete_trajectory_exporter(discrete_domain: Domain) -> TrajectoryExporter:
     return TrajectoryExporter(domain=discrete_domain)
@@ -108,6 +125,12 @@ def conditional_trajectory_exporter(conditional_domain: Domain) -> TrajectoryExp
 @fixture()
 def minecraft_trajectory_exporter(minecraft_domain: Domain) -> TrajectoryExporter:
     return TrajectoryExporter(domain=minecraft_domain)
+
+
+
+@fixture()
+def miconic_trajectory_exporter(miconic_domain: Domain) -> TrajectoryExporter:
+    return TrajectoryExporter(domain=miconic_domain)
 
 
 def create_state_from_predicate_components(
@@ -201,3 +224,18 @@ def test_export_trajectory_with_conditional_effects(
 
     except Exception as e:
         pytest.fail("Exporting a trajectory with conditional effects failed with the following error: " + str(e))
+
+
+def test_export_trajectory_with_universal_effects_applies_universal_effects_only_when_all_the_conditions_apply(
+        miconic_trajectory_exporter: TrajectoryExporter, miconic_problem: Problem):
+    triplets = miconic_trajectory_exporter.parse_plan(miconic_problem, TEST_MICONIC_PLAN_PATH)
+    print()
+    for triplet in triplets:
+        if triplet.operator.name == "stop" and str(triplet.operator) == "(stop f12)":
+            op = triplet.operator
+            print(triplet.previous_state.serialize())
+            print(str(triplet.operator))
+            print(triplet.next_state.serialize())
+            print()
+
+

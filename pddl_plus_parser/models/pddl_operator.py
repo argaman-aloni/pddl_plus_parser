@@ -84,10 +84,12 @@ class Operator:
             self.logger.warning("Did not receive the problem object so cannot apply the universal effects.")
             return
 
-        for universal_effect in self.lifted_universal_effects:
-            self.logger.debug("Updating the action's signature to temporarily include the quantified parameter.")
-            self.action.signature[universal_effect.quantified_parameter] = universal_effect.quantified_type
-            for pddl_object in self.problem_objects.values():
+        for pddl_object in self.problem_objects.values():
+            self.logger.debug(f"Trying to apply the action's universal effects on the object: {pddl_object.name}")
+
+            for universal_effect in self.lifted_universal_effects:
+                self.logger.debug("Updating the action's signature to temporarily include the quantified parameter.")
+                self.action.signature[universal_effect.quantified_parameter] = universal_effect.quantified_type
                 if pddl_object.type.name != universal_effect.quantified_type.name:
                     continue
 
@@ -108,8 +110,8 @@ class Operator:
                         self.logger.debug("The antecedents of the universal effect hold.")
                         grounded_conditional_effect.apply(current_state)
 
-            self.logger.debug("Removing the temporarily added signature item from the action.")
-            self.action.signature.pop(universal_effect.quantified_parameter)
+                self.logger.debug("Removing the temporarily added signature item from the action.")
+                self.action.signature.pop(universal_effect.quantified_parameter)
 
     def is_applicable(self, state: State) -> bool:
         """Checks if the action is applicable on the current state.
