@@ -43,6 +43,8 @@ class UniversalEffect:
         if len(self.conditional_effects) == 0:
             return ""
 
-        conditional_effects = "\n\t".join([str(conditional_effect) for conditional_effect in self.conditional_effects])
-        return f"(forall ({self.quantified_parameter} - {self.quantified_type.name})" \
-               f"\n\t\t{conditional_effects})"
+        combined_universal_effect = ""
+        for conditional_effect in self.conditional_effects:
+            combined_universal_effect += f"(forall ({self.quantified_parameter} - {self.quantified_type.name})" \
+                                         f"\n\t\t{str(conditional_effect)})\n\t"
+        return combined_universal_effect
