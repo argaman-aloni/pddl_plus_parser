@@ -3,13 +3,14 @@ from typing import Dict, Set, List
 
 from pytest import fixture, fail
 
-from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser, PDDLTokenizer
+from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser, PDDLTokenizer, TrajectoryParser
 from pddl_plus_parser.models import Domain, Action, GroundedPredicate, PDDLFunction, State, Problem, Precondition, \
-    NumericalExpressionTree
+    NumericalExpressionTree, Observation
 from pddl_plus_parser.models.grounded_precondition import GroundedPrecondition
 from tests.lisp_parsers_tests.consts import SPIDER_PROBLEM_PATH
 from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, TEST_NUMERIC_DOMAIN, SPIDER_DOMAIN_PATH, \
-    NURIKABE_DOMAIN_PATH, NURIKABE_PROBLEM_PATH
+    NURIKABE_DOMAIN_PATH, NURIKABE_PROBLEM_PATH, MICONIC_NESTED_DOMAIN_PATH, MICONIC_NESTED_PROBLEM_PATH, \
+    MICONIC_DOMAIN_PATH, MICONIC_TRAJECTORY_PATH
 
 TEST_LIFTED_SIGNATURE_ITEMS = ["?s", "?d", "?i", "?m"]
 TEST_GROUNDED_ACTION_CALL = ["s1", "test_direction", "test_instrument", "test_mode"]
@@ -48,6 +49,18 @@ def nurikabe_domain() -> Domain:
 
 
 @fixture()
+def miconic_nested_domain() -> Domain:
+    domain_parser = DomainParser(MICONIC_NESTED_DOMAIN_PATH)
+    return domain_parser.parse_domain()
+
+
+@fixture()
+def miconic_domain() -> Domain:
+    domain_parser = DomainParser(MICONIC_DOMAIN_PATH)
+    return domain_parser.parse_domain()
+
+
+@fixture()
 def spider_problem(spider_domain: Domain) -> Problem:
     return ProblemParser(problem_path=SPIDER_PROBLEM_PATH, domain=spider_domain).parse_problem()
 
@@ -55,6 +68,11 @@ def spider_problem(spider_domain: Domain) -> Problem:
 @fixture()
 def nurikabe_problem(nurikabe_domain: Domain) -> Problem:
     return ProblemParser(problem_path=NURIKABE_PROBLEM_PATH, domain=nurikabe_domain).parse_problem()
+
+
+@fixture()
+def miconic_nested_problem(miconic_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=MICONIC_NESTED_PROBLEM_PATH, domain=miconic_domain).parse_problem()
 
 
 @fixture()
@@ -88,6 +106,11 @@ def nurikabe_conditional_action(nurikabe_domain: Domain) -> Action:
 
 
 @fixture()
+def miconic_stop_action(miconic_nested_domain: Domain) -> Action:
+    return miconic_nested_domain.actions["stop"]
+
+
+@fixture()
 def satellite_action_precondition(satellite_domain: Domain, take_image_numeric_action: Action) -> GroundedPrecondition:
     return GroundedPrecondition(take_image_numeric_action.preconditions, satellite_domain, take_image_numeric_action)
 
@@ -100,6 +123,12 @@ def agricola_action_precondition(agricola_domain: Domain, agricola_numeric_actio
 @fixture()
 def spider_action_precondition(spider_domain: Domain, spider_conditional_action: Action) -> GroundedPrecondition:
     return GroundedPrecondition(spider_conditional_action.preconditions, spider_domain, spider_conditional_action)
+
+
+@fixture()
+def miconic_stop_action_precondition(miconic_nested_domain: Domain,
+                                     miconic_stop_action: Action) -> GroundedPrecondition:
+    return GroundedPrecondition(miconic_stop_action.preconditions, miconic_nested_domain, miconic_stop_action)
 
 
 @fixture()
@@ -172,6 +201,11 @@ def valid_previous_state(satellite_domain: Domain,
         **numeric_state_variables,
         data_stored_function.untyped_representation: data_stored_function
     })
+
+
+@fixture()
+def miconic_observation(miconic_domain: Domain, miconic_nested_problem: Problem) -> Observation:
+    return TrajectoryParser(miconic_domain, miconic_nested_problem).parse_trajectory(MICONIC_TRAJECTORY_PATH)
 
 
 def test_ground_equality_objects_returns_correct_grounded_objects(satellite_action_precondition: GroundedPrecondition):
@@ -485,3 +519,13 @@ def test_is_applicable_with_disjunctive_action_operator_does_not_fail(valid_prev
 
     except Exception:
         fail()
+
+
+def test_is_applicable_returns_true_when_the_action_has_nested_universal_precondition_but_is_logically_the_same_as_the_original_action(
+        miconic_nested_domain: Domain, miconic_nested_problem: Problem,
+        miconic_stop_action_precondition: GroundedPrecondition, miconic_observation: Observation):
+    miconic_stop_action_comp = miconic_observation.components[1]
+    miconic_previous_state = miconic_stop_action_comp.previous_state
+    test_parameters_map = {"?f": "f1"}
+    miconic_stop_action_precondition.ground_preconditions(test_parameters_map)
+    assert miconic_stop_action_precondition.is_applicable(miconic_previous_state)

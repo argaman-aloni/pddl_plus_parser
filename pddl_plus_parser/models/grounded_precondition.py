@@ -181,6 +181,9 @@ class GroundedPrecondition:
                     is_applicable = self._validate_numeric_expression_hold(sub_condition, is_applicable, condition,
                                                                            state)
 
+                elif isinstance(sub_condition, Precondition):
+                    is_applicable = self._is_condition_applicable(sub_condition, state, problem_objects)
+
         return is_applicable
 
     def _is_condition_applicable(self, preconditions: Precondition, state: State,
