@@ -25,6 +25,9 @@ WOODWORKING_COMBINED_DOMAIN_PATH = Path(CWD) / "woodworking_combined_domain.pddl
 WOODWORKING_COMBINED_PROBLEM_PATH = Path(CWD) / "woodworking_combined_problem.pddl"
 WOODWORKING_COMBINED_TRAJECTORY_PATH = Path(CWD) / "ma_woodworking_trajectory.trajectory"
 
+MICONIC_LEARNED_DOMAIN_PATH = Path(CWD) / "learned_domain_miconic.pddl"
+
+
 UMT2_DOMAIN_PATH = Path(CWD) / "UMT2_domain.pddl"
 
 

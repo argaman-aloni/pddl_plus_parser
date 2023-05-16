@@ -122,7 +122,7 @@ class Operator:
         if not self.grounded:
             self.ground()
 
-        return self.grounded_preconditions.is_applicable(state)
+        return self.grounded_preconditions.is_applicable(state, self.problem_objects)
 
     def apply(self, previous_state: State, allow_inapplicable_actions: bool = False) -> State:
         """Applies an action on a state and changes the state according to the action's effects.
