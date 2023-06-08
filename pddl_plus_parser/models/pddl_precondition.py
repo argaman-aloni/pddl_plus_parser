@@ -101,17 +101,17 @@ class Precondition:
         :param condition: the condition to add.
         """
         if isinstance(condition, (Predicate, GroundedPredicate)):
-            current_predicates = [cond.untyped_representation for cond in self.__iter__() if
+            current_predicates = [cond.untyped_representation for _, cond in self.__iter__() if
                                   isinstance(cond, Predicate)]
             if condition.untyped_representation not in current_predicates:
                 self.operands.add(condition)
         elif isinstance(condition, NumericalExpressionTree):
-            current_expressions = [cond.to_pddl() for cond in self.__iter__() if
+            current_expressions = [cond.to_pddl() for _, cond in self.__iter__() if
                                    isinstance(cond, NumericalExpressionTree)]
             if condition.to_pddl() not in current_expressions:
                 self.operands.add(condition)
         else:
-            current_compound_conditions = [str(cond) for cond in self.__iter__() if isinstance(cond, Precondition)]
+            current_compound_conditions = [str(cond) for _, cond in self.__iter__() if isinstance(cond, Precondition)]
             if str(condition) not in current_compound_conditions:
                 self.operands.add(condition)
 
