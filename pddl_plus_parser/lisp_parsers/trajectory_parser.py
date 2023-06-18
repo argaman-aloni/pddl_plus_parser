@@ -2,11 +2,11 @@
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Optional, Dict
 
 from pddl_plus_parser.lisp_parsers.pddl_tokenizer import PDDLTokenizer
 from pddl_plus_parser.models import Domain, Observation, State, ActionCall, PDDLFunction, Predicate, GroundedPredicate, \
-    Problem, MultiAgentObservation, NOP_ACTION
+    Problem, MultiAgentObservation, NOP_ACTION, PDDLObject
 
 
 class TrajectoryParser:
@@ -14,13 +14,16 @@ class TrajectoryParser:
 
     Note: This class assumes that the trajectory size is tractable and thus, reads the entire file at once.
     For lay loading of a trajectory future development is needed.
+
+    Warning: if the problem object is none, all objects should be present in the initial state of the trajectory.
+    Furthermore, in this case the script will not support type hierarchy or type checking for the observation objects.
     """
 
     partial_domain: Domain  # domain containing only the publicly known information.
     problem: Problem
     logger: logging.Logger
 
-    def __init__(self, partial_domain: Domain, problem: Problem):
+    def __init__(self, partial_domain: Domain, problem: Optional[Problem]=None):
         self.partial_domain = partial_domain
         self.problem = problem
         self.logger = logging.getLogger(__name__)
@@ -87,6 +90,14 @@ class TrajectoryParser:
                 f"Received fluent - {function_name} with wrong number of parameters! "
                 f"Expected - {len(lifted_function.signature)} and received - {len(fluent_signature_items)}")
 
+        if self.problem is None:
+            self.logger.debug("Since we don't know the objects in the problem, we don't need to validate their types.")
+            fluent_signature = {
+                object_name: list(lifted_function.signature.values())[index]
+                for index, object_name in enumerate(fluent_signature_items)
+            }
+            return PDDLFunction(name=function_name, signature=fluent_signature)
+
         possible_objects = {**self.problem.objects, **self.partial_domain.constants}
         fluent_signature = {
             object_name: possible_objects[object_name].type for object_name in fluent_signature_items
@@ -150,6 +161,38 @@ class TrajectoryParser:
 
         return actions
 
+
+    def deduce_problem_objects(
+            self, initial_state_expression: List[List[Union[str, List[str]]]]) -> Dict[str, PDDLObject]:
+        """Deduce the problem objects from the state.
+
+        :param initial_state_expression: the initial state expression that should contain predicates and functions that
+            can be used to deduce the problem objects from.
+        :return: the problem objects.
+        """
+        self.logger.info("Extracting the observation objects.")
+        observation_objects = {}
+        for expression in initial_state_expression:
+            if expression[0] == "=":  # This is an assignment of a grounded numeric fluent.
+                function_data = expression[1]
+                function_objects = function_data[1:]
+                lifted_function_signature = self.partial_domain.functions[function_data[0]].signature
+                for object_name, object_type in zip(function_objects, lifted_function_signature.values()):
+                    observation_objects[object_name] = PDDLObject(name=object_name, type=object_type)
+
+                continue
+
+            if expression[0] in self.partial_domain.predicates:
+                lifted_predicate_name = expression[0]
+                grounded_predicate_signature = expression[1:]
+                lifted_predicate_signature = self.partial_domain.predicates[lifted_predicate_name].signature
+                for object_name, object_type in zip(grounded_predicate_signature, lifted_predicate_signature.values()):
+                    observation_objects[object_name] = PDDLObject(name=object_name, type=object_type)
+
+                continue
+
+        return observation_objects
+
     def parse_trajectory(self, trajectory_file_path: Path,
                          executing_agents: List[str] = None) -> Union[Observation, MultiAgentObservation]:
         """Parse a trajectory and extracts the observed data into objects.
@@ -164,10 +207,17 @@ class TrajectoryParser:
         observation = MultiAgentObservation(
             executing_agents=executing_agents) if executing_agents is not None else Observation()
 
-        observation.add_problem_objects(self.problem.objects)
         self.logger.debug("Starting to generate the observation from the input trajectory.")
         for index in range(0, len(observation_expression) - 2, 2):
             macro_expression = observation_expression[index]
+            if macro_expression[0] == ":init":
+                if self.problem is not None:
+                    observation.add_problem_objects(self.problem.objects)
+
+                else:
+                    self.logger.debug("Parsing the initial state and extracting the objects from the state's data.")
+                    observation.add_problem_objects(self.deduce_problem_objects(macro_expression[1:]))
+
             if macro_expression[0] == ":init" or macro_expression[0] == ":state":
                 previous_state = self.parse_state(macro_expression[1:])
                 macro_expression = observation_expression[index + 1]

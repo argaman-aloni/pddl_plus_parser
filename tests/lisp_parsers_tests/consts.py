@@ -27,6 +27,9 @@ WOODWORKING_COMBINED_TRAJECTORY_PATH = Path(CWD) / "ma_woodworking_trajectory.tr
 
 MICONIC_LEARNED_DOMAIN_PATH = Path(CWD) / "learned_domain_miconic.pddl"
 
+STARCRAFT_DOMAIN_PATH = Path(CWD) / "starcraft_domain.pddl"
+STARCRAFT_TRAJECTORY_PATH = Path(CWD) / "starcraft_trajectory.trajectory"
+
 
 UMT2_DOMAIN_PATH = Path(CWD) / "UMT2_domain.pddl"
 
