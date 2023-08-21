@@ -175,14 +175,19 @@ class GroundedPrecondition:
             grounded_precondition = self._ground_universal_condition(condition, extended_parameter_map)
             for sub_condition in grounded_precondition.operands:
                 if isinstance(sub_condition, GroundedPredicate):
-                    is_applicable = self._validate_predicates_hold(sub_condition, is_applicable, condition, state)
+                    is_applicable = BinaryOperator[grounded_precondition.binary_operator](
+                        is_applicable, self._validate_predicates_hold(
+                            sub_condition, is_applicable, condition, state))
 
                 elif isinstance(sub_condition, NumericalExpressionTree):
-                    is_applicable = self._validate_numeric_expression_hold(sub_condition, is_applicable, condition,
-                                                                           state)
+                    is_applicable = BinaryOperator[grounded_precondition.binary_operator](
+                        is_applicable, self._validate_numeric_expression_hold(
+                            sub_condition, is_applicable, condition, state))
 
                 elif isinstance(sub_condition, Precondition):
-                    is_applicable = self._is_condition_applicable(sub_condition, state, problem_objects)
+                    is_applicable = BinaryOperator[grounded_precondition.binary_operator](
+                        is_applicable, self._is_condition_applicable(
+                            sub_condition, state, problem_objects))
 
         return is_applicable
 
@@ -198,10 +203,13 @@ class GroundedPrecondition:
         is_applicable = self._validate_equality_holds(preconditions)
         for condition in preconditions.operands:
             if isinstance(condition, GroundedPredicate):
-                is_applicable = self._validate_predicates_hold(condition, is_applicable, preconditions, state)
+                is_applicable = BinaryOperator[preconditions.binary_operator](
+                    is_applicable, self._validate_predicates_hold(condition, is_applicable, preconditions, state))
 
             elif isinstance(condition, NumericalExpressionTree):
-                is_applicable = self._validate_numeric_expression_hold(condition, is_applicable, preconditions, state)
+                is_applicable = BinaryOperator[preconditions.binary_operator](
+                    is_applicable, self._validate_numeric_expression_hold(
+                        condition, is_applicable, preconditions, state))
 
             elif isinstance(condition, Precondition):
                 is_applicable = BinaryOperator[preconditions.binary_operator](
