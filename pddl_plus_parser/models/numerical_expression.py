@@ -1,9 +1,14 @@
 """Class that represents a numerical expression that can be evaluated."""
-from typing import List, Union, Dict, Optional
+import os
+from typing import List, Union, Dict, Optional, Iterator
 
 from anytree import AnyNode, RenderTree
 
 from .pddl_function import PDDLFunction
+
+
+EPSILON = os.environ.get("EPSILON", 0.0001)
+
 
 LEGAL_NUMERICAL_EXPRESSIONS = ["=", "!=", "<=", ">=", ">", "<", "+", "-", "/", "*", "increase", "decrease", "assign"]
 
@@ -77,8 +82,8 @@ def assign(assigned_variable: PDDLFunction, value_to_assign: float) -> None:
 
 
 COMPARISON_OPERATORS = {
-    "=": lambda x, y: x == y,
-    "!=": lambda x, y: x != y,
+    "=": lambda x, y: abs(x - y) <= EPSILON,
+    "!=": lambda x, y: abs(x - y) > EPSILON,
     "<=": lambda x, y: x <= y,
     ">=": lambda x, y: x >= y,
     ">": lambda x, y: x > y,
@@ -166,6 +171,17 @@ class NumericalExpressionTree:
 
     def __str__(self):
         return "\n".join([f"{pre}{node.id}" for pre, _, node in RenderTree(self.root)])
+
+    def _iter_interal(self, node: AnyNode) -> Iterator[AnyNode]:
+        """iterator in pre-order method."""
+        yield node
+        for child in node.children:
+            for n in self._iter_interal(child):
+                yield n
+
+    def __iter__(self):
+        """iterator in pre-order method."""
+        yield from self._iter_interal(self.root)
 
     def _convert_to_pddl(self, node: AnyNode) -> str:
         """Recursive method that converts the expression tree to a PDDL string.
