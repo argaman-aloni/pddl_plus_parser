@@ -94,6 +94,20 @@ class Precondition:
     def __hash__(self) -> int:
         return hash(str(self))
 
+    def __contains__(self, item: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]) -> bool:
+        if len(self.operands) == 0:
+            return False
+
+        if item in self.operands:
+            return True
+
+        for operand in self.operands:
+            if isinstance(operand, Precondition):
+                if item in operand:
+                    return True
+
+        return False
+
     def add_condition(self,
                       condition: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]) -> None:
         """Add a condition to the precondition.

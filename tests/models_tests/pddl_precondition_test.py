@@ -128,3 +128,32 @@ def test_remove_condition_returns_true_and_removes_precondition_from_a_non_neste
 
     assert simple_precondition.remove_condition(test_inner_precondition)
     assert test_inner_precondition not in simple_precondition.operands
+
+
+def test_contains_when_item_inside_a_non_nested_precondition_returns_true(
+        simple_precondition: Precondition, domain: Domain):
+    test_predicate = domain.predicates["on_board"]
+    simple_precondition.add_condition(test_predicate)
+    assert test_predicate in simple_precondition
+
+
+def test_contains_when_item_not_inside_a_non_nested_precondition_returns_false(
+        simple_precondition: Precondition, domain: Domain):
+    test_predicate = domain.predicates["on_board"]
+    test_predicate_to_remove = domain.predicates["power_avail"]
+    simple_precondition.add_condition(test_predicate)
+    assert test_predicate in simple_precondition
+    assert test_predicate_to_remove not in simple_precondition
+
+
+def test_contains_when_item_inside_a_nested_precondition_returns_true(
+        simple_precondition: Precondition, domain: Domain):
+    outer_predicate = domain.predicates["on_board"]
+    inner_predicate = domain.predicates["power_avail"]
+    tested_predicate = domain.predicates["power_on"]
+    simple_precondition.add_condition(outer_predicate)
+    test_inner_precondition = Precondition("and")
+    test_inner_precondition.add_condition(inner_predicate)
+    test_inner_precondition.add_condition(tested_predicate)
+    simple_precondition.add_condition(test_inner_precondition)
+    assert tested_predicate in simple_precondition
