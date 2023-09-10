@@ -20,6 +20,19 @@ class State:
         self.state_fluents = fluents
         self.is_init = is_init
 
+    def __eq__(self, other: "State") -> bool:
+        my_predicates = {predicate.untyped_representation for ground_predicates in self.state_predicates.values() for
+                         predicate in ground_predicates}
+        other_predicates = {predicate.untyped_representation for ground_predicates in other.state_predicates.values()
+                            for predicate in ground_predicates}
+        if my_predicates != other_predicates:
+            return False
+
+        my_numeric_expressions = {expression.state_representation for expression in self.state_fluents.values()}
+        other_numeric_expressions = {expression.state_representation for expression in other.state_fluents.values()}
+
+        return my_numeric_expressions == other_numeric_expressions
+
     def _serialize_numeric_fluents(self) -> str:
         """Serialize the numeric fluents of the state.
 
