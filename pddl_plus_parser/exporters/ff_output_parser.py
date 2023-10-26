@@ -31,8 +31,9 @@ class MetricFFParser:
         :param input_path: the path to the log file.
         :return: the file content.
         """
-        with open(input_path, "rt") as interm_plan_file:
-            return interm_plan_file.read()
+        with open(input_path, "rb") as interm_plan_file:
+            content = interm_plan_file.read()
+            return content.decode("utf-8", errors="ignore")
 
     def _parse_plan_content(self, planner_output) -> List[str]:
         """Parse the content of the file and export the action sequence.

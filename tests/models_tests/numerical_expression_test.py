@@ -121,6 +121,14 @@ def test_convert_to_pddl_returns_correct_expression():
     assert pddl_str == "(>= (capacity ?jug2) (amount ?jug2))"
 
 
+def test_convert_to_mathematical_returns_correct_expression():
+    test_expression = ['>=', ['capacity', '?jug2'], ['amount', '?jug2']]
+    root = construct_expression_tree(test_expression, TEST_DOMAIN_FUNCTIONS)
+    tree = NumericalExpressionTree(root)
+    pddl_str = tree.to_mathematical()
+    assert pddl_str == "((capacity ?jug2) >= (amount ?jug2))"
+
+
 def test_iter_on_numerical_expression_tree_returns_correct_node():
     test_expression = ['>=', ['capacity', '?jug2'], ['amount', '?jug2']]
     root = construct_expression_tree(test_expression, TEST_DOMAIN_FUNCTIONS)
