@@ -13,5 +13,8 @@ class PDDLObject:
     def __str__(self):
         return f"{self.name} - {self.type.name}"
 
+    def copy(self) -> "PDDLObject":
+        return PDDLObject(self.name, self.type)
+
 
 PDDLConstant = PDDLObject

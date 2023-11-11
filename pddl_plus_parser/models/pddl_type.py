@@ -22,6 +22,9 @@ class PDDLType:
     def __eq__(self, other: "PDDLType"):
         return self.name == other.name
 
+    def copy(self) -> "PDDLType":
+        return PDDLType(self.name, self.parent)
+
     def is_sub_type(self, other_type: "PDDLType") -> bool:
         """Checks if a type a subtype of the other.
 
