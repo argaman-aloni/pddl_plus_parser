@@ -15,3 +15,6 @@ MICONIC_DOMAIN_PATH = Path(CWD, "domain_miconic.pddl")
 MICONIC_NESTED_DOMAIN_PATH = Path(CWD, "miconic_learned_domain.pddl")
 MICONIC_NESTED_PROBLEM_PATH = Path(CWD, "miconic_pfile_1-0.pddl")
 MICONIC_TRAJECTORY_PATH = Path(CWD, "miconic_pfile_1-0.trajectory")
+
+MINECRAFT_LARGE_DOMAIN_PATH = Path(CWD, "advanced_minecraft_domain.pddl")
+MINECRAFT_LARGE_PROBLEM_PATH = Path(CWD, "advanced_map_instance_0.pddl")

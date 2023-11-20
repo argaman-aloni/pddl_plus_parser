@@ -8,7 +8,7 @@ from pddl_plus_parser.models import Domain, Action, GroundedPredicate, PDDLFunct
 from pddl_plus_parser.models.grounded_effect import GroundedEffect
 from tests.lisp_parsers_tests.consts import SPIDER_PROBLEM_PATH
 from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, TEST_NUMERIC_DOMAIN, SPIDER_DOMAIN_PATH, \
-    NURIKABE_DOMAIN_PATH, NURIKABE_PROBLEM_PATH
+    NURIKABE_DOMAIN_PATH, NURIKABE_PROBLEM_PATH, MINECRAFT_LARGE_DOMAIN_PATH, MINECRAFT_LARGE_PROBLEM_PATH
 
 TEST_LIFTED_SIGNATURE_ITEMS = ["?s", "?d", "?i", "?m"]
 TEST_GROUNDED_ACTION_CALL = ["s1", "test_direction", "test_instrument", "test_mode"]
@@ -43,6 +43,12 @@ def spider_domain() -> Domain:
 @fixture()
 def nurikabe_domain() -> Domain:
     domain_parser = DomainParser(NURIKABE_DOMAIN_PATH)
+    return domain_parser.parse_domain()
+
+
+@fixture()
+def minecraft_large_domain() -> Domain:
+    domain_parser = DomainParser(MINECRAFT_LARGE_DOMAIN_PATH, partial_parsing=False)
     return domain_parser.parse_domain()
 
 
@@ -143,6 +149,11 @@ def previous_state_with_missing_numeric_fluent(satellite_domain: Domain,
     numeric_state_variables[data_capacity_function.untyped_representation].set_value(18.3)
     numeric_state_variables[data_function.untyped_representation].set_value(5.3)
     return State(predicates=complete_state_predicates, fluents=numeric_state_variables)
+
+
+@fixture()
+def minecraft_large_problem(minecraft_large_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=MINECRAFT_LARGE_PROBLEM_PATH, domain=minecraft_large_domain).parse_problem()
 
 
 @fixture()
@@ -326,3 +337,20 @@ def test_apply_removed_predicate_when_predicate_in_delete_effects(
     new_state_predicates = tmp_state.state_predicates
     satellite_action_effects.apply(tmp_state)
     assert len(new_state_predicates[pointing_predicate_str]) == 0
+
+
+def test_apply_uses_delete_then_add_methodology_and_does_not_remove_predicates_that_should_appear_in_state(
+        minecraft_large_problem: Problem, minecraft_large_domain: Domain):
+    state_predicates = minecraft_large_problem.initial_state_predicates
+    state_fluents = minecraft_large_problem.initial_state_fluents
+    initial_state = State(predicates=state_predicates, fluents=state_fluents, is_init=True)
+    minecraft_grounded_effect = GroundedEffect(
+        None,
+        minecraft_large_domain.actions["tp_to"].discrete_effects,
+        minecraft_large_domain.actions["tp_to"].numeric_effects,
+        minecraft_large_domain,
+        minecraft_large_domain.actions["tp_to"])
+    minecraft_grounded_effect.ground_conditional_effect({"?from": "cell15", "?to": "cell15"})
+    new_state = initial_state.copy()
+    minecraft_grounded_effect.apply(new_state)
+    assert "(position cell15)" in new_state.serialize()

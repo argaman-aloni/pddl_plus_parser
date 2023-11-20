@@ -66,25 +66,29 @@ class GroundedEffect:
     def _apply_discrete_effects(self, next_state_predicates: Dict[str, Set[GroundedPredicate]]) -> None:
         """Applies the discrete effects to the given state.
 
+        Note: This method works according to the delete then add semantics of PDDL+.
+
         :param next_state_predicates: the next state predicates to update with the effect's data.
         """
-        for predicate in self.grounded_discrete_effects:
+        # delete effects
+        delete_effects = [effect for effect in self.grounded_discrete_effects if not effect.is_positive]
+        add_effects = [effect for effect in self.grounded_discrete_effects if effect.is_positive]
+        for predicate in delete_effects:
+            positive_predicate = predicate.copy()
+            positive_predicate.is_positive = True
+            if positive_predicate.lifted_untyped_representation not in next_state_predicates:
+                continue
+
+            for state_predicate in next_state_predicates[positive_predicate.lifted_untyped_representation]:
+                if state_predicate.untyped_representation == positive_predicate.untyped_representation:
+                    next_state_predicates[positive_predicate.lifted_untyped_representation].discard(state_predicate)
+                    break
+
+        for predicate in add_effects:
             lifted_predicate_str = predicate.lifted_untyped_representation
-            if not predicate.is_positive:
-                positive_predicate = predicate.copy()
-                positive_predicate.is_positive = True
-                if positive_predicate.lifted_untyped_representation not in next_state_predicates:
-                    continue
-
-                for state_predicate in next_state_predicates[positive_predicate.lifted_untyped_representation]:
-                    if state_predicate.untyped_representation == positive_predicate.untyped_representation:
-                        next_state_predicates[positive_predicate.lifted_untyped_representation].discard(state_predicate)
-                        break
-
-            else:
-                next_state_grounded_predicates = next_state_predicates.get(lifted_predicate_str, set())
-                next_state_grounded_predicates.add(predicate)
-                next_state_predicates[lifted_predicate_str] = next_state_grounded_predicates
+            next_state_grounded_predicates = next_state_predicates.get(lifted_predicate_str, set())
+            next_state_grounded_predicates.add(predicate)
+            next_state_predicates[lifted_predicate_str] = next_state_grounded_predicates
 
     @staticmethod
     def _update_single_numeric_expression(numeric_expression: NumericalExpressionTree,
