@@ -1,6 +1,7 @@
 """Module that represents a state definition in a PDDL trajectory."""
 from typing import Dict, Set
 
+from .pddl_object import PDDLObject
 from .pddl_function import PDDLFunction
 from .pddl_predicate import GroundedPredicate
 
@@ -64,6 +65,21 @@ class State:
 
         return f"({' '.join(fluent.state_typed_representation for fluent in self.state_fluents.values())}" \
                f"{typed_predicates_str})\n"
+
+    def get_state_objects(self) -> Dict[str, PDDLObject]:
+        """Returns all the objects in the state."""
+        state_objects = {}
+        for grounded_predicates_set in self.state_predicates.values():
+            for grounded_predicate in grounded_predicates_set:
+                for param_name, obj_type in grounded_predicate.signature.items():
+                    object_name = grounded_predicate.object_mapping[param_name]
+                    state_objects[object_name] = PDDLObject(name=object_name, type=obj_type)
+
+        for grounded_function in self.state_fluents.values():
+            for obj_name, obj_type in grounded_function.signature.items():
+                state_objects[obj_name] = PDDLObject(name=obj_name, type=obj_type)
+
+        return state_objects
 
     def serialize(self) -> str:
         return f"({':init' if self.is_init else ':state'}" \

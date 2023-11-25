@@ -1,4 +1,4 @@
-from pytest import fixture, fail
+from pytest import fixture
 
 from pddl_plus_parser.lisp_parsers import ProblemParser, DomainParser
 from pddl_plus_parser.models import Domain, Problem, State
@@ -25,6 +25,11 @@ def spider_domain() -> Domain:
 @fixture()
 def spider_problem(spider_domain: Domain) -> Problem:
     return ProblemParser(problem_path=SPIDER_PROBLEM_PATH, domain=spider_domain).parse_problem()
+
+
+@fixture()
+def spider_first_state(spider_problem: Problem) -> State:
+    return State(predicates=spider_problem.initial_state_predicates, fluents=spider_problem.initial_state_fluents)
 
 
 def test_states_are_equal_when_states_contain_only_predicates(spider_problem: Problem):
@@ -70,3 +75,11 @@ def test_states_are_not_equal_when_states_contain_predicates_and_numeric_and_one
     state2 = state1.copy()
     state1.state_fluents["(group_worker_cost worker2)"].set_value(2)
     assert not state1 == state2
+
+
+def test_get_state_objects_extract_all_objects_from_state(spider_first_state: State):
+    objects = spider_first_state.get_state_objects()
+    assert len(objects) == 31
+    assert len([obj for obj in objects.keys() if obj.startswith("card")]) == 24
+    assert len([obj for obj in objects.keys() if obj.startswith("pile")]) == 4
+    assert len([obj for obj in objects.keys() if obj.startswith("deal")]) == 3
