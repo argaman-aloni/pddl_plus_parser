@@ -21,18 +21,24 @@ class Precondition:
 
     def _print_self(self) -> str:
         """Print the precondition in a human-readable format."""
-        combined_preconditions = []
+        numeric_preconditions = []
+        discrete_preconditions = []
+        compound_preconditions = []
         for operand in self.operands:
             if isinstance(operand, Precondition):
-                combined_preconditions.append(str(operand))
+                compound_preconditions.append(str(operand))
 
             elif isinstance(operand, Predicate):
-                combined_preconditions.append(operand.untyped_representation)
+                discrete_preconditions.append(operand.untyped_representation)
 
             elif isinstance(operand, NumericalExpressionTree):
-                combined_preconditions.append(operand.to_pddl())
+                numeric_preconditions.append(operand.to_pddl())
 
-        combined_conditions = "\n\t".join(combined_preconditions)
+        discrete_preconditions.sort()
+        numeric_preconditions.sort()
+        compound_preconditions.sort()
+        compound_preconditions = discrete_preconditions + numeric_preconditions + compound_preconditions
+        combined_conditions = "\n\t".join(compound_preconditions)
         equality_conditions = "\n\t".join([f"(= {o1} {o2})" for o1, o2 in self.equality_preconditions])
         inequality_conditions = "\n\t".join([f"(not (= {o1} {o2}))" for o1, o2 in self.inequality_preconditions])
         return f"({self.binary_operator} {combined_conditions}{equality_conditions}{inequality_conditions})"
