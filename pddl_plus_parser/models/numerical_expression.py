@@ -4,11 +4,10 @@ from typing import List, Union, Dict, Optional, Iterator
 
 from anytree import AnyNode, RenderTree
 
+from .numeric_symbolic_operations import simplify_complex_numeric_expression
 from .pddl_function import PDDLFunction
 
-
 EPSILON = os.environ.get("EPSILON", 0.0001)
-
 
 LEGAL_NUMERICAL_EXPRESSIONS = ["=", "!=", "<=", ">=", ">", "<", "+", "-", "/", "*", "increase", "decrease", "assign"]
 
@@ -172,16 +171,16 @@ class NumericalExpressionTree:
     def __str__(self):
         return "\n".join([f"{pre}{node.id}" for pre, _, node in RenderTree(self.root)])
 
-    def _iter_interal(self, node: AnyNode) -> Iterator[AnyNode]:
+    def _iter_internal(self, node: AnyNode) -> Iterator[AnyNode]:
         """iterator in pre-order method."""
         yield node
         for child in node.children:
-            for n in self._iter_interal(child):
+            for n in self._iter_internal(child):
                 yield n
 
     def __iter__(self):
         """iterator in pre-order method."""
-        yield from self._iter_interal(self.root)
+        yield from self._iter_internal(self.root)
 
     def _convert_to_pddl(self, node: AnyNode) -> str:
         """Recursive method that converts the expression tree to a PDDL string.
@@ -200,7 +199,6 @@ class NumericalExpressionTree:
         right_operand = self._convert_to_pddl(node.children[1])
         return f"({node.value} {left_operand} {right_operand})"
 
-
     def _convert_to_mathematical(self, node: AnyNode) -> str:
         """Recursive method that converts the expression tree to a PDDL string.
 
@@ -214,12 +212,19 @@ class NumericalExpressionTree:
 
             return node.value
 
-        left_operand = self._convert_to_pddl(node.children[0])
-        right_operand = self._convert_to_pddl(node.children[1])
+        left_operand = self._convert_to_mathematical(node.children[0])
+        right_operand = self._convert_to_mathematical(node.children[1])
         return f"({left_operand} {node.value} {right_operand})"
 
     def to_pddl(self) -> str:
         return self._convert_to_pddl(self.root)
+
+    def simplify_complex_numerical_pddl_expression(self) -> str:
+        """Method that minimizes complex numeric expression by applying symplify on the expression."""
+        left_side_op = NumericalExpressionTree(self.root.children[0]).to_mathematical()
+        right_side_op = NumericalExpressionTree(self.root.children[1]).to_mathematical()
+        simplified_left_side = simplify_complex_numeric_expression(left_side_op)
+        return f"({self.root.value} {simplified_left_side} {right_side_op})"
 
     def to_mathematical(self) -> str:
         return self._convert_to_mathematical(self.root)

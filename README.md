@@ -20,4 +20,5 @@
 * version 3.1.0 - Added support for universal effects containing only conjunctive conditions.
 * version 3.1.4 - Added support for inapplicable actions and fixed a minor logical bug in the universal effects.
 * version 3.3.0 - Added support for nested action schemas including universal preconditions.
+* version 3.5.0 - Added simplification of numeric expression. This helps to prevent getting too complicated preconditions.
 

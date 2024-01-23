@@ -3,3 +3,4 @@ anytree~=2.8.0
 setuptools==65.6.3
 networkx==2.8.8
 numpy==1.23.5
+sympy~=1.12
