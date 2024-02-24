@@ -89,6 +89,8 @@ COMPARISON_OPERATORS = {
     "<": lambda x, y: x < y,
 }
 
+INEQUALITY_OPERATORS = ["=", "<=", ">=", ">", "<"]
+
 ASSIGNMENT_EXPRESSIONS = {
     "increase": increase,
     "decrease": decrease,
@@ -217,6 +219,9 @@ class NumericalExpressionTree:
         return f"({left_operand} {node.value} {right_operand})"
 
     def to_pddl(self) -> str:
+        if self.root.value in INEQUALITY_OPERATORS:
+            return self.simplify_complex_numerical_pddl_expression()
+
         return self._convert_to_pddl(self.root)
 
     def simplify_complex_numerical_pddl_expression(self) -> str:

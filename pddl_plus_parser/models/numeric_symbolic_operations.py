@@ -4,7 +4,7 @@ import re
 from typing import Dict
 
 from sympy import symbols, simplify, Expr, Add, Mul, Pow, Symbol, Float
-from sympy.core.numbers import Zero
+from sympy.core.numbers import Zero, NegativeOne
 from sympy.parsing.sympy_parser import parse_expr
 
 SYMPY_OP_TO_PDDL_OP = {
@@ -14,6 +14,7 @@ SYMPY_OP_TO_PDDL_OP = {
     Float: "",
     Symbol: "",
     Zero: "0",
+    NegativeOne: "-1"
 }
 
 

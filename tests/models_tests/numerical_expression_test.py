@@ -126,6 +126,16 @@ def test_convert_to_pddl_returns_correct_expression():
     assert pddl_str == "(>= (capacity ?jug2) (amount ?jug2))"
 
 
+def test_to_pddl_does_not_break_effects_format():
+    original_expression = "(assign (fuel ?z) (* (capacity ?z) 9.0))"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    zeno_domain = DomainParser(domain_path=ZENO_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, zeno_domain.functions)
+    tree = NumericalExpressionTree(root)
+    assert tree.to_pddl() == original_expression
+
+
 def test_convert_to_mathematical_returns_correct_expression():
     test_expression = ['>=', ['capacity', '?jug2'], ['amount', '?jug2']]
     root = construct_expression_tree(test_expression, TEST_DOMAIN_FUNCTIONS)
