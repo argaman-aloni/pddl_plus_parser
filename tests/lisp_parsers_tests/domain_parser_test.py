@@ -706,11 +706,11 @@ def test_parse_preconditions_with_action_with_disjunctive_preconditions_extracts
     action = domain_parser.parse_action(action_tokens, domain.types, domain.functions, domain.predicates,
                                         domain.constants)
     preconditions = action.preconditions.root
-    assert "(>= (+ (* (fuel-cost ) -0.01) 0.78) 0.0)" in str(preconditions)
-    assert "(>= (+ (* (fuel-cost ) -0.02) 1.01) 0.0)" in str(preconditions)
-    assert "(>= (+ (* (fuel-cost ) 0.01) -1.79) 0.0)" in str(preconditions)
-    assert "(>= (+ (+ (* (weight ?y) 0.01) (* (fuel-cost ) 0.01)) -2.05) 0.0)" in str(preconditions)
-    assert "(>= (+ (* (fuel-cost ) -0.01) 0.78) 0.0)" in str(preconditions)
+    assert "(>= (+ 0.78 (* -0.01 (fuel-cost ))) 0.0)" in str(preconditions)
+    assert "(>= (+ 1.01 (* -0.02 (fuel-cost ))) 0.0)" in str(preconditions)
+    assert "(>= (+ -1.79 (* 0.01 (fuel-cost ))) 0.0)" in str(preconditions)
+    assert "(>= (+ -2.05 (+ (* 0.01 (fuel-cost )) (* 0.01 (weight ?y)))) 0.0)" in str(preconditions)
+    assert "(>= (+ 0.78 (* -0.01 (fuel-cost ))) 0.0)" in str(preconditions)
     assert "or" in str(preconditions)
     print(str(preconditions))
 
