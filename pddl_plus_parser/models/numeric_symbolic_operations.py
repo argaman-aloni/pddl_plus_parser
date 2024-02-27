@@ -4,7 +4,7 @@ import re
 from typing import Dict
 
 from sympy import symbols, simplify, Expr, Add, Mul, Pow, Symbol, Float
-from sympy.core.numbers import Zero, NegativeOne
+from sympy.core.numbers import Zero, NegativeOne, One, Integer
 from sympy.parsing.sympy_parser import parse_expr
 
 SYMPY_OP_TO_PDDL_OP = {
@@ -12,9 +12,11 @@ SYMPY_OP_TO_PDDL_OP = {
     Mul: "*",
     Pow: "^",
     Float: "",
+    Integer: "",
     Symbol: "",
     Zero: "0",
-    NegativeOne: "-1"
+    NegativeOne: "-1",
+    One: "1",
 }
 
 
@@ -26,13 +28,24 @@ def extract_atom(expression: Expr, symbols_map: Dict[Symbol, str]) -> str:
     :return: the PDDL expression.
     """
     if expression.func == Float:
-        return f"{expression:.2f}"
+        return format(expression, ".4f")
+
+    if expression.func == Integer:
+        return f"{expression}"
 
     if expression.func == Zero:
         return "0"
 
-    elif expression.func == Symbol:
+    if expression.func == One:
+        return "1"
+
+    if expression.func == NegativeOne:
+        return "-1"
+
+    if expression.func == Symbol:
         return f"{symbols_map[expression]}"
+
+    raise ValueError(f"Unsupported atomic expression: {expression}")
 
 
 def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbols_map: dict) -> str:
@@ -55,6 +68,7 @@ def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbol
     for component in reversed(components):
         if nested_expression:
             nested_expression = f"({operator} {component} {nested_expression})"
+
         else:
             nested_expression = component
 

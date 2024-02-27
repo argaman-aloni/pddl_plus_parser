@@ -184,7 +184,7 @@ def test_simplify_complex_numerical_pddl_expression_returns_inequality_with_corr
 
 
 def test_simplify_complex_numerical_pddl_expression_does_not_break_already_simple_expression():
-    original_expression = "(<= (+ (* -1.00 (fuel ?a)) (* -0.07 (capacity ?a))) -202.66)"
+    original_expression = "(<= (+ (* -1 (fuel ?a)) (* -0.0700 (capacity ?a))) -202.66)"
     expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
     tokens = expression_tokenizer.parse()
     zeno_domain = DomainParser(domain_path=ZENO_DOMAIN_PATH).parse_domain()

@@ -212,6 +212,9 @@ class NumericalExpressionTree:
                 function: PDDLFunction = node.value
                 return function.untyped_representation
 
+            if isinstance(node.value, float) and node.value.is_integer():
+                return str(int(node.value))
+
             return node.value
 
         left_operand = self._convert_to_mathematical(node.children[0])
@@ -225,7 +228,7 @@ class NumericalExpressionTree:
         return self._convert_to_pddl(self.root)
 
     def simplify_complex_numerical_pddl_expression(self) -> str:
-        """Method that minimizes complex numeric expression by applying symplify on the expression."""
+        """Method that minimizes complex numeric expression by applying the simplify algorithm on the expression."""
         left_side_op = NumericalExpressionTree(self.root.children[0]).to_mathematical()
         right_side_op = NumericalExpressionTree(self.root.children[1]).to_mathematical()
         simplified_left_side = simplify_complex_numeric_expression(left_side_op)
