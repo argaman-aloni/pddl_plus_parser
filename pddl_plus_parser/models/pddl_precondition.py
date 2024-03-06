@@ -126,10 +126,8 @@ class Precondition:
             if condition.untyped_representation not in current_predicates:
                 self.operands.add(condition)
         elif isinstance(condition, NumericalExpressionTree):
-            current_expressions = [cond.to_pddl() for _, cond in self.__iter__() if
-                                   isinstance(cond, NumericalExpressionTree)]
-            if condition.to_pddl() not in current_expressions:
-                self.operands.add(condition)
+            self.operands.add(condition)
+
         else:
             current_compound_conditions = [str(cond) for _, cond in self.__iter__() if isinstance(cond, Precondition)]
             if str(condition) not in current_compound_conditions:
