@@ -48,6 +48,20 @@ def extract_atom(expression: Expr, symbols_map: Dict[Symbol, str]) -> str:
     raise ValueError(f"Unsupported atomic expression: {expression}")
 
 
+def _recursive_pow_expression_to_pddl(expression: Pow, symbols_map: dict) -> str:
+    """Converts a recursive expression to a PDDL format.
+
+    :param expression: the expression to convert.
+    :return: the string representing the PDDL expression.
+    """
+    exponent = expression.exp
+    compiled_expression = f"{symbols_map[expression.base]}"
+    for _ in range(exponent - 1):
+        compiled_expression = f"(* {compiled_expression} {symbols_map[expression.base]})"
+
+    return compiled_expression
+
+
 def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbols_map: dict) -> str:
     """Converts the internal expression to a PDDL format.
 
@@ -58,6 +72,9 @@ def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbol
     """
     if expression.is_Atom:
         return extract_atom(expression, symbols_map)
+
+    if isinstance(expression, Pow):
+        return _recursive_pow_expression_to_pddl(expression, symbols_map)
 
     # the expression is a binary expression with multiple arguments
     components = [_convert_internal_expression_to_pddl(
