@@ -88,6 +88,7 @@ class Precondition:
         for operand in self.operands:
             if isinstance(operand, Precondition):
                 yield from operand
+
             else:
                 yield self.binary_operator, operand
 
@@ -114,19 +115,47 @@ class Precondition:
 
         return False
 
-    def add_condition(self,
-                      condition: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]) -> None:
-        """Add a condition to the precondition.
+    def _unique_add_predicate(self, condition: Union[Predicate, GroundedPredicate]) -> None:
+        """Adds a new predicate to the precondition if it does not already exist.
 
         :param condition: the condition to add.
         """
-        if isinstance(condition, (Predicate, GroundedPredicate)):
-            current_predicates = [cond.untyped_representation for _, cond in self.__iter__() if
-                                  isinstance(cond, Predicate)]
-            if condition.untyped_representation not in current_predicates:
-                self.operands.add(condition)
-        elif isinstance(condition, NumericalExpressionTree):
+        current_predicates = [cond.untyped_representation for _, cond in self.__iter__() if
+                              isinstance(cond, Predicate)]
+        if condition.untyped_representation not in current_predicates:
             self.operands.add(condition)
+
+    def _unique_add_numeric_expression(self, condition: NumericalExpressionTree) -> None:
+        """Adds a new numeric expression to the precondition if it does not already exist.
+
+        :param condition: the condition to add.
+        """
+        current_expressions = [cond.to_pddl() for _, cond in self.__iter__() if
+                               isinstance(cond, NumericalExpressionTree)]
+        if condition.to_pddl() not in current_expressions:
+            self.operands.add(condition)
+
+    def add_condition(self,
+                      condition: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree],
+                      check_duplications: bool = False) -> None:
+        """Add a condition to the precondition.
+
+        :param condition: the condition to add.
+        :param check_duplications: whether to check for duplications.
+        """
+        if isinstance(condition, (Predicate, GroundedPredicate)):
+            if not check_duplications:
+                self.operands.add(condition)
+
+            else:
+                self._unique_add_predicate(condition)
+
+        elif isinstance(condition, NumericalExpressionTree):
+            if not check_duplications:
+                self.operands.add(condition)
+
+            else:
+                self._unique_add_numeric_expression(condition)
 
         else:
             current_compound_conditions = [str(cond) for _, cond in self.__iter__() if isinstance(cond, Precondition)]

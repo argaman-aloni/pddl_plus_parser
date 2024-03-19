@@ -1,7 +1,5 @@
 """Module test for the numeric trajectory exporter functionality."""
-import os
 from collections import defaultdict
-from pathlib import Path
 from typing import List
 
 import pytest
@@ -10,30 +8,11 @@ from pytest import fixture
 from pddl_plus_parser.exporters import TrajectoryExporter
 from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser
 from pddl_plus_parser.models import Domain, State, Problem
-
-CWD = os.getcwd()
-TEST_DISCRETE_DOMAIN_PATH = Path(CWD, "elevators_domain.pddl")
-TEST_DISCRETE_PROBLEM_PATH = Path(CWD, "elevators_p03.pddl")
-TEST_DISCRETE_PLAN_PATH = Path(CWD, "elevators_p03_plan.solution")
-TEST_NUMERIC_DOMAIN_PATH = Path(CWD, "depot_numeric.pddl")
-TEST_NUMERIC_PROBLEM_PATH = Path(CWD, "pfile2.pddl")
-TEST_NUMERIC_PLAN_PATH = Path(CWD, "depot_numeric.solution")
-TEST_FAULTY_NUMERIC_PLAN_PATH = Path(CWD, "depot_numeric_faulty.solution")
-TEST_DISCRETE_TRAJECTORY_FILE_PATH = Path(CWD, "test_trajectory")
-TEST_NUMERIC_TRAJECTORY_FILE_PATH = Path(CWD, "test_numeric_trajectory")
-
-TEST_CONDITIONAL_DOMAIN_PATH = Path(CWD, "domain_spider.pddl")
-TEST_CONDITIONAL_PROBLEM_PATH = Path(CWD, "pfile01_spider.pddl")
-TEST_CONDITIONAL_PLAN_PATH = Path(CWD, "pfile01_spider.solution")
-
-TEST_MINECRAFT_DOMAIN_PATH = Path(CWD, "minecraft_domain.pddl")
-TEST_MINECRAFT_PROBLEM_PATH = Path(CWD, "minecraft_problem.pddl")
-TEST_MINECRAFT_PLAN_PATH = Path(CWD, "minecraft_pfile0.solution")
-
-
-TEST_MICONIC_DOMAIN_PATH = Path(CWD, "domain_miconic.pddl")
-TEST_MICONIC_PROBLEM_PATH = Path(CWD, "miconic_problem.pddl")
-TEST_MICONIC_PLAN_PATH = Path(CWD, "miconic_solution.solution")
+from .consts import TEST_DISCRETE_DOMAIN_PATH, TEST_DISCRETE_PROBLEM_PATH, TEST_DISCRETE_PLAN_PATH, \
+    TEST_NUMERIC_DOMAIN_PATH, TEST_NUMERIC_PROBLEM_PATH, TEST_NUMERIC_PLAN_PATH, TEST_FAULTY_NUMERIC_PLAN_PATH, \
+    TEST_DISCRETE_TRAJECTORY_FILE_PATH, TEST_NUMERIC_TRAJECTORY_FILE_PATH, TEST_CONDITIONAL_DOMAIN_PATH, \
+    TEST_CONDITIONAL_PROBLEM_PATH, TEST_CONDITIONAL_PLAN_PATH, TEST_MINECRAFT_DOMAIN_PATH, TEST_MINECRAFT_PROBLEM_PATH, \
+    TEST_MINECRAFT_PLAN_PATH, TEST_MICONIC_DOMAIN_PATH, TEST_MICONIC_PROBLEM_PATH, TEST_MICONIC_PLAN_PATH
 
 
 @fixture()
@@ -101,7 +80,6 @@ def minecraft_problem(minecraft_domain: Domain) -> Problem:
     return ProblemParser(problem_path=TEST_MINECRAFT_PROBLEM_PATH, domain=minecraft_domain).parse_problem()
 
 
-
 @fixture()
 def miconic_problem(miconic_domain: Domain) -> Problem:
     return ProblemParser(problem_path=TEST_MICONIC_PROBLEM_PATH, domain=miconic_domain).parse_problem()
@@ -125,7 +103,6 @@ def conditional_trajectory_exporter(conditional_domain: Domain) -> TrajectoryExp
 @fixture()
 def minecraft_trajectory_exporter(minecraft_domain: Domain) -> TrajectoryExporter:
     return TrajectoryExporter(domain=minecraft_domain)
-
 
 
 @fixture()
@@ -237,5 +214,3 @@ def test_export_trajectory_with_universal_effects_applies_universal_effects_only
             print(str(triplet.operator))
             print(triplet.next_state.serialize())
             print()
-
-

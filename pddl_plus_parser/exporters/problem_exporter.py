@@ -1,6 +1,6 @@
 """Exports a problem object to a PDDL file."""
 from pathlib import Path
-from typing import NoReturn, List, Dict, Set, Union
+from typing import List, Dict, Set, Union
 
 from pddl_plus_parser.models import PDDLObject, GroundedPredicate, Problem, PDDLFunction, NumericalExpressionTree
 
@@ -78,7 +78,7 @@ class ProblemExporter:
 
         return problem_data
 
-    def export_problem(self, problem: Problem, export_path: Path) -> NoReturn:
+    def export_problem(self, problem: Problem, export_path: Path) -> None:
         """Export the domain object to a correct PDDL file.
 
         :param problem: the problem object to export to a PDDL file.
