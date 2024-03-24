@@ -45,7 +45,7 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def generate_multiple_problems(
-        min_counters: int, max_counters: int, max_int: int, output_folder: Path) -> NoReturn:
+        min_counters: int, max_counters: int, max_int: int, output_folder: Path, total_num_problems: int = 100) -> NoReturn:
     """Generate multiple problems based on the input arguments.
 
     :param min_counters: the minimal number of counters possible in the problems.
@@ -53,10 +53,10 @@ def generate_multiple_problems(
     :param max_int: the maximal integer value.
     :param output_folder: the path to the output folder where the problems will be saved.
     """
-    counters_range = [i for i in range(min_counters, max_counters + 1)]
-    for num_counters in counters_range:
+    for i in range(total_num_problems):
+        num_counters = random.randint(min_counters, max_counters)
         print(f"Generating problem with {num_counters} counters")
-        with open(output_folder / f"pfile{num_counters}_{random.randint(0, 100)}.pddl", "wt") as problem_file:
+        with open(output_folder / f"pfile{i}.pddl", "wt") as problem_file:
             problem_file.write(
                 generate_instance(f"instance_{num_counters}_{max_int}", num_counters, max_int))
 

@@ -56,6 +56,9 @@ def _recursive_pow_expression_to_pddl(expression: Pow, symbols_map: dict) -> str
     """
     exponent = expression.exp
     compiled_expression = f"{symbols_map[expression.base]}"
+    if exponent == -1:
+        return f"(/ 1 {compiled_expression})"
+
     for _ in range(exponent - 1):
         compiled_expression = f"(* {compiled_expression} {symbols_map[expression.base]})"
 
@@ -73,7 +76,10 @@ def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbol
     if expression.is_Atom:
         return extract_atom(expression, symbols_map)
 
-    if isinstance(expression, Pow):
+    if isinstance(expression, Pow) and expression.exp == -1:
+        return f"(/ 1 {_convert_internal_expression_to_pddl(expression.base, SYMPY_OP_TO_PDDL_OP[expression.base.func], symbols_map)})"
+
+    if isinstance(expression, Pow) and expression.exp > 1:
         return _recursive_pow_expression_to_pddl(expression, symbols_map)
 
     # the expression is a binary expression with multiple arguments

@@ -38,11 +38,11 @@ def generate_instance(instance_name: str, num_boats: int, num_people: int, max_d
 def parse_arguments() -> argparse.Namespace:
     """Parses the command line arguments."""
     parser = argparse.ArgumentParser(description="Generate sailing planning instance")
-    parser.add_argument("--min_boats", required=True, help="Starting numer of boats")
-    parser.add_argument("--max_boats", required=True, help="Maximal number of boats")
-    parser.add_argument("--min_people", required=True, help="Min of people to save")
-    parser.add_argument("--max_people", required=True, help="Max of people to save")
-    parser.add_argument("--max_dist_goal", required=False, help="Max distance people to be rescued", default=500)
+    parser.add_argument("--min_boats", type=int, required=True, help="Starting numer of boats")
+    parser.add_argument("--max_boats", type=int, required=True, help="Maximal number of boats")
+    parser.add_argument("--min_people", type=int, required=True, help="Min of people to save")
+    parser.add_argument("--max_people", type=int, required=True, help="Max of people to save")
+    parser.add_argument("--max_dist_goal", type=int, required=False, help="Max distance people to be rescued", default=500)
     parser.add_argument("--output_folder", required=True,
                         help="Path to the directory containing the generated problems")
 
@@ -52,7 +52,7 @@ def parse_arguments() -> argparse.Namespace:
 
 def generate_multiple_problems(
         min_boats: int, max_boats: int, min_people: int, max_people: int, max_dist_goal: int,
-        output_folder: Path) -> NoReturn:
+        output_folder: Path, total_number_problems: int = 100) -> NoReturn:
     """Generates multiple sailing planning problems.
 
     :param min_boats: the minimal number of boats in the problem.
@@ -65,8 +65,10 @@ def generate_multiple_problems(
     """
     boats_range = [i for i in range(min_boats, max_boats + 1)]
     people_range = [i for i in range(min_people, max_people + 1)]
-    for num_boats, num_people in itertools.product(boats_range, people_range):
-        with open(output_folder / f"pfile{num_boats}_{num_people}_{max_dist_goal}.pddl", "wt") as problem_file:
+    for i in range(total_number_problems):
+        num_boats = random.choice(boats_range)
+        num_people = random.choice(people_range)
+        with open(output_folder / f"pfile{i}.pddl", "wt") as problem_file:
             problem_file.write(
                 generate_instance(f"instance_{num_boats}_{num_people}", num_boats, num_people, max_dist_goal))
 

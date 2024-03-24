@@ -127,7 +127,7 @@ def test_convert_to_pddl_returns_correct_expression():
 
 
 def test_to_pddl_does_not_break_effects_format():
-    original_expression = "(assign (fuel ?z) (* (capacity ?z) 9.0))"
+    original_expression = "(assign (fuel ?z) (* (capacity ?z) 9.00))"
     expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
     tokens = expression_tokenizer.parse()
     zeno_domain = DomainParser(domain_path=ZENO_DOMAIN_PATH).parse_domain()

@@ -195,7 +195,7 @@ class NumericalExpressionTree:
                 function: PDDLFunction = node.value
                 return function.untyped_representation
 
-            return node.value
+            return f"{node.value:.2f}" if isinstance(node.value, float) else node.value
 
         left_operand = self._convert_to_pddl(node.children[0])
         right_operand = self._convert_to_pddl(node.children[1])

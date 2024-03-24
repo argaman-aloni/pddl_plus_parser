@@ -100,7 +100,8 @@ def parse_arguments() -> argparse.Namespace:
 
 def generate_multiple_problems(min_farms: int, max_farms: int, min_num_units: int, max_num_units: int,
                                output_folder: Path,
-                               graph_generator: GraphGeneratorTypes = GraphGeneratorTypes.star) -> NoReturn:
+                               graph_generator: GraphGeneratorTypes = GraphGeneratorTypes.star,
+                               total_num_problems: int = 100) -> NoReturn:
     """Generate multiple problems based on the input arguments.
 
     :param min_farms: the minimal number of farms possible in a planning problem.
@@ -112,9 +113,11 @@ def generate_multiple_problems(min_farms: int, max_farms: int, min_num_units: in
     """
     farms_range = [i for i in range(min_farms, max_farms + 1)]
     units_range = [i for i in range(min_num_units, max_num_units + 1)]
-    for num_farms, num_units in itertools.product(farms_range, units_range):
+    for i in range(total_num_problems):
+        num_farms = random.choice(farms_range)
+        num_units = random.choice(units_range)
         print(f"Generating problem with {num_farms} farms and {num_units} units")
-        with open(output_folder / f"pfile{num_farms}_{num_units}.pddl", "wt") as problem_file:
+        with open(output_folder / f"pfile{i}.pddl", "wt") as problem_file:
             problem_file.write(generate_instance(f"instance_{num_farms}_{num_units}", num_farms, num_units,
                                                  graph_generator))
 
