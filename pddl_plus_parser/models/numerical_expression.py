@@ -227,6 +227,9 @@ class NumericalExpressionTree:
 
         return self._convert_to_pddl(self.root)
 
+    def to_pddl_no_simplification(self) -> str:
+        return self._convert_to_pddl(self.root)
+
     def simplify_complex_numerical_pddl_expression(self) -> str:
         """Method that minimizes complex numeric expression by applying the simplify algorithm on the expression."""
         left_side_op = NumericalExpressionTree(self.root.children[0]).to_mathematical()

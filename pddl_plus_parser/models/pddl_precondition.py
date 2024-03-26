@@ -19,8 +19,11 @@ class Precondition:
         self.equality_preconditions = set()
         self.inequality_preconditions = set()
 
-    def _print_self(self) -> str:
-        """Print the precondition in a human-readable format."""
+    def _print_self(self, should_simplify: bool = True) -> str:
+        """Print the precondition in a human-readable format.
+
+        :param should_simplify: whether to print the precondition in a simplified format (for numeric expressions).
+        """
         numeric_preconditions = []
         discrete_preconditions = []
         compound_preconditions = []
@@ -32,7 +35,10 @@ class Precondition:
                 discrete_preconditions.append(operand.untyped_representation)
 
             elif isinstance(operand, NumericalExpressionTree):
-                numeric_preconditions.append(operand.to_pddl())
+                if should_simplify:
+                    numeric_preconditions.append(operand.to_pddl())
+                else:  # This is support for legacy code, will be removed in the future.
+                    numeric_preconditions.append(operand.to_pddl_no_simplification())
 
         discrete_preconditions.sort()
         numeric_preconditions.sort()
@@ -83,6 +89,13 @@ class Precondition:
 
     def __str__(self):
         return self._print_self()
+
+    def print(self, should_simply: bool = True) -> str:
+        """Print the precondition in a human-readable format.
+
+        :param should_simply: whether to print the precondition in a simplified format.
+        """
+        return self._print_self(should_simply)
 
     def __iter__(self) -> Tuple[str, Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]]:
         for operand in self.operands:
@@ -262,3 +275,13 @@ class CompoundPrecondition:
         :param condition: the condition to remove.
         """
         self.root.remove_condition(condition)
+
+    def print(self, should_simplify: bool = True) -> str:
+        """Print the compound precondition in PDDL format.
+
+        Note:
+            This code is used for legacy support for the new NSAM paper and will be deleted in future versions.
+
+        :param should_simplify: whether to print the precondition in a simplified format.
+        """
+        return self.root.print(should_simplify)
