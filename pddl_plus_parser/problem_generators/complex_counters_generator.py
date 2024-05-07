@@ -6,7 +6,7 @@ from typing import NoReturn
 
 from pddl_plus_parser.problem_generators import get_problem_template
 
-TEMPLATE_FILE_PATH = Path("counters_template.pddl")
+TEMPLATE_FILE_PATH = Path("complex_counters_template.pddl")
 
 
 def generate_instance(instance_name: str, num_counters: int, max_int: int) -> str:
@@ -18,16 +18,17 @@ def generate_instance(instance_name: str, num_counters: int, max_int: int) -> st
     :return: the string representing the planning problem.
     """
     template = get_problem_template(TEMPLATE_FILE_PATH)
+    i, j, k = random.sample(range(num_counters), 3)
+    final_values = [f"(= (* (value c{i}) (value c{j})) (value c{k}))",
+                    *[f"(= (value c{m}) {random.randint(0, max_int)})" for m in range(num_counters) if m not in [i, j, k]]]
     template_mapping = {
         "instance_name": instance_name,
         "domain_name": "fo-counters-rnd",
         "counters_list": " ".join([f"c{i}" for i in range(num_counters)]),
         "counters_initial_values": "\n\t".join(
             [f"(= (value c{i}) {random.randint(0, max_int)})" for i in range(num_counters)]),
-        "counters_rate_values": "\n\t".join([f"(= (rate_value c{i}) 0)" for i in range(num_counters)]),
         "max_int_value": max_int,
-        "counters_final_values": "\n\t".join(
-            [f"(<= (+ (value c{i}) 1) (value c{i + 1}))" for i in range(num_counters - 1)])
+        "counters_final_values": "\n\t".join(final_values)
     }
     return template.substitute(template_mapping)
 
@@ -45,7 +46,8 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def generate_multiple_problems(
-        min_counters: int, max_counters: int, max_int: int, output_folder: Path, total_num_problems: int = 200) -> NoReturn:
+        min_counters: int, max_counters: int, max_int: int, output_folder: Path,
+        total_num_problems: int = 200) -> NoReturn:
     """Generate multiple problems based on the input arguments.
 
     :param min_counters: the minimal number of counters possible in the problems.

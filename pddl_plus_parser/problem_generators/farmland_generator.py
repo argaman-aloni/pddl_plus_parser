@@ -101,7 +101,7 @@ def parse_arguments() -> argparse.Namespace:
 def generate_multiple_problems(min_farms: int, max_farms: int, min_num_units: int, max_num_units: int,
                                output_folder: Path,
                                graph_generator: GraphGeneratorTypes = GraphGeneratorTypes.star,
-                               total_num_problems: int = 100) -> NoReturn:
+                               total_num_problems: int = 200) -> NoReturn:
     """Generate multiple problems based on the input arguments.
 
     :param min_farms: the minimal number of farms possible in a planning problem.

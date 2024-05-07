@@ -41,3 +41,10 @@ def test_simplify_when_there_is_a_multiplication_causing_the_creation_of_power_d
     expected_simple_expression = "(+ 88.2300 (+ (* 1.0000 (* (* (distance ?c2 ?c1) (distance ?c2 ?c1)) (distance ?c2 ?c1))) (* -0.0100 (capacity ?a))))"
     result = simplify_complex_numeric_expression(test_simple_expression)
     assert result == expected_simple_expression
+
+
+def test_simplify_when_there_are_zeros_in_the_original_expression_removes_them_from_the_output():
+    test_simple_expression = "((((capacity ?a) - 8823.0) * 0) + (1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1))))"
+    expected_simple_expression = "(* 1.0000 (* (* (distance ?c2 ?c1) (distance ?c2 ?c1)) (distance ?c2 ?c1)))"
+    result = simplify_complex_numeric_expression(test_simple_expression)
+    assert result == expected_simple_expression

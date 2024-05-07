@@ -1,7 +1,7 @@
 """Module to perform numeric symbolic operations on strings representing numeric expressions."""
 
 import re
-from typing import Dict
+from typing import Dict, Optional
 
 from sympy import symbols, simplify, Expr, Add, Mul, Pow, Symbol, Float
 from sympy.core.numbers import Zero, NegativeOne, One, Integer
@@ -20,7 +20,7 @@ SYMPY_OP_TO_PDDL_OP = {
 }
 
 
-def extract_atom(expression: Expr, symbols_map: Dict[Symbol, str]) -> str:
+def extract_atom(expression: Expr, symbols_map: Dict[Symbol, str]) -> Optional[str]:
     """Extracts an atom from a symbolic expression.
 
     :param expression: The atomic symbolic expression to extract.
@@ -28,7 +28,8 @@ def extract_atom(expression: Expr, symbols_map: Dict[Symbol, str]) -> str:
     :return: the PDDL expression.
     """
     if expression.func == Float:
-        return format(expression, ".4f")
+        formatted_expression = format(expression, ".4f")
+        return formatted_expression if float(formatted_expression) != 0 else None
 
     if expression.func == Integer:
         return f"{expression}"
@@ -83,9 +84,12 @@ def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbol
         return _recursive_pow_expression_to_pddl(expression, symbols_map)
 
     # the expression is a binary expression with multiple arguments
-    components = [_convert_internal_expression_to_pddl(
-        expression.args[i], SYMPY_OP_TO_PDDL_OP[expression.args[i].func], symbols_map) for i in
-        range(len(expression.args))]
+    components = []
+    for i in range(len(expression.args)):
+        comp = _convert_internal_expression_to_pddl(
+            expression.args[i], SYMPY_OP_TO_PDDL_OP[expression.args[i].func], symbols_map)
+        if comp:
+            components.append(comp)
 
     nested_expression = ""
     for component in reversed(components):

@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 
-def generate_problems(output_directory: Path, num_probs_per_difficulty: int = 50):
+def generate_problems(output_directory: Path, num_probs_per_difficulty: int = 100):
     # The following code is a part of the driverlog_generator.py file
     # It is used to generate problems for the driverlog domain
     # The code is used to generate problems for learning purposes

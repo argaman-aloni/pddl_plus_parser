@@ -52,7 +52,7 @@ def parse_arguments() -> argparse.Namespace:
 
 def generate_multiple_problems(
         min_boats: int, max_boats: int, min_people: int, max_people: int, max_dist_goal: int,
-        output_folder: Path, total_number_problems: int = 100) -> NoReturn:
+        output_folder: Path, total_number_problems: int = 200) -> NoReturn:
     """Generates multiple sailing planning problems.
 
     :param min_boats: the minimal number of boats in the problem.
