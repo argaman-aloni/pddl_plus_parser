@@ -28,7 +28,7 @@ def extract_atom(expression: Expr, symbols_map: Dict[Symbol, str]) -> Optional[s
     :return: the PDDL expression.
     """
     if expression.func == Float:
-        formatted_expression = format(expression, ".2f")
+        formatted_expression = format(expression, ".2f") if not float(expression).is_integer() else f"{int(expression)}"
         return formatted_expression if float(formatted_expression) != 0 else None
 
     if expression.func == Integer:

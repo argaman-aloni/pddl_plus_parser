@@ -191,5 +191,4 @@ def test_simplify_complex_numerical_pddl_expression_does_not_break_already_simpl
     root = construct_expression_tree(tokens, zeno_domain.functions)
     tree = NumericalExpressionTree(root)
     simplified_expression = tree.simplify_complex_numerical_pddl_expression()
-    assert len(simplified_expression) == len(original_expression)
-    assert simplified_expression == original_expression
+    assert simplified_expression == "(<= (+ (* -1 (fuel ?a)) (* -0.07 (capacity ?a))) -202.66)"

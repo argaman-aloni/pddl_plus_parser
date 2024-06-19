@@ -24,27 +24,27 @@ def test_simplify_removes_zero_multiplications_from_expression_and_reduces_strin
 
 def test_simplify_removes_multiplication_by_one_sice_it_does_not_change_the_expression():
     test_simple_expression = "(1.0 * ((distance ?c2 ?c1) * (zoom-limit ?a)))"
-    expected_simple_expression = "(* 1.0000 (* (distance ?c2 ?c1) (zoom-limit ?a)))"
+    expected_simple_expression = "(* 1 (* (distance ?c2 ?c1) (zoom-limit ?a)))"
     result = simplify_complex_numeric_expression(test_simple_expression)
     assert result == expected_simple_expression
 
 
 def test_simplify_when_there_is_a_multiplication_causing_the_creation_of_power_does_not_add_power_symbol():
     test_simple_expression = "(1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1)))"
-    expected_simple_expression = "(* 1.0000 (* (distance ?c2 ?c1) (distance ?c2 ?c1)))"
+    expected_simple_expression = "(* 1 (* (distance ?c2 ?c1) (distance ?c2 ?c1)))"
     result = simplify_complex_numeric_expression(test_simple_expression)
     assert result == expected_simple_expression
 
 
 def test_simplify_when_there_is_a_multiplication_causing_the_creation_of_power_does_not_add_power_symbol_with_complex_expression():
     test_simple_expression = "((((capacity ?a) - 8823.0) * -0.01) + (1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1))))"
-    expected_simple_expression = "(+ 88.2300 (+ (* 1.0000 (* (* (distance ?c2 ?c1) (distance ?c2 ?c1)) (distance ?c2 ?c1))) (* -0.0100 (capacity ?a))))"
+    expected_simple_expression = "(+ 88.23 (+ (* 1 (* (* (distance ?c2 ?c1) (distance ?c2 ?c1)) (distance ?c2 ?c1))) (* -0.01 (capacity ?a))))"
     result = simplify_complex_numeric_expression(test_simple_expression)
     assert result == expected_simple_expression
 
 
 def test_simplify_when_there_are_zeros_in_the_original_expression_removes_them_from_the_output():
     test_simple_expression = "((((capacity ?a) - 8823.0) * 0) + (1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1))))"
-    expected_simple_expression = "(* 1.0000 (* (* (distance ?c2 ?c1) (distance ?c2 ?c1)) (distance ?c2 ?c1)))"
+    expected_simple_expression = "(* 1 (* (* (distance ?c2 ?c1) (distance ?c2 ?c1)) (distance ?c2 ?c1)))"
     result = simplify_complex_numeric_expression(test_simple_expression)
     assert result == expected_simple_expression
