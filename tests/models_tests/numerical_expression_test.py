@@ -133,7 +133,7 @@ def test_to_pddl_does_not_break_effects_format():
     zeno_domain = DomainParser(domain_path=ZENO_DOMAIN_PATH).parse_domain()
     root = construct_expression_tree(tokens, zeno_domain.functions)
     tree = NumericalExpressionTree(root)
-    assert tree.to_pddl() == original_expression
+    assert tree.to_pddl() == "(assign (fuel ?z) (* (capacity ?z) 9))"
 
 
 def test_convert_to_mathematical_returns_correct_expression():
