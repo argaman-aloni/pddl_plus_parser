@@ -8,6 +8,7 @@ from .numeric_symbolic_operations import simplify_complex_numeric_expression
 from .pddl_function import PDDLFunction
 
 EPSILON = os.environ.get("EPSILON", 0.0001)
+DEFAULT_DIGITS = 2
 
 LEGAL_NUMERICAL_EXPRESSIONS = ["=", "!=", "<=", ">=", ">", "<", "+", "-", "/", "*", "increase", "decrease", "assign"]
 
@@ -184,10 +185,11 @@ class NumericalExpressionTree:
         """iterator in pre-order method."""
         yield from self._iter_internal(self.root)
 
-    def _convert_to_pddl(self, node: AnyNode) -> str:
+    def _convert_to_pddl(self, node: AnyNode, decimal_digits: int = DEFAULT_DIGITS) -> str:
         """Recursive method that converts the expression tree to a PDDL string.
 
         :param node: the node that the recursion is currently working on.
+        :param decimal_digits: the number of decimal digits to show in the PDDL string.
         :return: the PDDL string of the expression.
         """
         if node.is_leaf:
@@ -195,10 +197,11 @@ class NumericalExpressionTree:
                 function: PDDLFunction = node.value
                 return function.untyped_representation
 
-            return f"{node.value:.2f}" if not float(node.value).is_integer() else f"{int(node.value)}"
+            return "{number:.{digits}f}".format(number=node.value, digits=decimal_digits) if not float(
+                node.value).is_integer() else f"{int(node.value)}"
 
-        left_operand = self._convert_to_pddl(node.children[0])
-        right_operand = self._convert_to_pddl(node.children[1])
+        left_operand = self._convert_to_pddl(node.children[0], decimal_digits=decimal_digits)
+        right_operand = self._convert_to_pddl(node.children[1], decimal_digits=decimal_digits)
         return f"({node.value} {left_operand} {right_operand})"
 
     def _convert_to_mathematical(self, node: AnyNode) -> str:
@@ -221,20 +224,28 @@ class NumericalExpressionTree:
         right_operand = self._convert_to_mathematical(node.children[1])
         return f"({left_operand} {node.value} {right_operand})"
 
-    def to_pddl(self) -> str:
-        if self.root.value in INEQUALITY_OPERATORS:
-            return self.simplify_complex_numerical_pddl_expression()
+    def to_pddl(self, decimal_digits: int = DEFAULT_DIGITS) -> str:
+        """Method that converts the expression tree to a PDDL string.
 
-        return self._convert_to_pddl(self.root)
+        :param decimal_digits: the number of decimal digits to show in the PDDL string.
+        :return: the PDDL string of the expression.
+        """
+        if self.root.value in INEQUALITY_OPERATORS:
+            return self.simplify_complex_numerical_pddl_expression(decimal_digits=decimal_digits)
+
+        return self._convert_to_pddl(self.root, decimal_digits=decimal_digits)
 
     def to_pddl_no_simplification(self) -> str:
         return self._convert_to_pddl(self.root)
 
-    def simplify_complex_numerical_pddl_expression(self) -> str:
-        """Method that minimizes complex numeric expression by applying the simplify algorithm on the expression."""
+    def simplify_complex_numerical_pddl_expression(self, decimal_digits: int = DEFAULT_DIGITS) -> str:
+        """Method that minimizes complex numeric expression by applying the simplify algorithm on the expression.
+
+        :param decimal_digits: the number of decimal digits to show in the PDDL string.
+        """
         left_side_op = NumericalExpressionTree(self.root.children[0]).to_mathematical()
-        right_side_op = self._convert_to_pddl(self.root.children[1])
-        simplified_left_side = simplify_complex_numeric_expression(left_side_op)
+        right_side_op = self._convert_to_pddl(self.root.children[1], decimal_digits=decimal_digits)
+        simplified_left_side = simplify_complex_numeric_expression(left_side_op, decimal_digits=decimal_digits)
         return f"({self.root.value} {simplified_left_side} {right_side_op})"
 
     def to_mathematical(self) -> str:

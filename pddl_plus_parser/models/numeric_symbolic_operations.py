@@ -19,16 +19,21 @@ SYMPY_OP_TO_PDDL_OP = {
     One: "1",
 }
 
+DEFAULT_DECIMAL_DIGITS = 2
 
-def extract_atom(expression: Expr, symbols_map: Dict[Symbol, str]) -> Optional[str]:
+
+def extract_atom(expression: Expr, symbols_map: Dict[Symbol, str], decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> \
+        Optional[str]:
     """Extracts an atom from a symbolic expression.
 
     :param expression: The atomic symbolic expression to extract.
     :param symbols_map: the map between the symbolic expression and the PDDL expression.
+    :param decimal_digits: the number of decimal digits to keep.
     :return: the PDDL expression.
     """
     if expression.func == Float:
-        formatted_expression = format(expression, ".2f") if not float(expression).is_integer() else f"{int(expression)}"
+        formatted_expression = format(expression, f".{decimal_digits}f") if not float(
+            expression).is_integer() else f"{int(expression)}"
         return formatted_expression if float(formatted_expression) != 0 else None
 
     if expression.func == Integer:
@@ -66,19 +71,21 @@ def _recursive_pow_expression_to_pddl(expression: Pow, symbols_map: dict) -> str
     return compiled_expression
 
 
-def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbols_map: dict) -> str:
+def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbols_map: dict,
+                                         decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
     """Converts the internal expression to a PDDL format.
 
     :param expression: the expression to convert.
     :param operator: the numeric operator of the current sympy expression.
     :param symbols_map: the map between the symbolic expression and the PDDL expression.
+    :param decimal_digits: the number of decimal digits to keep.
     :return: the string representing the PDDL expression.
     """
     if expression.is_Atom:
-        return extract_atom(expression, symbols_map)
+        return extract_atom(expression, symbols_map, decimal_digits)
 
     if isinstance(expression, Pow) and expression.exp == -1:
-        return f"(/ 1 {_convert_internal_expression_to_pddl(expression.base, SYMPY_OP_TO_PDDL_OP[expression.base.func], symbols_map)})"
+        return f"(/ 1 {_convert_internal_expression_to_pddl(expression.base, SYMPY_OP_TO_PDDL_OP[expression.base.func], symbols_map, decimal_digits)})"
 
     if isinstance(expression, Pow) and expression.exp > 1:
         return _recursive_pow_expression_to_pddl(expression, symbols_map)
@@ -87,7 +94,7 @@ def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbol
     components = []
     for i in range(len(expression.args)):
         comp = _convert_internal_expression_to_pddl(
-            expression.args[i], SYMPY_OP_TO_PDDL_OP[expression.args[i].func], symbols_map)
+            expression.args[i], SYMPY_OP_TO_PDDL_OP[expression.args[i].func], symbols_map, decimal_digits)
         if comp:
             components.append(comp)
 
@@ -102,25 +109,29 @@ def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbol
     return nested_expression
 
 
-def convert_expr_to_pddl(expr: Expr, symbolic_vars: Dict[str, Symbol]) -> str:
+def convert_expr_to_pddl(expr: Expr, symbolic_vars: Dict[str, Symbol],
+                         decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
     """Converts a symbolic expression to a PDDL expression.
 
     :param expr: the symbolic expression to convert.
     :param symbolic_vars: the map between the symbolic expression and the PDDL expression.
+    :param decimal_digits: the number of decimal digits to keep.
     :return: the PDDL expression.
     """
     initial_operator = SYMPY_OP_TO_PDDL_OP[expr.func]
     return _convert_internal_expression_to_pddl(
-        expr, initial_operator, {val: key for key, val in symbolic_vars.items()}
+        expr, initial_operator, {val: key for key, val in symbolic_vars.items()}, decimal_digits=decimal_digits
     )
 
 
-def simplify_complex_numeric_expression(complex_numeric_expression: str) -> str:
+def simplify_complex_numeric_expression(complex_numeric_expression: str,
+                                        decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
     """Simplifies a complex numeric expression.
 
     Note: The expression should not be in PDD: format but in regular mathematical format.
 
     :param complex_numeric_expression: the expression to simplify.
+    :param decimal_digits: the number of decimal digits to keep.
     :return: the simplified expression in PDDL format.
     """
     # Extract the left part of the inequality
@@ -140,4 +151,4 @@ def simplify_complex_numeric_expression(complex_numeric_expression: str) -> str:
 
     # Simplify the left part
     simplified_left_part = simplify(left_part_expr)
-    return convert_expr_to_pddl(simplified_left_part, symbolic_vars)
+    return convert_expr_to_pddl(simplified_left_part, symbolic_vars, decimal_digits=decimal_digits)

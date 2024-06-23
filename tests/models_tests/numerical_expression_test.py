@@ -136,6 +136,16 @@ def test_to_pddl_does_not_break_effects_format():
     assert tree.to_pddl() == "(assign (fuel ?z) (* (capacity ?z) 9))"
 
 
+def test_to_pddl_with_floating_point_numbers_and_non_default_number_of_digits_changes_number_to_include_all_digits():
+    original_expression = "(assign (fuel ?z) (* (capacity ?z) 9.1))"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    zeno_domain = DomainParser(domain_path=ZENO_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, zeno_domain.functions)
+    tree = NumericalExpressionTree(root)
+    assert tree.to_pddl(decimal_digits=3) == "(assign (fuel ?z) (* (capacity ?z) 9.100))"
+
+
 def test_convert_to_mathematical_returns_correct_expression():
     test_expression = ['>=', ['capacity', '?jug2'], ['amount', '?jug2']]
     root = construct_expression_tree(test_expression, TEST_DOMAIN_FUNCTIONS)
@@ -192,3 +202,13 @@ def test_simplify_complex_numerical_pddl_expression_does_not_break_already_simpl
     tree = NumericalExpressionTree(root)
     simplified_expression = tree.simplify_complex_numerical_pddl_expression()
     assert simplified_expression == "(<= (+ (* -1 (fuel ?a)) (* -0.07 (capacity ?a))) -202.66)"
+
+def test_simplify_complex_numerical_pddl_expression_with_non_trivial_number_of_digits_changes_the_final_output_to_include_all_digits():
+    original_expression = "(<= (+ (* -1 (fuel ?a)) (* -0.07 (capacity ?a))) -202.6679)"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    zeno_domain = DomainParser(domain_path=ZENO_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, zeno_domain.functions)
+    tree = NumericalExpressionTree(root)
+    simplified_expression = tree.simplify_complex_numerical_pddl_expression(decimal_digits=4)
+    assert simplified_expression == "(<= (+ (* -1 (fuel ?a)) (* -0.0700 (capacity ?a))) -202.6679)"
