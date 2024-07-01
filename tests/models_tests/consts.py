@@ -20,3 +20,4 @@ MINECRAFT_LARGE_DOMAIN_PATH = Path(CWD, "advanced_minecraft_domain.pddl")
 MINECRAFT_LARGE_PROBLEM_PATH = Path(CWD, "advanced_map_instance_0.pddl")
 
 ZENO_DOMAIN_PATH = Path(CWD, "zenonumeric.pddl")
+DEPOT_NUMERIC_DOMAIN_PATH = Path(CWD, "depot_numeric.pddl")

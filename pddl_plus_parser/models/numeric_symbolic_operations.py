@@ -22,6 +22,11 @@ SYMPY_OP_TO_PDDL_OP = {
 DEFAULT_DECIMAL_DIGITS = 2
 
 
+def is_number_string(s):
+    pattern = re.compile(r'^-?\d+(\.\d+)?$')
+    return bool(pattern.match(s))
+
+
 def extract_atom(expression: Expr, symbols_map: Dict[Symbol, str], decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> \
         Optional[str]:
     """Extracts an atom from a symbolic expression.
@@ -101,7 +106,8 @@ def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbol
     nested_expression = ""
     for component in reversed(components):
         if nested_expression:
-            nested_expression = f"({operator} {nested_expression} {component})"
+            nested_expression = f"({operator} {component} {nested_expression})" if not is_number_string(
+                components[0]) else f"({operator} {nested_expression} {component})"
 
         else:
             nested_expression = component

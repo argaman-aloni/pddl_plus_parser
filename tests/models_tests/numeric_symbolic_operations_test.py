@@ -3,7 +3,7 @@ from pddl_plus_parser.models.numeric_symbolic_operations import simplify_complex
 
 def test_simplify_complex_numeric_expression_with_simple_expression_returns_the_same_expression_in_pddl_format():
     test_simple_expression = "((distance ?c2 ?c1) * (zoom-limit ?a))"
-    expected_simple_expression = "(* (zoom-limit ?a) (distance ?c2 ?c1))"
+    expected_simple_expression = "(* (distance ?c2 ?c1) (zoom-limit ?a))"
     result = simplify_complex_numeric_expression(test_simple_expression)
     assert result == expected_simple_expression
 

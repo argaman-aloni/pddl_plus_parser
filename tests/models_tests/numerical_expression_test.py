@@ -5,7 +5,7 @@ from pddl_plus_parser.lisp_parsers import PDDLTokenizer, DomainParser
 from pddl_plus_parser.models import construct_expression_tree, PDDLFunction, PDDLType, calculate, evaluate_expression, \
     NumericalExpressionTree
 from pddl_plus_parser.models.numerical_expression import COMPARISON_OPERATORS
-from tests.models_tests.consts import ZENO_DOMAIN_PATH
+from tests.models_tests.consts import ZENO_DOMAIN_PATH, DEPOT_NUMERIC_DOMAIN_PATH
 
 SIMPLE_EXPRESSION = ['assign', ['amount', '?jug1'], '0']
 COMPLEX_EXPRESSION = ['>=', ['-', ['capacity', '?jug2'], ['amount', '?jug2']], ['amount', '?jug1']]
@@ -201,7 +201,8 @@ def test_simplify_complex_numerical_pddl_expression_does_not_break_already_simpl
     root = construct_expression_tree(tokens, zeno_domain.functions)
     tree = NumericalExpressionTree(root)
     simplified_expression = tree.simplify_complex_numerical_pddl_expression()
-    assert simplified_expression == "(<= (+ (* -1 (fuel ?a)) (* -0.07 (capacity ?a))) -202.66)"
+    assert simplified_expression == "(<= (+ (* (fuel ?a) -1) (* (capacity ?a) -0.07)) -202.66)"
+
 
 def test_simplify_complex_numerical_pddl_expression_with_non_trivial_number_of_digits_changes_the_final_output_to_include_all_digits():
     original_expression = "(<= (+ (* -1 (fuel ?a)) (* -0.07 (capacity ?a))) -202.6679)"
@@ -211,4 +212,15 @@ def test_simplify_complex_numerical_pddl_expression_with_non_trivial_number_of_d
     root = construct_expression_tree(tokens, zeno_domain.functions)
     tree = NumericalExpressionTree(root)
     simplified_expression = tree.simplify_complex_numerical_pddl_expression(decimal_digits=4)
-    assert simplified_expression == "(<= (+ (* -1 (fuel ?a)) (* -0.0700 (capacity ?a))) -202.6679)"
+    assert simplified_expression == "(<= (+ (* (fuel ?a) -1) (* (capacity ?a) -0.0700)) -202.6679)"
+
+
+def test_using_simplify_and_then_reconstructing_the_new_expression_to_conserve_consistency_returns_expression_in_correct_form_with_operators_sorted():
+    original_expression = "(<= (+ (* (load_limit ?x) 0.94) (+ (* (current_load ?x) 0.01) (* (fuel-cost ) -0.33))) 458.54)"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, depot_domain.functions)
+    tree = NumericalExpressionTree(root)
+    simplified_expression = tree.simplify_complex_numerical_pddl_expression()
+    assert simplified_expression == original_expression
