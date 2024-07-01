@@ -5,6 +5,8 @@ from pddl_plus_parser.models.numerical_expression import NumericalExpressionTree
 from pddl_plus_parser.models.pddl_predicate import Predicate, GroundedPredicate
 from pddl_plus_parser.models.pddl_type import PDDLType
 
+DEFAULT_DECIMAL_DIGITS = 2
+
 
 class Precondition:
     """class representing a single precondition in a PDDL+ action."""
@@ -19,7 +21,7 @@ class Precondition:
         self.equality_preconditions = set()
         self.inequality_preconditions = set()
 
-    def _print_self(self, should_simplify: bool = True) -> str:
+    def _print_self(self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
         """Print the precondition in a human-readable format.
 
         :param should_simplify: whether to print the precondition in a simplified format (for numeric expressions).
@@ -36,9 +38,9 @@ class Precondition:
 
             elif isinstance(operand, NumericalExpressionTree):
                 if should_simplify:
-                    numeric_preconditions.append(operand.to_pddl())
+                    numeric_preconditions.append(operand.to_pddl(decimal_digits))
                 else:  # This is support for legacy code, will be removed in the future.
-                    numeric_preconditions.append(operand.to_pddl_no_simplification())
+                    numeric_preconditions.append(operand.to_pddl_no_simplification(decimal_digits))
 
         discrete_preconditions.sort()
         numeric_preconditions.sort()
@@ -90,12 +92,13 @@ class Precondition:
     def __str__(self):
         return self._print_self()
 
-    def print(self, should_simply: bool = True) -> str:
+    def print(self, should_simply: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
         """Print the precondition in a human-readable format.
 
         :param should_simply: whether to print the precondition in a simplified format.
+        :param decimal_digits: the number of decimal digits to keep.
         """
-        return self._print_self(should_simply)
+        return self._print_self(should_simply, decimal_digits)
 
     def __iter__(self) -> Tuple[str, Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]]:
         for operand in self.operands:
@@ -276,12 +279,13 @@ class CompoundPrecondition:
         """
         self.root.remove_condition(condition)
 
-    def print(self, should_simplify: bool = True) -> str:
+    def print(self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
         """Print the compound precondition in PDDL format.
 
         Note:
             This code is used for legacy support for the new NSAM paper and will be deleted in future versions.
 
         :param should_simplify: whether to print the precondition in a simplified format.
+        :param decimal_digits: the number of decimal digits to keep.
         """
-        return self.root.print(should_simplify)
+        return self.root.print(should_simplify, decimal_digits)

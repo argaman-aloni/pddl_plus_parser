@@ -101,7 +101,7 @@ def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbol
     nested_expression = ""
     for component in reversed(components):
         if nested_expression:
-            nested_expression = f"({operator} {component} {nested_expression})"
+            nested_expression = f"({operator} {nested_expression} {component})"
 
         else:
             nested_expression = component

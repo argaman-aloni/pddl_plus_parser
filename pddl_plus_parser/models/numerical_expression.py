@@ -235,8 +235,13 @@ class NumericalExpressionTree:
 
         return self._convert_to_pddl(self.root, decimal_digits=decimal_digits)
 
-    def to_pddl_no_simplification(self) -> str:
-        return self._convert_to_pddl(self.root)
+    def to_pddl_no_simplification(self, decimal_digits: int = DEFAULT_DIGITS) -> str:
+        """Method that converts the expression tree to a PDDL string without simplifying the expression.
+
+        :param decimal_digits: the number of decimal digits to show in the PDDL string.
+        :return: the PDDL string of the expression.
+        """
+        return self._convert_to_pddl(self.root, decimal_digits=decimal_digits)
 
     def simplify_complex_numerical_pddl_expression(self, decimal_digits: int = DEFAULT_DIGITS) -> str:
         """Method that minimizes complex numeric expression by applying the simplify algorithm on the expression.
