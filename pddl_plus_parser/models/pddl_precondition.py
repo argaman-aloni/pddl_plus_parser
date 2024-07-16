@@ -92,13 +92,13 @@ class Precondition:
     def __str__(self):
         return self._print_self()
 
-    def print(self, should_simply: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
+    def print(self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
         """Print the precondition in a human-readable format.
 
-        :param should_simply: whether to print the precondition in a simplified format.
+        :param should_simplify: whether to print the precondition in a simplified format.
         :param decimal_digits: the number of decimal digits to keep.
         """
-        return self._print_self(should_simply, decimal_digits)
+        return self._print_self(should_simplify, decimal_digits)
 
     def __iter__(self) -> Tuple[str, Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]]:
         for operand in self.operands:
