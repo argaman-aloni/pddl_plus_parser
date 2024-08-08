@@ -110,8 +110,8 @@ def test_parse_farmland_trajectory(farmland_trajectory_parser: TrajectoryParser)
 
 
 def test_parse_ma_combined_trajectory(ma_trajectory_parser: TrajectoryParser):
-    observation = ma_trajectory_parser.parse_trajectory(WOODWORKING_COMBINED_TRAJECTORY_PATH,
-                                                        executing_agents=WOODWORKING_AGENT_NAMES)
+    observation: MultiAgentObservation = ma_trajectory_parser.parse_trajectory(WOODWORKING_COMBINED_TRAJECTORY_PATH,
+                                                                               executing_agents=WOODWORKING_AGENT_NAMES)
     assert len(observation.components) == 4
     print(observation.components[0].grounded_joint_action)
 

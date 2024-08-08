@@ -48,3 +48,11 @@ def test_simplify_when_there_are_zeros_in_the_original_expression_removes_them_f
     expected_simple_expression = "(* (* (* (distance ?c2 ?c1) (distance ?c2 ?c1)) (distance ?c2 ?c1)) 1)"
     result = simplify_complex_numeric_expression(test_simple_expression)
     assert result == expected_simple_expression
+
+
+def test_simplify_when_there_are_zeros_in_the_expression_with_decimal_point_removes_zeros_correctly():
+    # expression = (+ (*(load_limit ?x) 0.00)(+ (*(current_load ?x) 0.01)(*(fuel - cost) - 1.00))
+    test_simple_expression = "((((distance ?c2 ?c1) * 0.00) + ((zoom-limit ?a) * 0.01)) + ((capacity ?a) * -1.00))"
+    expected_simple_expression = "(+ (* (zoom-limit ?a) 0.01) (* (capacity ?a) -1))"
+    result = simplify_complex_numeric_expression(test_simple_expression)
+    assert result == expected_simple_expression

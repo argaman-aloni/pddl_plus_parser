@@ -2,6 +2,7 @@
 import logging
 from typing import Set, Tuple, Dict, Optional
 
+from pddl_plus_parser.models import PDDLFunction
 from pddl_plus_parser.models.grounding_utils import ground_predicate, ground_numeric_calculation_tree
 from pddl_plus_parser.models.numerical_expression import NumericalExpressionTree, evaluate_expression, \
     set_expression_value
@@ -236,6 +237,21 @@ class GroundedPrecondition:
 
         self._ground(lifted_conditions=self._lifted_precondition.root,
                      grounded_conditions=self._grounded_precondition.root, parameters_map=parameters_map)
+
+    @property
+    def grounded_numeric_fluents(self) -> Set[str]:
+        """Get the grounded numeric fluents of the action.
+
+        :return: the grounded numeric fluents of the action.
+        """
+        numerical_fluents = set()
+        for operand in self._grounded_precondition.root.operands:
+            if isinstance(operand, NumericalExpressionTree):
+                for node in operand:
+                    if node.is_leaf and isinstance(node.value, PDDLFunction):
+                        numerical_fluents.add(node.value.untyped_representation)
+
+        return numerical_fluents
 
     def is_applicable(self, state: State, problem_objects: Optional[Dict[str, PDDLObject]] = None) -> bool:
         """Check whether the precondition is satisfied in the given state.

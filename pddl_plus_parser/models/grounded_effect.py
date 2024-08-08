@@ -102,6 +102,20 @@ class GroundedEffect:
         new_grounded_function = evaluate_expression(numeric_expression.root)
         values_to_update[new_grounded_function.untyped_representation] = new_grounded_function
 
+    @property
+    def grounded_numeric_fluents(self) -> Set[str]:
+        """Get the grounded numeric fluents of the action.
+
+        :return: the grounded numeric fluents of the action.
+        """
+        numerical_fluents = set()
+        for effect in self.grounded_numeric_effects:
+            for node in effect:
+                if node.is_leaf and isinstance(node.value, PDDLFunction):
+                    numerical_fluents.add(node.value.untyped_representation)
+
+        return numerical_fluents
+
     def apply(self, state: State) -> None:
         """Applies the effect to the given state.
 

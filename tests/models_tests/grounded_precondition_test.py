@@ -284,19 +284,35 @@ def test_ground_preconditions_when_domain_contains_constants_grounds_action_corr
     print(grounded_preconditions)
 
 
-def test_ground_preconditions_creates_grounded_predicates_with_correct_parameter_mapping(
+def test_ground_preconditions_when_domain_contains_constants_grounds_action_correctly(
+        agricola_action_precondition: GroundedPrecondition):
+    test_parameters_map = {
+        lifted_param: grounded_object for lifted_param, grounded_object in zip(
+            AGRICOLA_LIFTED_SIGNATURE_ITEMS, AGRICOLA_GROUNDED_ACTION_CALL)
+    }
+    agricola_action_precondition.ground_preconditions(test_parameters_map)
+    grounded_preconditions = agricola_action_precondition._grounded_precondition
+    expected_grounded_preconditions = ['(available_action act_labor)',
+                                       '(current_worker noworker)',
+                                       '(next_worker noworker w1)',
+                                       '(max_worker w2)',
+                                       '(current_round round1)',
+                                       '(num_food n1)',
+                                       '(next_num n1 n2)']
+    for precondition in expected_grounded_preconditions:
+        assert precondition in str(grounded_preconditions)
+    print(grounded_preconditions)
+
+
+def test_grounded_numeric_fluents_returns_correct_numeric_fluents_for_the_grounded_action_preconditions(
         satellite_action_precondition: GroundedPrecondition):
     test_parameters_map = {
         lifted_param: grounded_object for lifted_param, grounded_object in zip(
             TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition.ground_preconditions(test_parameters_map)
-    grounded_preconditions = satellite_action_precondition._grounded_precondition
-    for _, precondition in grounded_preconditions:
-        if isinstance(precondition, GroundedPredicate):
-            for parameter in precondition.object_mapping:
-                assert parameter in test_parameters_map
-                assert test_parameters_map[parameter] == precondition.object_mapping[parameter]
+    grounded_numeric_fluents = satellite_action_precondition.grounded_numeric_fluents
+    assert grounded_numeric_fluents == {"(data_capacity s1)", "(data test_direction test_mode)"}
 
 
 def test_ground_preconditions_grounds_precondition_with_equality_conditions_correctly(

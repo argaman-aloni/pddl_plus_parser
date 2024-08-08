@@ -207,35 +207,40 @@ class TrajectoryParser:
         observation = MultiAgentObservation(
             executing_agents=executing_agents) if executing_agents is not None else Observation()
 
+        self.logger.debug("Parsing the initial state.")
+        init_state_expression = observation_expression[0]
+        if init_state_expression[0] != ":init":
+            raise SyntaxError("Encountered a trajectory without an initial state!")
+
+        if self.problem is not None:
+            observation.add_problem_objects(self.problem.objects)
+
+        else:
+            self.logger.debug("Parsing the initial state and extracting the objects from the state's data.")
+            observation.add_problem_objects(self.deduce_problem_objects(init_state_expression[1:]))
+
+        previous_state = self.parse_state(init_state_expression[1:])
+
         self.logger.debug("Starting to generate the observation from the input trajectory.")
-        for index in range(0, len(observation_expression) - 2, 2):
+        for index in range(1, len(observation_expression), 2):
             macro_expression = observation_expression[index]
-            if macro_expression[0] == ":init":
-                if self.problem is not None:
-                    observation.add_problem_objects(self.problem.objects)
+            if macro_expression[0] == "operator:":
+                action_call = self.parse_action_call(macro_expression[1:])
 
-                else:
-                    self.logger.debug("Parsing the initial state and extracting the objects from the state's data.")
-                    observation.add_problem_objects(self.deduce_problem_objects(macro_expression[1:]))
+            elif macro_expression[0] == "operators:":
+                action_call = self.parse_joint_action(macro_expression[1:], executing_agents)
 
-            if macro_expression[0] == ":init" or macro_expression[0] == ":state":
-                previous_state = self.parse_state(macro_expression[1:])
-                macro_expression = observation_expression[index + 1]
-                if macro_expression[0] == "operator:":
-                    action_call = self.parse_action_call(macro_expression[1:])
+            else:
+                raise SyntaxError("Encountered a trajectory without an action call!")
 
-                elif macro_expression[0] == "operators:":
-                    action_call = self.parse_joint_action(macro_expression[1:], executing_agents)
+            macro_expression = observation_expression[index + 1]
+            if macro_expression[0] != ":state":
+                raise SyntaxError("Encountered a trajectory without a next state!")
 
-                else:
-                    raise SyntaxError("Encountered a trajectory without an action call!")
+            next_state = self.parse_state(macro_expression[1:])
+            self.logger.debug("Finished parsing a trajectory component.")
+            observation.add_component(previous_state, action_call, next_state)
 
-                macro_expression = observation_expression[index + 2]
-                if macro_expression[0] != ":state":
-                    raise SyntaxError("Encountered a trajectory without a next state!")
-
-                next_state = self.parse_state(macro_expression[1:])
-                self.logger.debug("Finished parsing a trajectory component.")
-                observation.add_component(previous_state, action_call, next_state)
+            previous_state = next_state.copy()
 
         return observation
