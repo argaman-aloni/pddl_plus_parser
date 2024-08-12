@@ -92,15 +92,14 @@ class GroundedEffect:
 
     @staticmethod
     def _update_single_numeric_expression(numeric_expression: NumericalExpressionTree,
-                                          values_to_update: Dict[str, PDDLFunction]) -> None:
+                                          previous_state_functions: Dict[str, PDDLFunction]) -> PDDLFunction:
         """Updates the numeric value of a single numeric expression.
 
         :param numeric_expression: the expression that represents the change to the state.
-        :param values_to_update: the previous values of the numeric expressions in the state to be updated.
+        :param previous_state_functions: the previous values of the numeric expressions to use to evaluate the next state functions.
         """
-        set_expression_value(numeric_expression.root, values_to_update)
-        new_grounded_function = evaluate_expression(numeric_expression.root)
-        values_to_update[new_grounded_function.untyped_representation] = new_grounded_function
+        set_expression_value(numeric_expression.root, previous_state_functions)
+        return evaluate_expression(numeric_expression.root)
 
     @property
     def grounded_numeric_fluents(self) -> Set[str]:
@@ -123,5 +122,10 @@ class GroundedEffect:
         """
         self.logger.debug("The antecedents for the effect hold so applying the effect.")
         self._apply_discrete_effects(next_state_predicates=state.state_predicates)
+        new_values = []
         for grounded_expression in self.grounded_numeric_effects:
-            self._update_single_numeric_expression(grounded_expression, values_to_update=state.state_fluents)
+            new_values.append(self._update_single_numeric_expression(grounded_expression,
+                                                                     previous_state_functions=state.state_fluents))
+
+        for new_value in new_values:
+            state.state_fluents[new_value.untyped_representation] = new_value

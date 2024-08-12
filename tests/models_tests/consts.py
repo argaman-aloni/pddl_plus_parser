@@ -21,3 +21,6 @@ MINECRAFT_LARGE_PROBLEM_PATH = Path(CWD, "advanced_map_instance_0.pddl")
 
 ZENO_DOMAIN_PATH = Path(CWD, "zenonumeric.pddl")
 DEPOT_NUMERIC_DOMAIN_PATH = Path(CWD, "depot_numeric.pddl")
+
+HARD_DRIVERLOG_DOMAIN_PATH = Path(CWD, "driverlogHardNumeric.pddl")
+HARD_DRIVERLOG_PROBLEM_PATH = Path(CWD, "pfile558.pddl")

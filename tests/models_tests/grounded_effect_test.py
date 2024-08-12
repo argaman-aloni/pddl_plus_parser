@@ -8,7 +8,8 @@ from pddl_plus_parser.models import Domain, Action, GroundedPredicate, PDDLFunct
 from pddl_plus_parser.models.grounded_effect import GroundedEffect
 from tests.lisp_parsers_tests.consts import SPIDER_PROBLEM_PATH
 from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, TEST_NUMERIC_DOMAIN, SPIDER_DOMAIN_PATH, \
-    NURIKABE_DOMAIN_PATH, NURIKABE_PROBLEM_PATH, MINECRAFT_LARGE_DOMAIN_PATH, MINECRAFT_LARGE_PROBLEM_PATH
+    NURIKABE_DOMAIN_PATH, NURIKABE_PROBLEM_PATH, MINECRAFT_LARGE_DOMAIN_PATH, MINECRAFT_LARGE_PROBLEM_PATH, \
+    HARD_DRIVERLOG_DOMAIN_PATH, HARD_DRIVERLOG_PROBLEM_PATH
 
 TEST_LIFTED_SIGNATURE_ITEMS = ["?s", "?d", "?i", "?m"]
 TEST_GROUNDED_ACTION_CALL = ["s1", "test_direction", "test_instrument", "test_mode"]
@@ -47,6 +48,12 @@ def nurikabe_domain() -> Domain:
 
 
 @fixture()
+def hard_driverlog_domain() -> Domain:
+    domain_parser = DomainParser(HARD_DRIVERLOG_DOMAIN_PATH)
+    return domain_parser.parse_domain()
+
+
+@fixture()
 def minecraft_large_domain() -> Domain:
     domain_parser = DomainParser(MINECRAFT_LARGE_DOMAIN_PATH, partial_parsing=False)
     return domain_parser.parse_domain()
@@ -55,6 +62,11 @@ def minecraft_large_domain() -> Domain:
 @fixture()
 def spider_problem(spider_domain: Domain) -> Problem:
     return ProblemParser(problem_path=SPIDER_PROBLEM_PATH, domain=spider_domain).parse_problem()
+
+
+@fixture()
+def hard_driverlog_problem(hard_driverlog_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=HARD_DRIVERLOG_PROBLEM_PATH, domain=hard_driverlog_domain).parse_problem()
 
 
 @fixture()
@@ -90,6 +102,11 @@ def nurikabe_unconditional_action(nurikabe_domain: Domain) -> Action:
 @fixture()
 def nurikabe_conditional_action(nurikabe_domain: Domain) -> Action:
     return nurikabe_domain.actions["move-painting"]
+
+
+@fixture()
+def load_truck_action(hard_driverlog_domain: Domain) -> Action:
+    return hard_driverlog_domain.actions["load-truck"]
 
 
 @fixture()
@@ -354,3 +371,21 @@ def test_apply_uses_delete_then_add_methodology_and_does_not_remove_predicates_t
     new_state = initial_state.copy()
     minecraft_grounded_effect.apply(new_state)
     assert "(position cell15)" in new_state.serialize()
+
+
+def test_apply_updates_effects_all_at_once_and_not_change_the_value_of_the_previous_state_during_update(
+        hard_driverlog_problem: Problem, hard_driverlog_domain: Domain):
+    state_predicates = hard_driverlog_problem.initial_state_predicates
+    state_fluents = hard_driverlog_problem.initial_state_fluents
+    initial_state = State(predicates=state_predicates, fluents=state_fluents, is_init=True)
+    grounded_effect = GroundedEffect(
+        None,
+        hard_driverlog_domain.actions["load-truck"].discrete_effects,
+        hard_driverlog_domain.actions["load-truck"].numeric_effects,
+        hard_driverlog_domain,
+        hard_driverlog_domain.actions["load-truck"])
+    grounded_effect.ground_conditional_effect({"?obj": "package4", "?truck": "truck1", "?loc": "s0"})
+    new_state = initial_state.copy()
+    grounded_effect.apply(new_state)
+    assert new_state.state_fluents["(fuel-per-minute truck1)"].value == 11
+    assert new_state.state_fluents["(load truck1)"].value == 1
