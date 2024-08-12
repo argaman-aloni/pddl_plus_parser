@@ -1,9 +1,10 @@
 """Module that contains the tokenization process of the PDDL files."""
 import re
+from collections import deque
 from pathlib import Path
 from typing import List, Optional
 
-from pddl_plus_parser.lisp_parsers import Token, Expression
+from pddl_plus_parser.lisp_parsers import Expression
 
 
 class PDDLTokenizer:
@@ -11,9 +12,13 @@ class PDDLTokenizer:
 
     pddl_file_content: List[str]
 
-    def __init__(self, file_path: Optional[Path] = None, pddl_str: Optional[str] = None):
+    def __init__(
+            self, file_path: Optional[Path] = None, pddl_str: Optional[str] = None
+    ):
         if file_path is None and pddl_str is None:
-            raise ValueError("Cannot receive both the file path and the PDDL str as null.")
+            raise ValueError(
+                "Cannot receive both the file path and the PDDL str as null."
+            )
 
         if file_path is not None:
             with open(file_path, "rt", encoding="utf-8") as pddl_file:
@@ -30,20 +35,22 @@ class PDDLTokenizer:
         """
         return line.strip().startswith(";")
 
-    def tokenize(self) -> List[Token]:
+    def tokenize(self) -> deque:
         """Tokenize the PDDL file into tokens."""
-        tokens = []
+        tokens = deque()
         for line in self.pddl_file_content:
             if self._is_comment_line(line):
                 continue
 
             no_comments_line = re.sub(r";.*", "", line)
-            line_tokens = no_comments_line.lower().replace("(", " ( ").replace(")", " ) ").split()
+            line_tokens = (
+                no_comments_line.lower().replace("(", " ( ").replace(")", " ) ").split()
+            )
             tokens.extend(line_tokens)
 
         return tokens
 
-    def read_from_tokens(self, tokens: List[Token]) -> Expression:
+    def read_from_tokens(self, tokens: deque) -> Expression:
         """Extract concrete PDDL expressions from the tokens.
 
         :param tokens: the list of tokens extracted from the PDDL file.
@@ -52,13 +59,13 @@ class PDDLTokenizer:
         if len(tokens) == 0:
             raise SyntaxError("Unexpected EOF")
 
-        token = tokens.pop(0)
+        token = tokens.popleft()
         if token == "(":
             expression = []
             while tokens[0] != ")":
                 expression.append(self.read_from_tokens(tokens))
 
-            tokens.pop(0)  # pop off ')'
+            tokens.popleft()  # pop off ')'
             return expression
 
         if token == ")":

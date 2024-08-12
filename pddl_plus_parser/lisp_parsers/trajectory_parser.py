@@ -23,7 +23,7 @@ class TrajectoryParser:
     problem: Problem
     logger: logging.Logger
 
-    def __init__(self, partial_domain: Domain, problem: Optional[Problem]=None):
+    def __init__(self, partial_domain: Domain, problem: Optional[Problem] = None):
         self.partial_domain = partial_domain
         self.problem = problem
         self.logger = logging.getLogger(__name__)
@@ -161,7 +161,6 @@ class TrajectoryParser:
 
         return actions
 
-
     def deduce_problem_objects(
             self, initial_state_expression: List[List[Union[str, List[str]]]]) -> Dict[str, PDDLObject]:
         """Deduce the problem objects from the state.
@@ -194,11 +193,14 @@ class TrajectoryParser:
         return observation_objects
 
     def parse_trajectory(self, trajectory_file_path: Path,
-                         executing_agents: List[str] = None) -> Union[Observation, MultiAgentObservation]:
+                         executing_agents: List[str] = None, strict_trajectory_validation: bool = False) -> Union[
+        Observation, MultiAgentObservation]:
         """Parse a trajectory and extracts the observed data into objects.
 
         :param trajectory_file_path: the path to the trajectory file.
         :param executing_agents: the list of agents that partake in the observation.
+        :param strict_trajectory_validation: whether to validate the trajectory's  syntax strictly
+                (mainly verify that the initial state.is labeled accordingly).
         :return: the observation extracted from the serialized trajectory.
         """
         self.logger.info("Starting to read the trajectory file!")
@@ -209,7 +211,7 @@ class TrajectoryParser:
 
         self.logger.debug("Parsing the initial state.")
         init_state_expression = observation_expression[0]
-        if init_state_expression[0] != ":init":
+        if init_state_expression[0] != ":init" and strict_trajectory_validation:
             raise SyntaxError("Encountered a trajectory without an initial state!")
 
         if self.problem is not None:

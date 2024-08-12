@@ -74,4 +74,5 @@
 * version 3.5.0 - Added simplification of numeric expression. This helps to prevent getting too complicated preconditions.
 * version 3.5.7 - Added support for problem exportation to PDDL from a problem object.
 * version 3.5.8 - Fixed a bug that displayed power expressions in PDDL even though this is not supported by the language.
+* version 3.6.5 - performance **boost** for the tokenizer - credit @yarin-benyamin.
 
