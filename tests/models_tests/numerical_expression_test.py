@@ -224,3 +224,126 @@ def test_using_simplify_and_then_reconstructing_the_new_expression_to_conserve_c
     tree = NumericalExpressionTree(root)
     simplified_expression = tree.simplify_complex_numerical_pddl_expression()
     assert simplified_expression == original_expression
+
+
+def test_extract_eliminated_expressions_can_extract_correct_left_side_and_right_side_when_right_side_expression_equals_to_zero():
+    original_expression = "(= (+ (* (load_limit ?x) 0.71) (* (fuel-cost ) -0.71)) 0)"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, depot_domain.functions)
+    tree = NumericalExpressionTree(root)
+    expression_to_eliminate, replacing_expression = tree.extract_eliminated_expressions()
+    assert expression_to_eliminate is not None
+    assert replacing_expression is not None
+    assert expression_to_eliminate.to_pddl() == "(* (load_limit ?x) 0.71)"
+    assert replacing_expression.to_pddl() == "(* -1 (* (fuel-cost ) -0.71))"
+
+
+def test_extract_eliminated_expressions_can_extract_correct_left_side_and_right_side_when_right_side_expression_is_non_zero_expression():
+    original_expression = "(= (+ (* (load_limit ?x) 0.71) (* (fuel-cost ) -0.71)) 10)"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, depot_domain.functions)
+    tree = NumericalExpressionTree(root)
+    expression_to_eliminate, replacing_expression = tree.extract_eliminated_expressions()
+    assert expression_to_eliminate is not None
+    assert replacing_expression is not None
+    assert expression_to_eliminate.to_pddl() == "(* (load_limit ?x) 0.71)"
+    assert replacing_expression.to_pddl() == "(- 10 (* (fuel-cost ) -0.71))"
+
+
+def test_extract_eliminated_expressions_can_extract_correct_left_side_and_right_side_when_right_side_expression_is_a_function():
+    original_expression = "(= (+ (* (load_limit ?x) 0.71) (* (fuel-cost ) -0.71)) (+ 13 (* (fuel-cost ) -0.53))))"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, depot_domain.functions)
+    tree = NumericalExpressionTree(root)
+    expression_to_eliminate, replacing_expression = tree.extract_eliminated_expressions()
+    assert expression_to_eliminate is not None
+    assert replacing_expression is not None
+    assert expression_to_eliminate.to_pddl() == "(* (load_limit ?x) 0.71)"
+    assert replacing_expression.to_pddl() == "(- (+ 13 (* (fuel-cost ) -0.53)) (* (fuel-cost ) -0.71))"
+
+
+def test_extract_eliminated_expressions_can_extract_correct_left_side_and_right_side_when_the_expression_expresses_that_a_function_is_a_const():
+    original_expression = "(= (+ (fuel-cost ) -100) 0)"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, depot_domain.functions)
+    tree = NumericalExpressionTree(root)
+    expression_to_eliminate, replacing_expression = tree.extract_eliminated_expressions()
+    assert expression_to_eliminate is not None
+    assert replacing_expression is not None
+    assert expression_to_eliminate.to_pddl() == "(fuel-cost )"
+    assert replacing_expression.to_pddl() == "(* -1 -100)"
+
+
+def test_extract_eliminated_expressions_with_driverlog_domain_example_returns_conditions_that_the_first_item_is_equal_to_the_second():
+    original_expression = "(= (+ (load_limit ?x) (* (current_load ?x) -1)) 0)"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, depot_domain.functions)
+    tree = NumericalExpressionTree(root)
+    expression_to_eliminate, replacing_expression = tree.extract_eliminated_expressions()
+    assert expression_to_eliminate is not None
+    assert replacing_expression is not None
+    assert expression_to_eliminate.to_pddl() == "(load_limit ?x)"
+    assert replacing_expression.to_pddl() == "(* -1 (* (current_load ?x) -1))"
+
+
+def test_locate_and_replace_can_locate_the_correct_expression_inside_a_complex_expression_and_replaces_it_once_it_is_located():
+    original_expression = "(<= (+ (+ (* (load_limit ?x) -0.71) (* (current_load ?x) -0.71)) 58.22) 165.42)"
+    equality_expression = "(= (+ (load_limit ?x) (* (current_load ?x) -1)) 0)"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, depot_domain.functions)
+    tree = NumericalExpressionTree(root)
+
+    equality_expression_tree = NumericalExpressionTree(
+        construct_expression_tree(PDDLTokenizer(pddl_str=equality_expression).parse(), depot_domain.functions))
+    expression_to_eliminate, replacing_expression = equality_expression_tree.extract_eliminated_expressions()
+    tree.locate_and_replace(expression_to_eliminate, replacing_expression)
+    print(tree.to_pddl())
+    assert "(load_limit ?x)" not in tree.to_pddl()
+    assert "(* -1 (* (current_load ?x) -1))" in tree.to_pddl()
+
+
+def test_locate_and_replace_can_locate_the_correct_expression_inside_a_complex_expression_with_irrelevant_expression_and_replaces_it_once_it_is_located():
+    original_expression = "(<= (+ (+ (+ (* (load_limit ?x) -0.71) (* (current_load ?x) -0.71)) (* (fuel-cost ) 0.01)) 58.22) 3657.14)"
+    equality_expression = "(= (+ (load_limit ?x) (* (current_load ?x) -1)) 0)"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, depot_domain.functions)
+    tree = NumericalExpressionTree(root)
+
+    equality_expression_tree = NumericalExpressionTree(
+        construct_expression_tree(PDDLTokenizer(pddl_str=equality_expression).parse(), depot_domain.functions))
+    expression_to_eliminate, replacing_expression = equality_expression_tree.extract_eliminated_expressions()
+    tree.locate_and_replace(expression_to_eliminate, replacing_expression)
+    print(tree.to_pddl())
+    assert "(load_limit ?x)" not in tree.to_pddl()
+    assert "(* -1 (* (current_load ?x) -1))" in tree.to_pddl()
+
+
+def test_using_simplify_after_variable_elimination_executes_and_does_not_return_error_while_executing():
+    original_expression = "(<= (+ (+ (+ (* (load_limit ?x) -0.71) (* (current_load ?x) -0.71)) (* (fuel-cost ) 0.01)) 58.22) 3657.14)"
+    equality_expression = "(= (+ (load_limit ?x) (* (current_load ?x) -1)) 0)"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, depot_domain.functions)
+    tree = NumericalExpressionTree(root)
+
+    equality_expression_tree = NumericalExpressionTree(
+        construct_expression_tree(PDDLTokenizer(pddl_str=equality_expression).parse(), depot_domain.functions))
+    expression_to_eliminate, replacing_expression = equality_expression_tree.extract_eliminated_expressions()
+    tree.locate_and_replace(expression_to_eliminate, replacing_expression)
+    simplified_expression = tree.simplify_complex_numerical_pddl_expression()
+    assert simplified_expression == "(<= (+ (+ (* (current_load ?x) -1.42) (* (fuel-cost ) 0.01)) 58.22) 3657.14)"

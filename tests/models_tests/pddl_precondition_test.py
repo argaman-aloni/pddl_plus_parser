@@ -4,12 +4,18 @@ from pytest import fixture
 from pddl_plus_parser.lisp_parsers import DomainParser
 from pddl_plus_parser.models import Domain, construct_expression_tree, NumericalExpressionTree
 from pddl_plus_parser.models.pddl_precondition import Precondition
-from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN
+from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, HARD_TEST_NUMERIC_DOMAIN
 
 
 @fixture()
 def domain() -> Domain:
     domain_parser = DomainParser(TEST_HARD_NUMERIC_DOMAIN)
+    return domain_parser.parse_domain()
+
+
+@fixture()
+def complex_numeric_domain() -> Domain:
+    domain_parser = DomainParser(HARD_TEST_NUMERIC_DOMAIN)
     return domain_parser.parse_domain()
 
 
@@ -157,3 +163,23 @@ def test_contains_when_item_inside_a_nested_precondition_returns_true(
     test_inner_precondition.add_condition(tested_predicate)
     simple_precondition.add_condition(test_inner_precondition)
     assert tested_predicate in simple_precondition
+
+
+def test_print_with_simplify_option_on_numeric_condition_reduces_the_size_of_the_preconditions_compared_to_the_original(
+        complex_numeric_domain: Domain):
+    tested_action = complex_numeric_domain.actions["walk"]
+    precondition = tested_action.preconditions
+    original_preconditions = precondition.print(should_simplify=False)
+    simplified_precondition = precondition.print(should_simplify=True)
+    print(simplified_precondition)
+    assert len(simplified_precondition) < len(original_preconditions)
+
+
+def test_print_with_simplify_option_on_numeric_condition_reduces_the_size_of_the_preconditions_compared_to_the_original_even_when_the_removed_conditions_are_not_minimal(
+        complex_numeric_domain: Domain):
+    tested_action = complex_numeric_domain.actions["drive-truck"]
+    precondition = tested_action.preconditions
+    original_preconditions = precondition.print(should_simplify=False)
+    simplified_precondition = precondition.print(should_simplify=True)
+    print(simplified_precondition)
+    assert len(simplified_precondition) < len(original_preconditions)

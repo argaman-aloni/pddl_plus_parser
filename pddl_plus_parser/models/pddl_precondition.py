@@ -1,5 +1,5 @@
 """Module containing the classes representing the preconditions of a PDDL+ action."""
-from typing import Union, Set, Tuple
+from typing import Union, Set, Tuple, List
 
 from pddl_plus_parser.models.numerical_expression import NumericalExpressionTree
 from pddl_plus_parser.models.pddl_predicate import Predicate, GroundedPredicate
@@ -29,6 +29,7 @@ class Precondition:
         numeric_preconditions = []
         discrete_preconditions = []
         compound_preconditions = []
+        numeric_expressions = []
         for operand in self.operands:
             if isinstance(operand, Precondition):
                 compound_preconditions.append(str(operand))
@@ -37,10 +38,13 @@ class Precondition:
                 discrete_preconditions.append(operand.untyped_representation)
 
             elif isinstance(operand, NumericalExpressionTree):
-                if should_simplify:
-                    numeric_preconditions.append(operand.to_pddl(decimal_digits))
-                else:  # This is support for legacy code, will be removed in the future.
-                    numeric_preconditions.append(operand.to_pddl_no_simplification(decimal_digits))
+                numeric_expressions.append(operand)
+
+        if not should_simplify:
+            numeric_preconditions = [operand.to_pddl(decimal_digits) for operand in numeric_expressions]
+
+        else:
+            numeric_preconditions = self._simplify_numeric_preconditions(numeric_expressions, decimal_digits)
 
         discrete_preconditions.sort()
         numeric_preconditions.sort()
@@ -150,6 +154,37 @@ class Precondition:
                                isinstance(cond, NumericalExpressionTree)]
         if condition.to_pddl() not in current_expressions:
             self.operands.add(condition)
+
+    def _simplify_numeric_preconditions(self, numeric_preconditions: List[NumericalExpressionTree],
+                                        decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> List[str]:
+        """
+
+        :param numeric_preconditions:
+        :param decimal_digits:
+        :return:
+        """
+        # start by searching for the equality conditions that can be used to eliminate some variables in the other conditions
+        new_expressions = [precondition.__copy__() for precondition in numeric_preconditions]
+        equality_conditions = [condition for condition in new_expressions if condition.root.value == "="]
+        for equality_condition in equality_conditions:
+            eliminated_expression = equality_condition.extract_eliminated_expressions()
+            if eliminated_expression is None:
+                continue
+
+            expression_to_eliminate, replacing_expression = eliminated_expression
+            for other_condition in new_expressions:
+                if equality_condition == other_condition:
+                    continue
+
+                # eliminating the expression from the other condition and simplifying it
+                other_condition.locate_and_replace(expression_to_eliminate, replacing_expression)
+
+        simplified_conditions = []
+        for condition in new_expressions:
+            simplified_conditions.append(condition.simplify_complex_numerical_pddl_expression(
+                decimal_digits=decimal_digits))
+
+        return simplified_conditions
 
     def add_condition(self,
                       condition: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree],

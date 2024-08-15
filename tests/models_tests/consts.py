@@ -24,3 +24,5 @@ DEPOT_NUMERIC_DOMAIN_PATH = Path(CWD, "depot_numeric.pddl")
 
 HARD_DRIVERLOG_DOMAIN_PATH = Path(CWD, "driverlogHardNumeric.pddl")
 HARD_DRIVERLOG_PROBLEM_PATH = Path(CWD, "pfile558.pddl")
+
+HARD_TEST_NUMERIC_DOMAIN = Path(CWD, "test_domain.pddl")

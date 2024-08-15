@@ -75,4 +75,5 @@
 * version 3.5.7 - Added support for problem exportation to PDDL from a problem object.
 * version 3.5.8 - Fixed a bug that displayed power expressions in PDDL even though this is not supported by the language.
 * version 3.6.5 - performance **boost** for the tokenizer - credit @yarin-benyamin.
+* version 3.7.0 - Added the ability to simplify preconditions by eliminating variables that are redundant and thus reducing the general size of the conditions. 
 

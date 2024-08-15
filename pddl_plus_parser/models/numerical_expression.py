@@ -1,6 +1,6 @@
 """Class that represents a numerical expression that can be evaluated."""
 import os
-from typing import List, Union, Dict, Optional, Iterator
+from typing import List, Union, Dict, Optional, Iterator, Tuple
 
 from anytree import AnyNode, RenderTree
 
@@ -90,7 +90,7 @@ COMPARISON_OPERATORS = {
     "<": lambda x, y: x < y,
 }
 
-INEQUALITY_OPERATORS = ["=", "<=", ">=", ">", "<"]
+INEQUALITY_OPERATORS = ["<=", ">=", ">", "<"]
 
 ASSIGNMENT_EXPRESSIONS = {
     "increase": increase,
@@ -181,9 +181,29 @@ class NumericalExpressionTree:
             for n in self._iter_internal(child):
                 yield n
 
+    def _copy_internal(self, node: AnyNode) -> AnyNode:
+        """Recursive method that copies the expression tree.
+
+        :param node: the node that the recursion is currently working on.
+        :return: the copied node.
+        """
+        if node.is_leaf:
+            if isinstance(node.value, PDDLFunction):
+                function: PDDLFunction = node.value
+                return AnyNode(id=str(function), value=function)
+
+            return AnyNode(id=node.id, value=node.value)
+
+        left_child = self._copy_internal(node.children[0])
+        right_child = self._copy_internal(node.children[1])
+        return AnyNode(id=node.id, value=node.value, children=[left_child, right_child])
+
     def __iter__(self):
         """iterator in pre-order method."""
         yield from self._iter_internal(self.root)
+
+    def __copy__(self) -> "NumericalExpressionTree":
+        return NumericalExpressionTree(self._copy_internal(self.root))
 
     def _convert_to_pddl(self, node: AnyNode, decimal_digits: int = DEFAULT_DIGITS) -> str:
         """Recursive method that converts the expression tree to a PDDL string.
@@ -230,18 +250,49 @@ class NumericalExpressionTree:
         :param decimal_digits: the number of decimal digits to show in the PDDL string.
         :return: the PDDL string of the expression.
         """
-        if self.root.value in INEQUALITY_OPERATORS:
-            return self.simplify_complex_numerical_pddl_expression(decimal_digits=decimal_digits)
-
         return self._convert_to_pddl(self.root, decimal_digits=decimal_digits)
 
-    def to_pddl_no_simplification(self, decimal_digits: int = DEFAULT_DIGITS) -> str:
-        """Method that converts the expression tree to a PDDL string without simplifying the expression.
-
-        :param decimal_digits: the number of decimal digits to show in the PDDL string.
-        :return: the PDDL string of the expression.
+    def locate_and_replace(self, expression_to_locate: "NumericalExpressionTree", expression_to_replace: "NumericalExpressionTree"):
         """
-        return self._convert_to_pddl(self.root, decimal_digits=decimal_digits)
+
+        :param expression_to_locate:
+        :param expression_to_replace:
+        :return:
+        """
+        for node in self.root.descendants:
+            if str(NumericalExpressionTree(node)) == str(expression_to_locate):
+                item_to_replace_copy = expression_to_replace.__copy__()
+                prev_children = list(node.parent.children)
+                new_children = [item_to_replace_copy.root if child == node else child for child in prev_children]
+                node.parent.children = tuple(new_children)
+
+
+
+    def extract_eliminated_expressions(self) -> Optional[Tuple["NumericalExpressionTree", "NumericalExpressionTree"]]:
+        """Method that evaluates the two sides of an equality and returns the expressions to eliminate and the one to replace it.
+
+        :return: the expressions to eliminate and the one to replace it.
+        """
+        if self.root.value != "=":
+            return None
+
+        copied_tree = self.__copy__()
+        left_operand, right_operand = copied_tree.root.children[0], copied_tree.root.children[1]
+        if left_operand.value != "+":
+            # currently supporting linear equations only
+            return None
+
+        left_op_first_child, left_op_second_child = left_operand.children[0], left_operand.children[1]
+        expression_to_eliminate = NumericalExpressionTree(left_op_first_child) if \
+            left_op_first_child.is_leaf else NumericalExpressionTree(left_op_first_child)
+
+        replacing_expression = NumericalExpressionTree(
+            AnyNode(id="*", value="*", children=[AnyNode(id="-1", value=-1), left_op_second_child])) if \
+            right_operand.value == 0 else NumericalExpressionTree(AnyNode(id="-", value="-", children=[
+            right_operand, left_op_second_child
+        ]))
+
+        return expression_to_eliminate, replacing_expression
 
     def simplify_complex_numerical_pddl_expression(self, decimal_digits: int = DEFAULT_DIGITS) -> str:
         """Method that minimizes complex numeric expression by applying the simplify algorithm on the expression.

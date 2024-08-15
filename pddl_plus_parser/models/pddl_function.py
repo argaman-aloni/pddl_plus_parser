@@ -30,6 +30,10 @@ class PDDLFunction:
         if not self.name == other.name:
             return False
 
+        # check that the parameters are the same (including their order) -- assuming dict keys are ordered
+        if list(self.signature.keys()) != list(other.signature.keys()):
+            return False
+
         for parameter_name, parameter_type in self.signature.items():
             if parameter_name not in other.signature:
                 return False
@@ -37,6 +41,9 @@ class PDDLFunction:
             other_param_type = other.signature[parameter_name]
             if not parameter_type.is_sub_type(other_param_type):
                 return False
+
+        if self.stored_value != other.stored_value:
+            return False
 
         return True
 
