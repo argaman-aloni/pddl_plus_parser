@@ -27,6 +27,9 @@ class PDDLFunction:
         :param other: the other predicate to compare.
         :return: whether the predicates are equal.
         """
+        if not isinstance(other, PDDLFunction) or other is None:
+            return False
+
         if not self.name == other.name:
             return False
 
