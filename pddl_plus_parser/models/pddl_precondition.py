@@ -1,5 +1,6 @@
 """Module containing the classes representing the preconditions of a PDDL+ action."""
 from typing import Union, Set, Tuple, List
+from collections import deque
 
 from pddl_plus_parser.models.numerical_expression import NumericalExpressionTree
 from pddl_plus_parser.models.pddl_predicate import Predicate, GroundedPredicate
@@ -26,7 +27,6 @@ class Precondition:
 
         :param should_simplify: whether to print the precondition in a simplified format (for numeric expressions).
         """
-        numeric_preconditions = []
         discrete_preconditions = []
         compound_preconditions = []
         numeric_expressions = []
@@ -155,13 +155,48 @@ class Precondition:
         if condition.to_pddl() not in current_expressions:
             self.operands.add(condition)
 
+    def _remove_duplicate_inequalities(
+            self, new_expressions: List[NumericalExpressionTree], op_type: str) -> List[NumericalExpressionTree]:
+        """Removes duplicate linear inequalities that are created when we lower the number of decimal points.
+
+        :param new_expressions: the expressions prior to the simplification.
+        :param op_type: the type of the inequality to remove, either <= or >=.
+        :return: the new expressions after the simplification.
+        """
+        # removing inequalities that appear multiple times with different right side values
+        queue_before_simplification = deque(new_expressions)
+        queue_after_simplification = deque()
+        while queue_before_simplification:
+            condition_to_test = queue_before_simplification.popleft()
+            if condition_to_test.root.value != op_type:
+                queue_after_simplification.append(condition_to_test)
+                continue
+
+            left_side, right_side = condition_to_test.root.children
+            updated_right_value = right_side.value
+            queue_to_iterate = deque(queue_before_simplification)
+            while queue_to_iterate:
+                other_condition = queue_to_iterate.popleft()
+                other_left_side, other_right_side = other_condition.root.children
+                if str(NumericalExpressionTree(other_left_side)) == str(NumericalExpressionTree(left_side)):
+                    updated_right_value = min(updated_right_value, other_right_side.value) if op_type == "<=" else \
+                        max(updated_right_value, other_right_side.value)
+
+                    right_side.id = str(updated_right_value)
+                    right_side.value = updated_right_value
+                    queue_before_simplification.remove(other_condition)
+
+            queue_after_simplification.append(condition_to_test)
+
+        return list(queue_after_simplification)
+
     def _simplify_numeric_preconditions(self, numeric_preconditions: List[NumericalExpressionTree],
                                         decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> List[str]:
-        """
+        """Simplify the numeric preconditions by eliminating redundant conditions as well as removing redundant preconditions.
 
-        :param numeric_preconditions:
-        :param decimal_digits:
-        :return:
+        :param numeric_preconditions: the numeric preconditions to simplify.
+        :param decimal_digits: the number of decimal digits to keep.
+        :return: the simplified numeric preconditions.
         """
         # start by searching for the equality conditions that can be used to eliminate some variables in the other conditions
         new_expressions = [precondition.__copy__() for precondition in numeric_preconditions]
@@ -178,6 +213,9 @@ class Precondition:
 
                 # eliminating the expression from the other condition and simplifying it
                 other_condition.locate_and_replace(expression_to_eliminate, replacing_expression)
+
+        new_expressions = self._remove_duplicate_inequalities(new_expressions, op_type="<=")
+        new_expressions = self._remove_duplicate_inequalities(new_expressions, op_type=">=")
 
         simplified_conditions = []
         for condition in new_expressions:
