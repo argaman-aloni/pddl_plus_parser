@@ -5,7 +5,7 @@ from pddl_plus_parser.lisp_parsers import DomainParser
 from pddl_plus_parser.models import Domain, construct_expression_tree, NumericalExpressionTree
 from pddl_plus_parser.models.pddl_precondition import Precondition
 from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, HARD_TEST_NUMERIC_DOMAIN, \
-    DOMAIN_TO_TEST_INEQUALITY_REMOVAL
+    DOMAIN_TO_TEST_INEQUALITY_REMOVAL, DOMAIN_TO_TEST_BOTH_TYPES_OF_INEQUALITY
 
 
 @fixture()
@@ -23,6 +23,12 @@ def complex_numeric_domain() -> Domain:
 @fixture()
 def domain_to_test_linear_inequality_removal() -> Domain:
     domain_parser = DomainParser(DOMAIN_TO_TEST_INEQUALITY_REMOVAL)
+    return domain_parser.parse_domain()
+
+
+@fixture()
+def zenotravel_two_types_inequality_domain() -> Domain:
+    domain_parser = DomainParser(DOMAIN_TO_TEST_BOTH_TYPES_OF_INEQUALITY)
     return domain_parser.parse_domain()
 
 
@@ -191,3 +197,15 @@ def test_print_with_simplify_option_on_numeric_condition_reduces_the_size_of_the
     print(simplified_precondition)
     assert len(simplified_precondition) < len(original_preconditions)
     assert "(<= (+ (+ (+ (* (walked ) -0.10) (* (time-to-drive ?loc-to ?loc-from) -1.40)) (* (driven ) 0.18)) 73.96) 188.65)" in simplified_precondition
+
+
+def test_print_with_simplify_option_on_when_there_are_two_types_of_inequalities_returns_correct_condition_and_does_not_break_correctness(
+        zenotravel_two_types_inequality_domain: Domain):
+    tested_action = zenotravel_two_types_inequality_domain.actions["board"]
+    precondition = tested_action.preconditions
+    original_preconditions = precondition.print(should_simplify=False)
+    simplified_precondition = precondition.print(should_simplify=True)
+    print(simplified_precondition)
+    assert len(simplified_precondition) == len(original_preconditions)
+    assert "(<= (onboard ?a) 6)" in simplified_precondition
+    assert "(>= (onboard ?a) 0)" in simplified_precondition

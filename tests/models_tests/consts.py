@@ -27,3 +27,5 @@ HARD_DRIVERLOG_PROBLEM_PATH = Path(CWD, "pfile558.pddl")
 
 HARD_TEST_NUMERIC_DOMAIN = Path(CWD, "test_domain.pddl")
 DOMAIN_TO_TEST_INEQUALITY_REMOVAL = Path(CWD, "domain_to_test_linear_inequality_removal.pddl")
+DOMAIN_TO_TEST_BOTH_TYPES_OF_INEQUALITY = Path(CWD, "zenotravel_test_domain.pddl")
+

@@ -155,8 +155,9 @@ class Precondition:
         if condition.to_pddl() not in current_expressions:
             self.operands.add(condition)
 
+    @staticmethod
     def _remove_duplicate_inequalities(
-            self, new_expressions: List[NumericalExpressionTree], op_type: str) -> List[NumericalExpressionTree]:
+            new_expressions: List[NumericalExpressionTree], op_type: str) -> List[NumericalExpressionTree]:
         """Removes duplicate linear inequalities that are created when we lower the number of decimal points.
 
         :param new_expressions: the expressions prior to the simplification.
@@ -177,6 +178,9 @@ class Precondition:
             queue_to_iterate = deque(queue_before_simplification)
             while queue_to_iterate:
                 other_condition = queue_to_iterate.popleft()
+                if other_condition.root.value != condition_to_test.root.value:
+                    continue
+
                 other_left_side, other_right_side = other_condition.root.children
                 if str(NumericalExpressionTree(other_left_side)) == str(NumericalExpressionTree(left_side)):
                     updated_right_value = min(updated_right_value, other_right_side.value) if op_type == "<=" else \
