@@ -252,7 +252,8 @@ class NumericalExpressionTree:
         """
         return self._convert_to_pddl(self.root, decimal_digits=decimal_digits)
 
-    def locate_and_replace(self, expression_to_locate: "NumericalExpressionTree", expression_to_replace: "NumericalExpressionTree"):
+    def locate_and_replace(self, expression_to_locate: "NumericalExpressionTree",
+                           expression_to_replace: "NumericalExpressionTree"):
         """
 
         :param expression_to_locate:
@@ -265,8 +266,6 @@ class NumericalExpressionTree:
                 prev_children = list(node.parent.children)
                 new_children = [item_to_replace_copy.root if child == node else child for child in prev_children]
                 node.parent.children = tuple(new_children)
-
-
 
     def extract_eliminated_expressions(self) -> Optional[Tuple["NumericalExpressionTree", "NumericalExpressionTree"]]:
         """Method that evaluates the two sides of an equality and returns the expressions to eliminate and the one to replace it.

@@ -1,7 +1,8 @@
 """Module containing the classes representing the preconditions of a PDDL+ action."""
-from typing import Union, Set, Tuple, List
 from collections import deque
+from typing import Union, Set, Tuple, List
 
+from pddl_plus_parser.models.numeric_symbolic_operations import simplify_inequality
 from pddl_plus_parser.models.numerical_expression import NumericalExpressionTree
 from pddl_plus_parser.models.pddl_predicate import Predicate, GroundedPredicate
 from pddl_plus_parser.models.pddl_type import PDDLType
@@ -205,26 +206,28 @@ class Precondition:
         # start by searching for the equality conditions that can be used to eliminate some variables in the other conditions
         new_expressions = [precondition.__copy__() for precondition in numeric_preconditions]
         equality_conditions = [condition for condition in new_expressions if condition.root.value == "="]
+        new_expressions = self._remove_duplicate_inequalities(new_expressions, op_type="<=")
+        new_expressions = self._remove_duplicate_inequalities(new_expressions, op_type=">=")
+
+        assumptions = []
         for equality_condition in equality_conditions:
             eliminated_expression = equality_condition.extract_eliminated_expressions()
             if eliminated_expression is None:
                 continue
 
             expression_to_eliminate, replacing_expression = eliminated_expression
-            for other_condition in new_expressions:
-                if equality_condition == other_condition:
-                    continue
-
-                # eliminating the expression from the other condition and simplifying it
-                other_condition.locate_and_replace(expression_to_eliminate, replacing_expression)
-
-        new_expressions = self._remove_duplicate_inequalities(new_expressions, op_type="<=")
-        new_expressions = self._remove_duplicate_inequalities(new_expressions, op_type=">=")
+            new_assumption = f"{expression_to_eliminate.to_mathematical()} = {replacing_expression.to_mathematical()}"
+            assumptions.append((equality_condition, new_assumption))
 
         simplified_conditions = []
         for condition in new_expressions:
-            simplified_conditions.append(condition.simplify_complex_numerical_pddl_expression(
-                decimal_digits=decimal_digits))
+            if condition.root.value == "=":
+                simplified_conditions.append(condition.to_pddl())
+                continue
+
+            simplified_conditions.append(
+                simplify_inequality(condition.to_mathematical(), [assumption[1] for assumption in assumptions],
+                                    decimal_digits=decimal_digits))
 
         return simplified_conditions
 

@@ -226,6 +226,17 @@ def test_using_simplify_and_then_reconstructing_the_new_expression_to_conserve_c
     assert simplified_expression == original_expression
 
 
+def test_using_simplify_and_then_reconstructing_the_new_expression_removes_trailing_zeros():
+    original_expression = "(<= (+ (+ (* (load_limit ?x) -0.01) (* (current_load ?x) 1.00)) -81.05) 15.03)"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, depot_domain.functions)
+    tree = NumericalExpressionTree(root)
+    simplified_expression = tree.simplify_complex_numerical_pddl_expression()
+    assert simplified_expression == "(<= (+ (+ (* (load_limit ?x) -0.01) (current_load ?x)) -81.05) 15.03)"
+
+
 def test_extract_eliminated_expressions_can_extract_correct_left_side_and_right_side_when_right_side_expression_equals_to_zero():
     original_expression = "(= (+ (* (load_limit ?x) 0.71) (* (fuel-cost ) -0.71)) 0)"
     expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)

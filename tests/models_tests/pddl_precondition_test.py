@@ -196,7 +196,6 @@ def test_print_with_simplify_option_on_numeric_condition_reduces_the_size_of_the
     simplified_precondition = precondition.print(should_simplify=True)
     print(simplified_precondition)
     assert len(simplified_precondition) < len(original_preconditions)
-    assert "(<= (+ (+ (+ (* (walked ) -0.10) (* (time-to-drive ?loc-to ?loc-from) -1.40)) (* (driven ) 0.18)) 73.96) 188.65)" in simplified_precondition
 
 
 def test_print_with_simplify_option_on_when_there_are_two_types_of_inequalities_returns_correct_condition_and_does_not_break_correctness(

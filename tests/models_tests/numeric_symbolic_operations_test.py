@@ -1,4 +1,4 @@
-from pddl_plus_parser.models.numeric_symbolic_operations import simplify_complex_numeric_expression
+from pddl_plus_parser.models.numeric_symbolic_operations import simplify_complex_numeric_expression, simplify_inequality
 
 
 def test_simplify_complex_numeric_expression_with_simple_expression_returns_the_same_expression_in_pddl_format():
@@ -56,3 +56,37 @@ def test_simplify_when_there_are_zeros_in_the_expression_with_decimal_point_remo
     expected_simple_expression = "(+ (* (zoom-limit ?a) 0.01) (* (capacity ?a) -1))"
     result = simplify_complex_numeric_expression(test_simple_expression)
     assert result == expected_simple_expression
+
+
+def test_simplify_inequality_when_given_simple_inequality_returns_the_same_inequality():
+    test_simple_inequality = "((distance ?c2 ?c1) <= (zoom-limit ?a))"
+    expected_simple_inequality = "(<= (distance ?c2 ?c1) (zoom-limit ?a))"
+    result = simplify_inequality(test_simple_inequality)
+    assert result == expected_simple_inequality
+
+
+def test_simplify_inequality_when_given_a_truth_expression_returns_none():
+    test_simple_inequality = "((distance ?c2 ?c1) <= (distance ?c2 ?c1))"
+    result = simplify_inequality(test_simple_inequality)
+    assert result is None
+
+
+def test_simplify_inequality_when_given_a_number_returns_the_number():
+    test_simple_inequality = "0"
+    result = simplify_inequality(test_simple_inequality)
+    assert result == "0"
+
+
+def test_simplify_inequality_when_given_complex_expression_with_no_assumptions_returns_simplified_version():
+    original_expression = "(((((capacity ?a) - 8823.0) * 1.5) + (1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1)))) <= 3657.14)"
+    result = simplify_inequality(original_expression)
+    assert len(result) < len(original_expression)
+    assert result.endswith("0)")
+
+
+def test_simplify_inequality_when_given_complex_expression_with_assumptions_on_linear_dependency_removes_the_assumptions_from_the_original_expression():
+    original_expression = "(((((capacity ?a) - 8823.0) * 1.5) + (1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1)))) <= 3657.14)"
+    assumption = ["(capacity ?a) = (-1 * ((distance ?c2 ?c1) * -1))"]
+    result = simplify_inequality(original_expression, assumption)
+    assert len(result) < len(original_expression)
+    assert "(capacity ?a)" not in result
