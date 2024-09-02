@@ -90,3 +90,11 @@ def test_simplify_inequality_when_given_complex_expression_with_assumptions_on_l
     result = simplify_inequality(original_expression, assumption)
     assert len(result) < len(original_expression)
     assert "(capacity ?a)" not in result
+
+
+def test_simplify_inequality_when_given_complex_expression_with_assumptions_on_linear_dependency_removes_assumption_even_when_assumption_in_complex_form():
+    original_expression = "(((((capacity ?a) - 8823.0) * 1.5) + (1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1)))) <= 3657.14)"
+    assumption = ["((capacity ?a) - 54) = (-1 * (((distance ?c2 ?c1) - 54) * -1))"]
+    result = simplify_inequality(original_expression, assumption)
+    assert len(result) < len(original_expression)
+    assert "(capacity ?a)" not in result

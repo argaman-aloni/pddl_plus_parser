@@ -227,9 +227,11 @@ def simplify_inequality(complex_numeric_expression: str, assumptions: List[str] 
         transformed_right_expr, symbolic_vars = transform_expression(right_expr, symbolic_vars)
         transformed_left_expr = parse_expr(transformed_left_expr)
         transformed_right_expr = parse_expr(transformed_right_expr)
+        equation = Eq(transformed_left_expr, transformed_right_expr)
+        simplified_equation = simplify(equation)
 
         # Substitute the assumption into the inequality
-        sympy_expression = sympy_expression.subs(transformed_left_expr, transformed_right_expr)
+        sympy_expression = sympy_expression.subs(simplified_equation.lhs, simplified_equation.rhs)
 
     # Expand the brackets in the expression
     expanded_expression = expand(sympy_expression)
