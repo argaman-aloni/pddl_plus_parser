@@ -29,19 +29,24 @@ def is_number_string(s):
     return bool(pattern.match(s))
 
 
-def extract_atom(expression: Expr, symbols_map: Dict[Symbol, str], decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> \
+def extract_atom(expression: Expr, symbols_map: Dict[Symbol, str], decimal_digits: int = DEFAULT_DECIMAL_DIGITS,
+                 should_remove_trailing_zeros: bool = True) -> \
         Optional[str]:
     """Extracts an atom from a symbolic expression.
 
     :param expression: The atomic symbolic expression to extract.
     :param symbols_map: the map between the symbolic expression and the PDDL expression.
     :param decimal_digits: the number of decimal digits to keep.
+    :param should_remove_trailing_zeros: whether to remove trailing zeros or not.
     :return: the PDDL expression.
     """
     if expression.func == Float:
         formatted_expression = format(expression, f".{decimal_digits}f") if not \
             round(float(expression), decimal_digits).is_integer() else f"{int(expression)}"
-        return formatted_expression if float(formatted_expression) != 0 else None
+        if should_remove_trailing_zeros:
+            return formatted_expression if float(formatted_expression) != 0 else None
+
+        return formatted_expression
 
     if expression.func == Integer:
         return f"{expression}"
@@ -79,7 +84,8 @@ def _recursive_pow_expression_to_pddl(expression: Pow, symbols_map: dict) -> str
 
 
 def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbols_map: dict,
-                                         decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
+                                         decimal_digits: int = DEFAULT_DECIMAL_DIGITS,
+                                         should_remove_trailing_zeros: bool = True) -> str:
     """Converts the internal expression to a PDDL format.
 
     :param expression: the expression to convert.
@@ -89,10 +95,10 @@ def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbol
     :return: the string representing the PDDL expression.
     """
     if expression.is_Atom:
-        return extract_atom(expression, symbols_map, decimal_digits)
+        return extract_atom(expression, symbols_map, decimal_digits, should_remove_trailing_zeros)
 
     if isinstance(expression, Pow) and expression.exp == -1:
-        return f"(/ 1 {_convert_internal_expression_to_pddl(expression.base, SYMPY_OP_TO_PDDL_OP[expression.base.func], symbols_map, decimal_digits)})"
+        return f"(/ 1 {_convert_internal_expression_to_pddl(expression.base, SYMPY_OP_TO_PDDL_OP[expression.base.func], symbols_map, decimal_digits, should_remove_trailing_zeros)})"
 
     if isinstance(expression, Pow) and expression.exp > 1:
         return _recursive_pow_expression_to_pddl(expression, symbols_map)
@@ -101,7 +107,8 @@ def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbol
     components = []
     for i in range(len(expression.args)):
         comp = _convert_internal_expression_to_pddl(
-            expression.args[i], SYMPY_OP_TO_PDDL_OP[expression.args[i].func], symbols_map, decimal_digits)
+            expression.args[i], SYMPY_OP_TO_PDDL_OP[expression.args[i].func], symbols_map, decimal_digits,
+            should_remove_trailing_zeros)
         if comp:
             components.append(comp)
 
@@ -118,7 +125,8 @@ def _convert_internal_expression_to_pddl(expression: Expr, operator: str, symbol
 
 
 def convert_expr_to_pddl(expr: Expr, symbolic_vars: Dict[str, Symbol],
-                         decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
+                         decimal_digits: int = DEFAULT_DECIMAL_DIGITS,
+                         should_remove_trailing_zeros: bool = True) -> str:
     """Converts a symbolic expression to a PDDL expression.
 
     :param expr: the symbolic expression to convert.
@@ -128,7 +136,8 @@ def convert_expr_to_pddl(expr: Expr, symbolic_vars: Dict[str, Symbol],
     """
     initial_operator = SYMPY_OP_TO_PDDL_OP[expr.func]
     return _convert_internal_expression_to_pddl(
-        expr, initial_operator, {val: key for key, val in symbolic_vars.items()}, decimal_digits=decimal_digits
+        expr, initial_operator, {val: key for key, val in symbolic_vars.items()}, decimal_digits=decimal_digits,
+        should_remove_trailing_zeros=should_remove_trailing_zeros
     )
 
 
@@ -172,7 +181,7 @@ def transform_expression(expression: str, symbols_to_use: Optional[Dict[str, Sym
     """
     pddl_variables = set(re.findall(r"(\([\w-]+\s[?\w\-\s]*\))", expression))
     if len(pddl_variables) == 0:
-        return expression, None
+        return expression, symbols_to_use
 
     # Extract the left part of the inequality
     symbolic_vars = {**symbols_to_use} if symbols_to_use else {}
@@ -202,6 +211,31 @@ def get_inequality_operator(inequality: Expr) -> str:
 
     # Extract and return the operator string
     return operator_map.get(inequality_type, "Unknown operator")
+
+
+def simplify_equality(equation: str, decimal_digits=DEFAULT_DECIMAL_DIGITS) -> Optional[str]:
+    """
+
+    :param equation:
+    :param decimal_digits:
+    :return:
+    """
+    left_expr, right_expr = equation.split('=')
+    transformed_left_expr, symbolic_vars = transform_expression(left_expr)
+    transformed_right_expr, symbolic_vars = transform_expression(right_expr, symbolic_vars)
+    transformed_left_expr = parse_expr(transformed_left_expr)
+    transformed_right_expr = parse_expr(transformed_right_expr)
+    equation = Eq(transformed_left_expr, transformed_right_expr)
+    simplified_equation = simplify(equation)
+
+    if isinstance(simplified_equation, BooleanTrue):
+        return None
+
+    pddl_left_side = convert_expr_to_pddl(simplified_equation.lhs, symbolic_vars, decimal_digits=decimal_digits)
+    pddl_right_side = convert_expr_to_pddl(simplified_equation.rhs, symbolic_vars, decimal_digits=decimal_digits,
+                                           should_remove_trailing_zeros=False)
+
+    return f"(= {pddl_left_side} {pddl_right_side})"
 
 
 def simplify_inequality(complex_numeric_expression: str, assumptions: List[str] = [],
@@ -246,6 +280,7 @@ def simplify_inequality(complex_numeric_expression: str, assumptions: List[str] 
         return None
 
     pddl_left_side = convert_expr_to_pddl(simplified_expression.lhs, symbolic_vars, decimal_digits=decimal_digits)
-    pddl_right_side = convert_expr_to_pddl(simplified_expression.rhs, symbolic_vars, decimal_digits=decimal_digits)
+    pddl_right_side = convert_expr_to_pddl(simplified_expression.rhs, symbolic_vars, decimal_digits=decimal_digits,
+                                           should_remove_trailing_zeros=False)
 
     return f"({get_inequality_operator(simplified_expression)} {pddl_left_side} {pddl_right_side})"

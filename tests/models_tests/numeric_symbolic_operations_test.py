@@ -1,4 +1,5 @@
-from pddl_plus_parser.models.numeric_symbolic_operations import simplify_complex_numeric_expression, simplify_inequality
+from pddl_plus_parser.models.numeric_symbolic_operations import simplify_complex_numeric_expression, \
+    simplify_inequality, simplify_equality
 
 
 def test_simplify_complex_numeric_expression_with_simple_expression_returns_the_same_expression_in_pddl_format():
@@ -98,3 +99,25 @@ def test_simplify_inequality_when_given_complex_expression_with_assumptions_on_l
     result = simplify_inequality(original_expression, assumption)
     assert len(result) < len(original_expression)
     assert "(capacity ?a)" not in result
+
+
+def test_simplify_inequality_when_rhs_is_zero_does_not_add_invalid_none_at_the_end_of_the_expression():
+    original_expression = "(((((capacity ?a) - 1.0) * 1.5) + (1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1)))) <= 0)"
+    assumption = ["((capacity ?a) - 54) = (-1 * (((distance ?c2 ?c1) - 54) * -1))"]
+    result = simplify_inequality(original_expression, assumption)
+    assert "None" not in result
+
+
+def test_simplify_equality_when_given_an_equality_without_assumptions_returns_correct_equality():
+    original_expression = "((capacity ?a) - 54) = (-1 * (((distance ?c2 ?c1) - 54) * -1))"
+    assumption = []
+    result = simplify_equality(original_expression, assumption)
+    assert len(result) < len(original_expression)
+    assert result == "(= (capacity ?a) (distance ?c2 ?c1))"
+
+
+def test_simplify_equality_when_given_an_equality_that_is_trivial_returns_none():
+    original_expression = "((capacity ?a) - 54) = ((capacity ?a) - 54)"
+    assumption = []
+    result = simplify_equality(original_expression, assumption)
+    assert result is None

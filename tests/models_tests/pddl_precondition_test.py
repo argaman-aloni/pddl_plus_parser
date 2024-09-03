@@ -198,6 +198,20 @@ def test_print_with_simplify_option_on_numeric_condition_reduces_the_size_of_the
     assert len(simplified_precondition) < len(original_preconditions)
 
 
+def test_print_with_simplify_option_on_numeric_condition_when_equality_condition_is_in_format_a_equals_b_returns_simplified_precondition_and_does_not_crash(
+        domain_to_test_linear_inequality_removal: Domain):
+    tested_action = domain_to_test_linear_inequality_removal.actions["walk"]
+    precondition = tested_action.preconditions
+    original_preconditions = precondition.print(should_simplify=False)
+    try:
+        simplified_precondition = precondition.print(should_simplify=True)
+        print(simplified_precondition)
+        assert len(simplified_precondition) < len(original_preconditions)
+
+    except Exception as e:
+        assert False
+
+
 def test_print_with_simplify_option_on_when_there_are_two_types_of_inequalities_returns_correct_condition_and_does_not_break_correctness(
         zenotravel_two_types_inequality_domain: Domain):
     tested_action = zenotravel_two_types_inequality_domain.actions["board"]

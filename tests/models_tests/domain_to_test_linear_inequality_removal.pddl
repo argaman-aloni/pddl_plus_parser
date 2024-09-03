@@ -236,7 +236,7 @@
 	(<= (+ (+ (+ (* (walked ) 0.52) (* (time-to-walk ?loc-to ?loc-from) 1.19)) (* (driven ) 0.13)) -115.34) 637.57)
 	(<= (+ (+ (+ (* (walked ) 0.73) (* (time-to-walk ?loc-to ?loc-from) 0.80)) (* (driven ) 0.36)) -91.86) 1163.78)
 	(<= (+ (driven ) -53) 1448)
-	(= (+ (time-to-walk ?loc-from ?loc-to) (* (time-to-walk ?loc-to ?loc-from) -1)) 0)(not (= ?loc-from ?loc-to)))
+	(= (time-to-walk ?loc-from ?loc-to) (time-to-walk ?loc-to ?loc-from))(not (= ?loc-from ?loc-to)))
 	:effect (and (at ?driver ?loc-to)
 		(not (at ?driver ?loc-from))
 (increase (walked ) (time-to-walk ?loc-from ?loc-to))))

@@ -2,7 +2,7 @@
 from collections import deque
 from typing import Union, Set, Tuple, List
 
-from pddl_plus_parser.models.numeric_symbolic_operations import simplify_inequality
+from pddl_plus_parser.models.numeric_symbolic_operations import simplify_inequality, simplify_equality
 from pddl_plus_parser.models.numerical_expression import NumericalExpressionTree
 from pddl_plus_parser.models.pddl_predicate import Predicate, GroundedPredicate
 from pddl_plus_parser.models.pddl_type import PDDLType
@@ -222,12 +222,17 @@ class Precondition:
         simplified_conditions = []
         for condition in new_expressions:
             if condition.root.value == "=":
-                simplified_conditions.append(condition.to_pddl())
+                simplified_equation = simplify_equality(condition.to_mathematical()[1:-1])
+                if simplified_equation:
+                    simplified_conditions.append(simplified_equation)
+
                 continue
 
-            simplified_conditions.append(
-                simplify_inequality(condition.to_mathematical(), [assumption[1] for assumption in assumptions],
-                                    decimal_digits=decimal_digits))
+            simplified_inequality = simplify_inequality(condition.to_mathematical(),
+                                                        [assumption[1] for assumption in assumptions],
+                                                        decimal_digits=decimal_digits)
+            if simplified_inequality:
+                simplified_conditions.append(simplified_inequality)
 
         return simplified_conditions
 
