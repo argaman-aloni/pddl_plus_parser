@@ -1,5 +1,5 @@
 """Module to perform numeric symbolic operations on strings representing numeric expressions."""
-
+import os
 import re
 from typing import Dict, Optional, List, Tuple
 
@@ -21,7 +21,7 @@ SYMPY_OP_TO_PDDL_OP = {
     One: "1",
 }
 
-DEFAULT_DECIMAL_DIGITS = 2
+DEFAULT_DECIMAL_DIGITS = os.environ.get("NUMERIC_PRECISION", 4)
 
 
 def is_number_string(s):

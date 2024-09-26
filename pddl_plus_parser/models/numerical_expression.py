@@ -8,7 +8,7 @@ from .numeric_symbolic_operations import simplify_complex_numeric_expression
 from .pddl_function import PDDLFunction
 
 EPSILON = os.environ.get("EPSILON", 0.0001)
-DEFAULT_DIGITS = 2
+DEFAULT_DIGITS = os.environ.get("NUMERIC_PRECISION", 4)
 
 LEGAL_NUMERICAL_EXPRESSIONS = ["=", "!=", "<=", ">=", ">", "<", "+", "-", "/", "*", "increase", "decrease", "assign"]
 

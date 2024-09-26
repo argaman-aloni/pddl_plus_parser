@@ -1,17 +1,18 @@
-;; Enrico Scala (enricos83@gmail.com) and Miquel Ramirez (miquel.ramirez@gmail.com)
 (define (problem ${instance_name})
 	(:domain ${domain_name})
 	(:objects
 		${counters_list} - counter
+		${students_list} - student
+		teacher - teacher
 	)
   (:init
 		${counters_initial_values}
-
-		(= (max_int) ${max_int_value})
+        ${students_initial_positions}
+        ${teacher_initial_position}
+		(= (max-dimension) 100)
 	)
 	(:goal
 		(and
-			${counters_final_values}
 			${goal_constraints}
 		)
 	)
