@@ -29,7 +29,7 @@ def generate_instance(instance_name: str, num_counters: int, max_int: int) -> st
             [f"(= (value c{i}) {random.randint(0, max_int)})" for i in range(num_counters)]),
         "max_int_value": max_int,
         "counters_final_values": "\n\t".join(final_values),
-        "goal_constraints": "(counters-multiplied)" if random.random() >= 0.5 else ""
+        "goal_constraints": "(counters-multiplied)"
     }
     return template.substitute(template_mapping)
 
