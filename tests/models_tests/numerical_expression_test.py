@@ -200,7 +200,7 @@ def test_simplify_complex_numerical_pddl_expression_does_not_break_already_simpl
     zeno_domain = DomainParser(domain_path=ZENO_DOMAIN_PATH).parse_domain()
     root = construct_expression_tree(tokens, zeno_domain.functions)
     tree = NumericalExpressionTree(root)
-    simplified_expression = tree.simplify_complex_numerical_pddl_expression()
+    simplified_expression = tree.simplify_complex_numerical_pddl_expression(decimal_digits=2)
     assert simplified_expression == "(<= (+ (* (fuel ?a) -1) (* (capacity ?a) -0.07)) -202.66)"
 
 
@@ -222,7 +222,7 @@ def test_using_simplify_and_then_reconstructing_the_new_expression_to_conserve_c
     depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
     root = construct_expression_tree(tokens, depot_domain.functions)
     tree = NumericalExpressionTree(root)
-    simplified_expression = tree.simplify_complex_numerical_pddl_expression()
+    simplified_expression = tree.simplify_complex_numerical_pddl_expression(decimal_digits=2)
     assert simplified_expression == original_expression
 
 
@@ -233,7 +233,7 @@ def test_using_simplify_and_then_reconstructing_the_new_expression_removes_trail
     depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
     root = construct_expression_tree(tokens, depot_domain.functions)
     tree = NumericalExpressionTree(root)
-    simplified_expression = tree.simplify_complex_numerical_pddl_expression()
+    simplified_expression = tree.simplify_complex_numerical_pddl_expression(decimal_digits=2)
     assert simplified_expression == "(<= (+ (+ (* (load_limit ?x) -0.01) (current_load ?x)) -81.05) 15.03)"
 
 
@@ -247,8 +247,8 @@ def test_extract_eliminated_expressions_can_extract_correct_left_side_and_right_
     expression_to_eliminate, replacing_expression = tree.extract_eliminated_expressions()
     assert expression_to_eliminate is not None
     assert replacing_expression is not None
-    assert expression_to_eliminate.to_pddl() == "(* (load_limit ?x) 0.71)"
-    assert replacing_expression.to_pddl() == "(* -1 (* (fuel-cost ) -0.71))"
+    assert expression_to_eliminate.to_pddl(decimal_digits=2) == "(* (load_limit ?x) 0.71)"
+    assert replacing_expression.to_pddl(decimal_digits=2) == "(* -1 (* (fuel-cost ) -0.71))"
 
 
 def test_extract_eliminated_expressions_can_extract_correct_left_side_and_right_side_when_right_side_expression_is_non_zero_expression():
@@ -261,8 +261,8 @@ def test_extract_eliminated_expressions_can_extract_correct_left_side_and_right_
     expression_to_eliminate, replacing_expression = tree.extract_eliminated_expressions()
     assert expression_to_eliminate is not None
     assert replacing_expression is not None
-    assert expression_to_eliminate.to_pddl() == "(* (load_limit ?x) 0.71)"
-    assert replacing_expression.to_pddl() == "(- 10 (* (fuel-cost ) -0.71))"
+    assert expression_to_eliminate.to_pddl(decimal_digits=2) == "(* (load_limit ?x) 0.71)"
+    assert replacing_expression.to_pddl(decimal_digits=2) == "(- 10 (* (fuel-cost ) -0.71))"
 
 
 def test_extract_eliminated_expressions_can_extract_correct_left_side_and_right_side_when_right_side_expression_is_a_function():
@@ -275,8 +275,8 @@ def test_extract_eliminated_expressions_can_extract_correct_left_side_and_right_
     expression_to_eliminate, replacing_expression = tree.extract_eliminated_expressions()
     assert expression_to_eliminate is not None
     assert replacing_expression is not None
-    assert expression_to_eliminate.to_pddl() == "(* (load_limit ?x) 0.71)"
-    assert replacing_expression.to_pddl() == "(- (+ 13 (* (fuel-cost ) -0.53)) (* (fuel-cost ) -0.71))"
+    assert expression_to_eliminate.to_pddl(decimal_digits=2) == "(* (load_limit ?x) 0.71)"
+    assert replacing_expression.to_pddl(decimal_digits=2) == "(- (+ 13 (* (fuel-cost ) -0.53)) (* (fuel-cost ) -0.71))"
 
 
 def test_extract_eliminated_expressions_can_extract_correct_left_side_and_right_side_when_the_expression_expresses_that_a_function_is_a_const():
@@ -356,5 +356,5 @@ def test_using_simplify_after_variable_elimination_executes_and_does_not_return_
         construct_expression_tree(PDDLTokenizer(pddl_str=equality_expression).parse(), depot_domain.functions))
     expression_to_eliminate, replacing_expression = equality_expression_tree.extract_eliminated_expressions()
     tree.locate_and_replace(expression_to_eliminate, replacing_expression)
-    simplified_expression = tree.simplify_complex_numerical_pddl_expression()
+    simplified_expression = tree.simplify_complex_numerical_pddl_expression(decimal_digits=2)
     assert simplified_expression == "(<= (+ (+ (* (current_load ?x) -1.42) (* (fuel-cost ) 0.01)) 58.22) 3657.14)"

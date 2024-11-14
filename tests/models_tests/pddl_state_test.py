@@ -77,6 +77,14 @@ def test_states_are_not_equal_when_states_contain_predicates_and_numeric_and_one
     assert not state1 == state2
 
 
+def test_convert_fluents_to_numeric_conditions_converts_the_state_fluents_with_their_values_correctly(
+        agricola_problem: Problem):
+    state1 = State(predicates=agricola_problem.initial_state_predicates, fluents=agricola_problem.initial_state_fluents)
+    num_fluents = len(state1.state_fluents)
+    numerical_fluents = state1.convert_fluents_to_numeric_conditions()
+    assert len(numerical_fluents) == num_fluents
+
+
 def test_get_state_objects_extract_all_objects_from_state(spider_first_state: State):
     objects = spider_first_state.get_state_objects()
     assert len(objects) == 31

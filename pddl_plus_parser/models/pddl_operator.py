@@ -124,18 +124,19 @@ class Operator:
 
         return self.grounded_preconditions.is_applicable(state, self.problem_objects)
 
-    def apply(self, previous_state: State, allow_inapplicable_actions: bool = False) -> State:
+    def apply(self, previous_state: State, allow_inapplicable_actions: bool = False, skip_validation: bool = False) -> State:
         """Applies an action on a state and changes the state according to the action's effects.
 
         :param previous_state: the state in which the operator is being applied on.
         :param allow_inapplicable_actions: whether to allow inapplicable actions to be applied.
+        :param skip_validation: whether to skip the validation of the action's applicability.
         :return: the new state that was created by applying the operator.
         """
         # First need to apply the operator's discrete effects.
         if not self.grounded:
             self.ground()
 
-        if not self.is_applicable(previous_state):
+        if not skip_validation and not self.is_applicable(previous_state):
             self.logger.warning("Tried to apply an action to a state where the action's preconditions don't hold!")
             if not allow_inapplicable_actions:
                 raise ValueError("Cannot apply an action when it is not applicable!")
@@ -146,7 +147,7 @@ class Operator:
 
         for effect in self.grounded_effects:
             self.logger.debug(f"Applying the effect: {str(effect)}")
-            if not effect.antecedents_hold(previous_state):
+            if not not skip_validation and not effect.antecedents_hold(previous_state):
                 self.logger.debug("The antecedents for the effect do not hold so skipping the effect.")
                 continue
 

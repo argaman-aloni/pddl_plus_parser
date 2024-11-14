@@ -1,6 +1,10 @@
 """Module that represents a state definition in a PDDL trajectory."""
 from typing import Dict, Set
 
+from anytree import AnyNode
+from sympy.codegen.ast import value_const
+
+from . import NumericalExpressionTree
 from .pddl_object import PDDLObject
 from .pddl_function import PDDLFunction
 from .pddl_predicate import GroundedPredicate
@@ -85,6 +89,21 @@ class State:
         return f"({':init' if self.is_init else ':state'}" \
                f" {self._serialize_numeric_fluents()}" \
                f"{self._serialize_predicates()})\n"
+
+    def convert_fluents_to_numeric_conditions(self) -> Set[NumericalExpressionTree]:
+        """Converts the numeric fluents to numerical conditions.
+
+        :return: the set of numerical conditions representing the numeric fluents.
+        """
+        conditions = set()
+        for fluent in self.state_fluents.values():
+            left_child = AnyNode(id=str(fluent), value=fluent)
+            right_child = AnyNode(id=str(fluent.value), value=fluent.value)
+            root_node = AnyNode(id="=", value="=", children=[left_child, right_child])
+            conditions.add(NumericalExpressionTree(root_node))
+
+        return conditions
+
 
     def copy(self) -> "State":
         """Creates a copy of the state."""
