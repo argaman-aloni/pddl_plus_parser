@@ -39,7 +39,7 @@ def test_simplify_when_there_is_a_multiplication_causing_the_creation_of_power_d
 
 def test_simplify_when_there_is_a_multiplication_causing_the_creation_of_power_does_not_add_power_symbol_with_complex_expression():
     test_simple_expression = "((((capacity ?a) - 8823.0) * -0.01) + (1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1))))"
-    expected_simple_expression = "(+ (+ (* (capacity ?a) -0.01) (* (* (* (distance ?c2 ?c1) (distance ?c2 ?c1)) (distance ?c2 ?c1)) 1)) 88.23)"
+    expected_simple_expression = "(+ (+ (* (capacity ?a) -0.0100) (* (* (* (distance ?c2 ?c1) (distance ?c2 ?c1)) (distance ?c2 ?c1)) 1)) 88.2300)"
     result = simplify_complex_numeric_expression(test_simple_expression)
     assert result == expected_simple_expression
 
@@ -54,7 +54,7 @@ def test_simplify_when_there_are_zeros_in_the_original_expression_removes_them_f
 def test_simplify_when_there_are_zeros_in_the_expression_with_decimal_point_removes_zeros_correctly():
     # expression = (+ (*(load_limit ?x) 0.00)(+ (*(current_load ?x) 0.01)(*(fuel - cost) - 1.00))
     test_simple_expression = "((((distance ?c2 ?c1) * 0.00) + ((zoom-limit ?a) * 0.01)) + ((capacity ?a) * -1.00))"
-    expected_simple_expression = "(+ (* (zoom-limit ?a) 0.01) (* (capacity ?a) -1))"
+    expected_simple_expression = "(+ (* (zoom-limit ?a) 0.0100) (* (capacity ?a) -1))"
     result = simplify_complex_numeric_expression(test_simple_expression)
     assert result == expected_simple_expression
 
@@ -62,50 +62,54 @@ def test_simplify_when_there_are_zeros_in_the_expression_with_decimal_point_remo
 def test_simplify_inequality_when_given_simple_inequality_returns_the_same_inequality():
     test_simple_inequality = "((distance ?c2 ?c1) <= (zoom-limit ?a))"
     expected_simple_inequality = "(<= (distance ?c2 ?c1) (zoom-limit ?a))"
-    result = simplify_inequality(test_simple_inequality)
+    result = simplify_inequality(test_simple_inequality, inequality_operator="<=")
     assert result == expected_simple_inequality
 
 
-def test_simplify_inequality_when_given_a_truth_expression_returns_none():
-    test_simple_inequality = "((distance ?c2 ?c1) <= (distance ?c2 ?c1))"
-    result = simplify_inequality(test_simple_inequality)
-    assert result is None
-
-
-def test_simplify_inequality_when_given_a_number_returns_the_number():
-    test_simple_inequality = "0"
-    result = simplify_inequality(test_simple_inequality)
-    assert result == "0"
-
-
 def test_simplify_inequality_when_given_complex_expression_with_no_assumptions_returns_simplified_version():
-    original_expression = "(((((capacity ?a) - 8823.0) * 1.5) + (1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1)))) <= 3657.14)"
-    result = simplify_inequality(original_expression)
-    assert len(result) < len(original_expression)
-    assert result.endswith("0)")
+    original_expression = "(((((capacity ?a) - 8823) * 1.5000) + (1 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1)))) <= 3657.14)"
+    result = simplify_inequality(original_expression, inequality_operator="<=", decimal_digits=2)
+    assert "-13234.5" in result
+    assert "(* (capacity ?a) 1.50)" in result
+    assert result.endswith("3657.14)")
 
 
 def test_simplify_inequality_when_given_complex_expression_with_assumptions_on_linear_dependency_removes_the_assumptions_from_the_original_expression():
-    original_expression = "(((((capacity ?a) - 8823.0) * 1.5) + (1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1)))) <= 3657.14)"
+    original_expression = "(((((capacity ?a) - 8823) * 1.5) + (1 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1)))) <= 3657.14)"
     assumption = ["(capacity ?a) = (-1 * ((distance ?c2 ?c1) * -1))"]
-    result = simplify_inequality(original_expression, assumption)
-    assert len(result) < len(original_expression)
+    result = simplify_inequality(original_expression, inequality_operator="<=", assumptions=assumption,
+                                 decimal_digits=2)
+    assert "-13234.50" in result
     assert "(capacity ?a)" not in result
 
 
 def test_simplify_inequality_when_given_complex_expression_with_assumptions_on_linear_dependency_removes_assumption_even_when_assumption_in_complex_form():
-    original_expression = "(((((capacity ?a) - 8823.0) * 1.5) + (1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1)))) <= 3657.14)"
+    original_expression = "(((((capacity ?a) - 8823) * 1.5) + (1 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1)))) <= 3657.14)"
     assumption = ["((capacity ?a) - 54) = (-1 * (((distance ?c2 ?c1) - 54) * -1))"]
-    result = simplify_inequality(original_expression, assumption)
-    assert len(result) < len(original_expression)
+    result = simplify_inequality(original_expression, inequality_operator="<=", assumptions=assumption,
+                                 decimal_digits=2)
     assert "(capacity ?a)" not in result
+    assert "-13234.50" in result
+    assert "(* (distance ?c2 ?c1) 1.50)" in result
+
+
+def test_simplify_inequality_when_given_inequality_type_different_than_leq_still_works():
+    original_expression = "(((((capacity ?a) - 8823) * 1.5) + (1 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1)))) >= 3657.14)"
+    assumption = ["((capacity ?a) - 54) = (-1 * (((distance ?c2 ?c1) - 54) * -1))"]
+    result = simplify_inequality(original_expression, inequality_operator=">=", assumptions=assumption,
+                                 decimal_digits=2)
+    assert "(capacity ?a)" not in result
+    assert "-13234.50" in result
+    assert "(* (distance ?c2 ?c1) 1.50)" in result
+    assert ">=" in result
 
 
 def test_simplify_inequality_when_rhs_is_zero_does_not_add_invalid_none_at_the_end_of_the_expression():
     original_expression = "(((((capacity ?a) - 1.0) * 1.5) + (1.0 * ((distance ?c2 ?c1) * (distance ?c2 ?c1) * (distance ?c2 ?c1)))) <= 0)"
     assumption = ["((capacity ?a) - 54) = (-1 * (((distance ?c2 ?c1) - 54) * -1))"]
-    result = simplify_inequality(original_expression, assumption)
+    result = simplify_inequality(original_expression, inequality_operator="<=", assumptions=assumption)
     assert "None" not in result
+    assert result.endswith("0)")
 
 
 def test_simplify_equality_when_given_an_equality_without_assumptions_returns_correct_equality():

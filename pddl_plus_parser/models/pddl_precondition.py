@@ -1,5 +1,4 @@
 """Module containing the classes representing the preconditions of a PDDL+ action."""
-from collections import deque
 from typing import Union, Set, Tuple, List
 
 from pddl_plus_parser.models.numeric_symbolic_operations import simplify_inequality, simplify_equality
@@ -157,45 +156,7 @@ class Precondition:
             self.operands.add(condition)
 
     @staticmethod
-    def _remove_duplicate_inequalities(
-            new_expressions: List[NumericalExpressionTree], op_type: str) -> List[NumericalExpressionTree]:
-        """Removes duplicate linear inequalities that are created when we lower the number of decimal points.
-
-        :param new_expressions: the expressions prior to the simplification.
-        :param op_type: the type of the inequality to remove, either <= or >=.
-        :return: the new expressions after the simplification.
-        """
-        # removing inequalities that appear multiple times with different right side values
-        queue_before_simplification = deque(new_expressions)
-        queue_after_simplification = deque()
-        while queue_before_simplification:
-            condition_to_test = queue_before_simplification.popleft()
-            if condition_to_test.root.value != op_type:
-                queue_after_simplification.append(condition_to_test)
-                continue
-
-            left_side, right_side = condition_to_test.root.children
-            updated_right_value = right_side.value
-            queue_to_iterate = deque(queue_before_simplification)
-            while queue_to_iterate:
-                other_condition = queue_to_iterate.popleft()
-                if other_condition.root.value != condition_to_test.root.value:
-                    continue
-
-                other_left_side, other_right_side = other_condition.root.children
-                if str(NumericalExpressionTree(other_left_side)) == str(NumericalExpressionTree(left_side)):
-                    updated_right_value = min(updated_right_value, other_right_side.value) if op_type == "<=" else \
-                        max(updated_right_value, other_right_side.value)
-
-                    right_side.id = str(updated_right_value)
-                    right_side.value = updated_right_value
-                    queue_before_simplification.remove(other_condition)
-
-            queue_after_simplification.append(condition_to_test)
-
-        return list(queue_after_simplification)
-
-    def _simplify_numeric_preconditions(self, numeric_preconditions: List[NumericalExpressionTree],
+    def _simplify_numeric_preconditions(numeric_preconditions: List[NumericalExpressionTree],
                                         decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> List[str]:
         """Simplify the numeric preconditions by eliminating redundant conditions as well as removing redundant preconditions.
 
@@ -206,8 +167,6 @@ class Precondition:
         # start by searching for the equality conditions that can be used to eliminate some variables in the other conditions
         new_expressions = [precondition.__copy__() for precondition in numeric_preconditions]
         equality_conditions = [condition for condition in new_expressions if condition.root.value == "="]
-        new_expressions = self._remove_duplicate_inequalities(new_expressions, op_type="<=")
-        new_expressions = self._remove_duplicate_inequalities(new_expressions, op_type=">=")
 
         assumptions = []
         for equality_condition in equality_conditions:
@@ -216,8 +175,7 @@ class Precondition:
                 continue
 
             expression_to_eliminate, replacing_expression = eliminated_expression
-            new_assumption = f"{expression_to_eliminate.to_mathematical()} = {replacing_expression.to_mathematical()}"
-            assumptions.append((equality_condition, new_assumption))
+            assumptions.append(f"{expression_to_eliminate.to_mathematical()} = {replacing_expression.to_mathematical()}")
 
         simplified_conditions = []
         for condition in new_expressions:
@@ -229,7 +187,8 @@ class Precondition:
                 continue
 
             simplified_inequality = simplify_inequality(condition.to_mathematical(),
-                                                        [assumption[1] for assumption in assumptions],
+                                                        condition.root.value,
+                                                        [assumption for assumption in assumptions],
                                                         decimal_digits=decimal_digits)
             if simplified_inequality:
                 simplified_conditions.append(simplified_inequality)

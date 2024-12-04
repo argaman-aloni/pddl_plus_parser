@@ -282,8 +282,7 @@ class NumericalExpressionTree:
             return None
 
         left_op_first_child, left_op_second_child = left_operand.children[0], left_operand.children[1]
-        expression_to_eliminate = NumericalExpressionTree(left_op_first_child) if \
-            left_op_first_child.is_leaf else NumericalExpressionTree(left_op_first_child)
+        expression_to_eliminate = NumericalExpressionTree(left_op_first_child)
 
         replacing_expression = NumericalExpressionTree(
             AnyNode(id="*", value="*", children=[AnyNode(id="-1", value=-1), left_op_second_child])) if \

@@ -3,8 +3,8 @@ import os
 import re
 from typing import Dict, Optional, List, Tuple
 
-from sympy import Le, Ge, Lt, Eq, Gt
-from sympy import symbols, simplify, Expr, Add, Mul, Pow, Symbol, Float, expand, collect
+from sympy import Eq, sympify, expand
+from sympy import symbols, simplify, Expr, Add, Mul, Pow, Symbol, Float
 from sympy.core.numbers import Zero, NegativeOne, One, Integer
 from sympy.logic.boolalg import BooleanTrue
 from sympy.parsing.sympy_parser import parse_expr
@@ -132,6 +132,7 @@ def convert_expr_to_pddl(expr: Expr, symbolic_vars: Dict[str, Symbol],
     :param expr: the symbolic expression to convert.
     :param symbolic_vars: the map between the symbolic expression and the PDDL expression.
     :param decimal_digits: the number of decimal digits to keep.
+    :param should_remove_trailing_zeros: whether to remove trailing zeros or not.
     :return: the PDDL expression.
     """
     initial_operator = SYMPY_OP_TO_PDDL_OP[expr.func]
@@ -139,36 +140,6 @@ def convert_expr_to_pddl(expr: Expr, symbolic_vars: Dict[str, Symbol],
         expr, initial_operator, {val: key for key, val in symbolic_vars.items()}, decimal_digits=decimal_digits,
         should_remove_trailing_zeros=should_remove_trailing_zeros
     )
-
-
-def simplify_complex_numeric_expression(complex_numeric_expression: str,
-                                        decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
-    """Simplifies a complex numeric expression.
-
-    Note: The expression should not be in PDD: format but in regular mathematical format.
-
-    :param complex_numeric_expression: the expression to simplify.
-    :param decimal_digits: the number of decimal digits to keep.
-    :return: the simplified expression in PDDL format.
-    """
-    # Extract the function arguments from the expression
-    pddl_variables = set(re.findall(r"(\([\w-]+\s[?\w\-\s]*\))", complex_numeric_expression))
-    if len(pddl_variables) == 0:
-        return complex_numeric_expression  # Return unchanged if no variables are found
-
-    # the code works on the left side of the numerical inequality
-    symbolic_vars = {var: symbols(re.sub(r"[\(\-\)\s\?]", "", var)) for var in pddl_variables}
-    # Replace PDDL variables in the left part with symbolic variables
-    left_part_str = complex_numeric_expression
-    for var, sym in symbolic_vars.items():
-        left_part_str = left_part_str.replace(var, str(sym))
-
-    # Convert the modified left part back to a symbolic expression
-    left_part_expr = parse_expr(left_part_str)
-
-    # Simplify the left part
-    simplified_left_part = simplify(left_part_expr)
-    return convert_expr_to_pddl(simplified_left_part, symbolic_vars, decimal_digits=decimal_digits)
 
 
 def transform_expression(expression: str, symbols_to_use: Optional[Dict[str, Symbol]] = None) -> Tuple[
@@ -196,21 +167,20 @@ def transform_expression(expression: str, symbols_to_use: Optional[Dict[str, Sym
     return formatted_expression, symbolic_vars
 
 
-def get_inequality_operator(inequality: Expr) -> str:
-    # Identify the type of the inequality
-    inequality_type = type(inequality)
+def simplify_complex_numeric_expression(complex_numeric_expression: str,
+                                        decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
+    """Simplifies a complex numeric expression.
 
-    # Map the type to the corresponding string representation
-    operator_map = {
-        Le: '<=',
-        Ge: '>=',
-        Lt: '<',
-        Gt: '>',
-        Eq: '='
-    }
+    Note: The expression should not be in PDD: format but in regular mathematical format.
 
-    # Extract and return the operator string
-    return operator_map.get(inequality_type, "Unknown operator")
+    :param complex_numeric_expression: the expression to simplify.
+    :param decimal_digits: the number of decimal digits to keep.
+    :return: the simplified expression in PDDL format.
+    """
+    left_part_str, symbolic_vars = transform_expression(complex_numeric_expression)
+    left_part_expr = parse_expr(left_part_str)
+    simplified_expression = simplify(left_part_expr)
+    return convert_expr_to_pddl(simplified_expression, symbolic_vars, decimal_digits=decimal_digits)
 
 
 def simplify_equality(equation: str, decimal_digits=DEFAULT_DECIMAL_DIGITS) -> Optional[str]:
@@ -223,8 +193,8 @@ def simplify_equality(equation: str, decimal_digits=DEFAULT_DECIMAL_DIGITS) -> O
     left_expr, right_expr = equation.split('=')
     transformed_left_expr, symbolic_vars = transform_expression(left_expr)
     transformed_right_expr, symbolic_vars = transform_expression(right_expr, symbolic_vars)
-    transformed_left_expr = parse_expr(transformed_left_expr)
-    transformed_right_expr = parse_expr(transformed_right_expr)
+    transformed_left_expr = parse_expr(transformed_left_expr, evaluate=False)
+    transformed_right_expr = parse_expr(transformed_right_expr, evaluate=False)
     equation = Eq(transformed_left_expr, transformed_right_expr)
     simplified_equation = simplify(equation)
 
@@ -238,49 +208,37 @@ def simplify_equality(equation: str, decimal_digits=DEFAULT_DECIMAL_DIGITS) -> O
     return f"(= {pddl_left_side} {pddl_right_side})"
 
 
-def simplify_inequality(complex_numeric_expression: str, assumptions: List[str] = [],
+def simplify_inequality(complex_numeric_expression: str, inequality_operator: str, assumptions: List[str] = [],
                         decimal_digits=DEFAULT_DECIMAL_DIGITS) -> Optional[str]:
+    """Simplifies a complex numeric inequality by performing the following steps:
+
+    1. if there are assumptions, substitute them into the inequality
+    2. expand the brackets in the expression
+
+    :param complex_numeric_expression: the expression to simplify.
+    :param inequality_operator: the operator of the inequality.
+    :param assumptions: the assumptions to substitute into the inequality.
+    :param decimal_digits: the number of decimal digits to keep.
+    :return: the simplified expression in PDDL format.
     """
+    left_side_expression, right_side_expression = complex_numeric_expression[1:-1].split(inequality_operator)
+    transformed_left_str, symbolic_vars = transform_expression(left_side_expression)
+    transformed_right_str, symbolic_vars = transform_expression(right_side_expression, symbolic_vars)
+    left_expr = parse_expr(transformed_left_str, evaluate=False)
+    right_expr = parse_expr(transformed_right_str, evaluate=False)
 
-    :param complex_numeric_expression:
-    :param assumptions:
-    :param decimal_digits:
-    :return:
-    """
-    transformed_expression, symbolic_vars = transform_expression(complex_numeric_expression)
-    if not symbolic_vars:
-        return complex_numeric_expression
+    for assumption_str in assumptions:
+        # Parse the strings as sympy expressions
+        assumption_expression, symbolic_vars = transform_expression(assumption_str, symbolic_vars)
+        lhs, rhs = assumption_expression.split('=')
+        lhs = simplify(sympify(lhs))
+        rhs = simplify(sympify(rhs))
+        assumption = simplify(Eq(lhs, rhs))
+        left_expr = left_expr.subs(assumption.lhs, assumption.rhs)
+        right_expr = right_expr.subs(assumption.lhs, assumption.rhs)
 
-    # Convert the modified left part back to a symbolic expression
-    sympy_expression = parse_expr(transformed_expression)
-
-    for assumption in assumptions:
-        # Assumption string is expected in the form "expr1 = expr2"
-        left_expr, right_expr = assumption.split('=')
-        transformed_left_expr, symbolic_vars = transform_expression(left_expr, symbolic_vars)
-        transformed_right_expr, symbolic_vars = transform_expression(right_expr, symbolic_vars)
-        transformed_left_expr = parse_expr(transformed_left_expr)
-        transformed_right_expr = parse_expr(transformed_right_expr)
-        equation = Eq(transformed_left_expr, transformed_right_expr)
-        simplified_equation = simplify(equation)
-
-        # Substitute the assumption into the inequality
-        sympy_expression = sympy_expression.subs(simplified_equation.lhs, simplified_equation.rhs)
-
-    # Expand the brackets in the expression
-    expanded_expression = expand(sympy_expression)
-
-    # Step 5: Move all constant terms to the right side and simplify
-    inequality_op = get_inequality_operator(expanded_expression)
-    simplified_expression = simplify(collect(expanded_expression.lhs - expanded_expression.rhs,
-                                             expanded_expression.free_symbols) <= 0) if inequality_op == '<=' \
-        else simplify(collect(expanded_expression.lhs - expanded_expression.rhs, expanded_expression.free_symbols) >= 0)
-
-    if isinstance(simplified_expression, BooleanTrue):
-        return None
-
-    pddl_left_side = convert_expr_to_pddl(simplified_expression.lhs, symbolic_vars, decimal_digits=decimal_digits)
-    pddl_right_side = convert_expr_to_pddl(simplified_expression.rhs, symbolic_vars, decimal_digits=decimal_digits,
+    pddl_left_side = convert_expr_to_pddl(expand(left_expr), symbolic_vars, decimal_digits=decimal_digits)
+    pddl_right_side = convert_expr_to_pddl(expand(right_expr), symbolic_vars, decimal_digits=decimal_digits,
                                            should_remove_trailing_zeros=False)
 
-    return f"({get_inequality_operator(simplified_expression)} {pddl_left_side} {pddl_right_side})"
+    return f"({inequality_operator} {pddl_left_side} {pddl_right_side})"

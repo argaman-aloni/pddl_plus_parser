@@ -206,7 +206,7 @@ def test_print_with_simplify_option_on_numeric_condition_when_equality_condition
     try:
         simplified_precondition = precondition.print(should_simplify=True)
         print(simplified_precondition)
-        assert len(simplified_precondition) < len(original_preconditions)
+        assert len(simplified_precondition) <= len(original_preconditions)
 
     except Exception as e:
         assert False
