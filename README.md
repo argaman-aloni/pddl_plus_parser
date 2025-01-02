@@ -78,4 +78,6 @@
 * version 3.7.0 - Added the ability to simplify preconditions by eliminating variables that are redundant and thus reducing the general size of the conditions.
 * version 3.8.0 - Added code to better support multi-agent domains and problems.
 * version 3.8.9 - Added bug fixes to the numeric expressions simplification.
+* version 3.9.0 - Added the ability to query the size of an observation.
+* version 3.10.0 - Added the ability to handle untyped domains and domains containing predicates / functions / actions where their parameters are grouped to the same type.
 

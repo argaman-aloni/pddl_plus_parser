@@ -52,6 +52,9 @@ class Observation:
         self.components = []
         self.grounded_objects = {}
 
+    def __len__(self):
+        return len(self.components)
+
     def add_problem_objects(self, objects: Dict[str, PDDLObject]) -> None:
         """Add the objects from the problem to the observation data.
 
@@ -80,6 +83,9 @@ class MultiAgentObservation:
         self.components = []
         self.grounded_objects = {}
         self.agents_in_observation = executing_agents
+
+    def __len__(self):
+        return len(self.components)
 
     def add_problem_objects(self, objects: Dict[str, PDDLObject]) -> None:
         """Add the objects from the problem to the observation data.

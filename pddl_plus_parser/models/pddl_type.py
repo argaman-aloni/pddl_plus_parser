@@ -39,3 +39,6 @@ class PDDLType:
             compared_type = compared_type.parent
 
         return False
+
+
+ObjectType = PDDLType(name="object", parent=None)

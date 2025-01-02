@@ -5,7 +5,9 @@ from .pddl_action import Action
 from .pddl_function import PDDLFunction
 from .pddl_object import PDDLConstant
 from .pddl_predicate import Predicate
-from .pddl_type import PDDLType
+from .pddl_type import PDDLType, ObjectType
+
+DEFAULT_TYPES = {"object": ObjectType}
 
 
 class Domain:
@@ -26,7 +28,7 @@ class Domain:
         self.actions = {}
         self.constants = {}
         self.functions = {}
-        self.types = {}
+        self.types = DEFAULT_TYPES
         self.predicates = {}
         self.requirements = []
 

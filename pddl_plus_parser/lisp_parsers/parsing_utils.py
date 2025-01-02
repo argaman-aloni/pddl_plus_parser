@@ -1,7 +1,7 @@
 """Module containing utility functionality for the parsing process."""
 from typing import Dict, Iterator, List
 
-from pddl_plus_parser.models import PDDLType, SignatureType, Predicate, PDDLConstant, Action
+from pddl_plus_parser.models import PDDLType, SignatureType, Predicate, PDDLConstant, Action, ObjectType
 
 
 COMPARISON_OPS = ["<=", ">=", ">", "<"]
@@ -12,6 +12,8 @@ FORALL_OPERATOR = "forall"
 ASSIGNMENT_OPS = ["assign", "increase", "decrease"]
 WHEN_OPERATOR = "when"
 
+PARAMETERS_INVALID_SYNTAX_ERROR = "The parameters should start with a question mark."
+
 def parse_signature(parameters: Iterator[str], domain_types: Dict[str, PDDLType]) -> SignatureType:
     """Parse the signature of a statement.
 
@@ -19,12 +21,32 @@ def parse_signature(parameters: Iterator[str], domain_types: Dict[str, PDDLType]
     :param domain_types: the types that were extracted from the domain.
     :return: the object representing the signature's data.
     """
+    # For each group of parameters (possibly of size one) search for the dash that indicates the type of the parameter.
+    # If the dash does noe exist, assign the default type of object.
+    # Then, try to find the next set of parameters.
     signature = {}
-    for parameter_name in parameters:
-        # now the next item is the dash that we need to ignore
-        next(parameters)
-        parameter_type = next(parameters)
-        signature[parameter_name] = domain_types[parameter_type]
+    grouped_params = []
+    for parameter in parameters:
+        if parameter == "-":
+            parameter_type = next(parameters)
+            if any([not param.startswith("?") for param in grouped_params]):
+                raise SyntaxError(PARAMETERS_INVALID_SYNTAX_ERROR)
+
+            for grouped_param in grouped_params:
+
+                signature[grouped_param] = domain_types[parameter_type]
+
+            grouped_params = []
+
+        else:
+            if not parameter.startswith("?"):
+                raise SyntaxError(PARAMETERS_INVALID_SYNTAX_ERROR)
+
+            grouped_params.append(parameter)
+
+    if len(grouped_params) > 0:
+        for param in grouped_params:
+            signature[param] = ObjectType
 
     return signature
 

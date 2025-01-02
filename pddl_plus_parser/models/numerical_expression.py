@@ -253,12 +253,11 @@ class NumericalExpressionTree:
         return self._convert_to_pddl(self.root, decimal_digits=decimal_digits)
 
     def locate_and_replace(self, expression_to_locate: "NumericalExpressionTree",
-                           expression_to_replace: "NumericalExpressionTree"):
-        """
+                           expression_to_replace: "NumericalExpressionTree") -> None:
+        """locates the expression to replace and replaces it with the new expression.
 
-        :param expression_to_locate:
-        :param expression_to_replace:
-        :return:
+        :param expression_to_locate: the expression to locate.
+        :param expression_to_replace: the expression to replace the located expression with.
         """
         for node in self.root.descendants:
             if str(NumericalExpressionTree(node)) == str(expression_to_locate):

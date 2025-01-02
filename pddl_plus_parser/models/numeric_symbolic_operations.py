@@ -144,11 +144,15 @@ def convert_expr_to_pddl(expr: Expr, symbolic_vars: Dict[str, Symbol],
 
 def transform_expression(expression: str, symbols_to_use: Optional[Dict[str, Symbol]] = None) -> Tuple[
     str, Dict[str, Symbol]]:
-    """
+    """Transforms a PDDL expression to an expression that can be used in Sympy.
 
-    :param expression:
-    :param symbols_to_use:
-    :return:
+    Note:
+        The formatting is converting the PDDL style variables to a more fitting ones so that there is a one-to-one
+        mapping between the PDDL variables and the symbolic ones.
+
+    :param expression: the string representing the numeric expression.
+    :param symbols_to_use: an optional list of symbols to use so that already defined symbols will be reused.
+    :return: the transformed expression and the symbols to use.
     """
     pddl_variables = set(re.findall(r"(\([\w-]+\s[?\w\-\s]*\))", expression))
     if len(pddl_variables) == 0:

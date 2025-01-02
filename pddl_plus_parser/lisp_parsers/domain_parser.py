@@ -4,13 +4,11 @@ from pathlib import Path
 from typing import List, Dict, Union
 
 from pddl_plus_parser.models import Domain, PDDLType, Predicate, PDDLConstant, PDDLFunction, Action, \
-    CompoundPrecondition
+    CompoundPrecondition, ObjectType
 from .effects_parser import EffectsParser
 from .parsing_utils import parse_signature
 from .pddl_tokenizer import PDDLTokenizer
 from .preconditions_parser import PreconditionsParser
-
-ObjectType = PDDLType(name="object", parent=None)
 
 
 class DomainParser:
@@ -104,9 +102,6 @@ class DomainParser:
         """
         self.logger.info(f"Parsing the predicate represented by the AST - {predicate_ast}")
         predicate_name = predicate_ast[0]
-        if (len(predicate_ast[1:]) % 3) != 0:
-            raise SyntaxError(f"Received a predicate with a wrong signature - {predicate_ast[1:]}")
-
         signature_items = iter(predicate_ast[1:])
         predicate_signature = parse_signature(signature_items, domain_types)
         extracted_predicate = Predicate(name=predicate_name, signature=predicate_signature, is_positive=True)
@@ -205,7 +200,8 @@ class DomainParser:
         self.effects_parser.parse(
             effects_ast, new_action, domain_types, domain_functions, domain_predicates, domain_constants)
 
-    def parse_action(self, action_ast: List[Union[str, List[str]]], domain_types: Dict[str, PDDLType],
+    def parse_action(self, action_ast: List[Union[str, List[str]]],
+                     domain_types: Dict[str, PDDLType],
                      domain_functions: Dict[str, PDDLFunction],
                      domain_predicates: Dict[str, Predicate],
                      domain_constants: Dict[str, PDDLConstant] = {}) -> Action:

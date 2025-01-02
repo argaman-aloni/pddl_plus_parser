@@ -1,12 +1,12 @@
 from pytest import fixture, raises, fail
 
 from pddl_plus_parser.lisp_parsers import DomainParser, PDDLTokenizer
-from pddl_plus_parser.models import PDDLType, Predicate, Action, CompoundPrecondition
+from pddl_plus_parser.models import PDDLType, Predicate, Action, ObjectType
 from tests.lisp_parsers_tests.consts import TEST_PARSING_FILE_PATH, TEST_WOODWORKING_DOMAIN_PATH, \
     TEST_NUMERIC_DEPOT_DOMAIN_PATH, PLANT_WATERING_DOMAIN, TEST_CONSTANTS_FOR_CONDITIONAL_DOMAIN, \
     TEST_TYPES_FOR_CONDITIONAL_DOMAIN, TEST_PREDICATES_FOR_CONDITIONAL_DOMAIN, SPIDER_DOMAIN_PATH, \
     TYPES_FOR_UNIVERSAL_CONDITIONAL_DOMAIN, TEST_PREDICATES_FOR_UNIVERSAL_QUANTIFIER_DOMAIN, UMT2_DOMAIN_PATH, \
-    MICONIC_LEARNED_DOMAIN_PATH
+    MICONIC_LEARNED_DOMAIN_PATH, TEST_BLOCKS_DOMAIN_NO_TYPES_PATH, TEST_DOMAIN_WITH_COMBINED_TYPED_PARAMS
 
 test_types_with_no_parent = ['acolour', 'awood', 'woodobj', 'machine', 'surface', 'treatmentstatus', 'aboardsize',
                              'apartsize']
@@ -38,6 +38,11 @@ test_predicates_str = """((available ?obj - woodobj)
 @fixture()
 def domain_parser() -> DomainParser:
     return DomainParser(TEST_PARSING_FILE_PATH)
+
+
+@fixture()
+def untyped_domain_parser() -> DomainParser:
+    return DomainParser(TEST_BLOCKS_DOMAIN_NO_TYPES_PATH)
 
 
 def test_parse_types_with_no_parent_extracts_types_with_object_as_parent(domain_parser: DomainParser):
@@ -706,11 +711,11 @@ def test_parse_preconditions_with_action_with_disjunctive_preconditions_extracts
     action = domain_parser.parse_action(action_tokens, domain.types, domain.functions, domain.predicates,
                                         domain.constants)
     preconditions = action.preconditions.root
-    assert "(>= (+ 0.78 (* -0.01 (fuel-cost ))) 0)" in str(preconditions)
-    assert "(>= (+ 1.01 (* -0.02 (fuel-cost ))) 0)" in str(preconditions)
-    assert "(>= (+ -1.79 (* 0.01 (fuel-cost ))) 0)" in str(preconditions)
-    assert "(>= (+ -2.05 (+ (* 0.01 (fuel-cost )) (* 0.01 (weight ?y)))) 0)" in str(preconditions)
-    assert "(>= (+ 0.78 (* -0.01 (fuel-cost ))) 0)" in str(preconditions)
+    assert "(>= (+ (* (fuel-cost ) -0.01) 0.78) 0)" in str(preconditions)
+    assert "(>= (+ (* (fuel-cost ) -0.02) 1.01) 0)" in str(preconditions)
+    assert "(>= (+ (* (fuel-cost ) 0.01) -1.79) 0)" in str(preconditions)
+    assert "(>= (+ (+ (* (weight ?y) 0.01) (* (fuel-cost ) 0.01)) -2.05) 0))))" in str(preconditions)
+    assert "(>= (+ (* (fuel-cost ) -0.01) 0.78) 0)" in str(preconditions)
     assert "or" in str(preconditions)
     print(str(preconditions))
 
@@ -762,3 +767,52 @@ def test_parse_domain_with_nested_universal_preconditions_does_not_fail():
             print()
     except Exception:
         fail("Parsing domain with nested action schema failed.")
+
+
+def test_parse_domain_when_domain_does_not_contain_types_statement_not_fail(untyped_domain_parser: DomainParser):
+    try:
+        domain = untyped_domain_parser.parse_domain()
+        for action in domain.actions.values():
+            print(str(action))
+            print(action.preconditions)
+
+    except Exception:
+        fail("Parsing domain with nested action schema failed.")
+
+
+def test_parse_domain_when_domain_does_not_contain_types_set_all_signature_objects_to_default_and_all_types_are_equal_to_the_same_type(
+        untyped_domain_parser: DomainParser):
+    domain = untyped_domain_parser.parse_domain()
+    predicate_signature_types = set()
+    for predicate in domain.predicates.values():
+        predicate_signature_types.update([str(param_type) for param_type in predicate.signature.values()])
+
+    assert len(predicate_signature_types) == 1
+    action_signature_types = set()
+
+    for action in domain.actions.values():
+        action_signature_types.update([str(param_type) for param_type in action.signature.values()])
+
+    assert len(action_signature_types) == 1
+
+
+def test_parse_domain_when_domain_contains_multiple_types_sharing_the_same_parameter_correctly_extracts_the_parameter_types_and_assigns_the_same_types_to_parameters_in_the_same_group():
+    domain_parser = DomainParser(TEST_DOMAIN_WITH_COMBINED_TYPED_PARAMS)
+    domain = domain_parser.parse_domain()
+    tested_predicate = domain.predicates["next"]
+    assert len(tested_predicate.signature) == 2
+    assert tested_predicate.signature["?l1"] == domain.types["flevel"]
+    assert tested_predicate.signature["?l2"] == domain.types["flevel"]
+
+    tested_action = domain.actions["zoom"]
+    assert len(tested_action.signature) == 6
+    assert tested_action.signature["?c1"] == domain.types["city"]
+    assert tested_action.signature["?c2"] == domain.types["city"]
+    assert tested_action.signature["?l1"] == domain.types["flevel"]
+    assert tested_action.signature["?l2"] == domain.types["flevel"]
+    assert tested_action.signature["?l3"] == domain.types["flevel"]
+
+
+    for action in domain.actions.values():
+        print(str(action))
+        print(action.preconditions)
