@@ -47,6 +47,7 @@ class Precondition:
             numeric_preconditions = self._simplify_numeric_preconditions(numeric_expressions, decimal_digits)
 
         discrete_preconditions.sort()
+        numeric_preconditions = list(set(numeric_preconditions))    # remove duplicates
         numeric_preconditions.sort()
         compound_preconditions.sort()
         compound_preconditions = discrete_preconditions + numeric_preconditions + compound_preconditions
