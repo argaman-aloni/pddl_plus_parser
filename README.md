@@ -80,4 +80,5 @@
 * version 3.8.9 - Added bug fixes to the numeric expressions simplification.
 * version 3.9.0 - Added the ability to query the size of an observation.
 * version 3.10.0 - Added the ability to handle untyped domains and domains containing predicates / functions / actions where their parameters are grouped to the same type.
+* version 3.10.2 - Added the ability to convert a string representing a predicate into a Predicate object.
 

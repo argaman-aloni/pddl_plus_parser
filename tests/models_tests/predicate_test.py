@@ -1,5 +1,4 @@
 """Tests some basic functionality of the Predicate class."""
-
 from pddl_plus_parser.models import Predicate, PDDLType
 
 
@@ -12,6 +11,7 @@ def test_predicate_copy_with_negated_option_false_returns_the_previous_predicate
 
     # Assert
     assert result.is_positive == predicate.is_positive
+
 
 def test_predicate_copy_with_negated_option_true_returns_the_previous_predicate_with_is_positive_value_negated_from_original():
     # Arrange

@@ -1,8 +1,8 @@
 """Module containing utility functionality for the parsing process."""
 from typing import Dict, Iterator, List
 
-from pddl_plus_parser.models import PDDLType, SignatureType, Predicate, PDDLConstant, Action, ObjectType
-
+from pddl_plus_parser.lisp_parsers import PDDLTokenizer
+from pddl_plus_parser.models import PDDLType, SignatureType, Predicate, PDDLConstant, ObjectType
 
 COMPARISON_OPS = ["<=", ">=", ">", "<"]
 BINARY_OPERATORS = ["and", "or"]
@@ -13,6 +13,7 @@ ASSIGNMENT_OPS = ["assign", "increase", "decrease"]
 WHEN_OPERATOR = "when"
 
 PARAMETERS_INVALID_SYNTAX_ERROR = "The parameters should start with a question mark."
+
 
 def parse_signature(parameters: Iterator[str], domain_types: Dict[str, PDDLType]) -> SignatureType:
     """Parse the signature of a statement.
@@ -33,7 +34,6 @@ def parse_signature(parameters: Iterator[str], domain_types: Dict[str, PDDLType]
                 raise SyntaxError(PARAMETERS_INVALID_SYNTAX_ERROR)
 
             for grouped_param in grouped_params:
-
                 signature[grouped_param] = domain_types[parameter_type]
 
             grouped_params = []
@@ -71,17 +71,20 @@ def parse_untyped_predicate(untyped_predicate: List[str], action_signature: Sign
     return Predicate(name=predicate_name, signature=signed_signature, is_positive=is_positive)
 
 
-def extend_action_to_contain_quantified_objects(
-        action: Action, quantified_param: str, quantified_type: PDDLType) -> Action:
-    """Extends the relevant parts of the action to include the quantified object.
+def parse_predicate_from_string(predicate_str: str, types_map: Dict[str, PDDLType]) -> Predicate:
+    """Creates a predicate object from a string representation.
 
-    :param action: the action to extend.
-    :param quantified_param: the name of the parameter that is added to the extended action.
-    :param quantified_type: the type of the quantified object.
-    :return: the extended action.
+    Notice: currently supporting predicates string in the form:
+        (predicate_name ?param1 - type1 ?param2 - type2 ...)
+
+    :param predicate_str: the string representation of the predicate.
+    :param types_map: the map of types that are used in the domain.
+    :return: the predicate object.
     """
-    combined_signature = {**action.signature, quantified_param: quantified_type}
-    extended_action = Action()
-    extended_action.name = action.name
-    extended_action.signature = combined_signature
-    return extended_action
+    tokenizer = PDDLTokenizer(pddl_str=predicate_str)
+    expression = tokenizer.parse()
+    predicate_name = expression[0]
+    signature_items = iter(expression[1:])
+    predicate_signature = parse_signature(signature_items, types_map)
+    extracted_predicate = Predicate(name=predicate_name, signature=predicate_signature, is_positive=True)
+    return extracted_predicate
