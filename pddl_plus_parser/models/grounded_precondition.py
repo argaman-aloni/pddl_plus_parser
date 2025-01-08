@@ -33,6 +33,9 @@ class GroundedPrecondition:
         self.action = action
         self.logger = logging.getLogger(__name__)
 
+    def __iter__(self):
+        yield from self._grounded_precondition
+
     @staticmethod
     def _ground_equality_objects(equality_preconditions: Set[Tuple[str, str]],
                                  parameters_map: Dict[str, str]) -> Set[Tuple[str, str]]:

@@ -1,10 +1,11 @@
 """Module to convert MA domains into single agent domains"""
 import logging
 from pathlib import Path
+from typing import Optional
 
 from pddl_plus_parser.exporters import DomainExporter
 from pddl_plus_parser.lisp_parsers import DomainParser
-from pddl_plus_parser.models import Domain, Predicate, Action
+from pddl_plus_parser.models import Domain, Predicate, Action, Precondition
 
 DUMMY_PREDICATE_NAME = "dummy-additional-predicate"
 DUMMY_ADD_PREDICATE = Predicate(name=DUMMY_PREDICATE_NAME, signature={}, is_positive=True)
@@ -39,8 +40,11 @@ class MultiAgentDomainsConverter:
         delete_action.discrete_effects = {DUMMY_DEL_PREDICATE}
         domain.actions[delete_action.name] = delete_action
 
-    def locate_domains(self) -> Domain:
-        """Locate only the domains when there is no need to also parse the problems."""
+    def locate_domains(self, add_dummy_actions: bool = False) -> Domain:
+        """Locate only the domains when there is no need to also parse the problems.
+
+        :param add_dummy_actions: whether to add dummy actions to the domain.
+        """
         combined_domain = Domain()
         for domain_path in self.domains_directory_path.glob("domain-*.pddl"):
             self.logger.debug(f"Working on the domain - {domain_path.stem}")
@@ -58,11 +62,21 @@ class MultiAgentDomainsConverter:
 
             self.logger.debug(f"extracted the domain - {domain_file_name}")
 
-        combined_domain.predicates[DUMMY_ADD_PREDICATE.name] = DUMMY_ADD_PREDICATE
-        self._add_dummy_actions(combined_domain)
+        if add_dummy_actions:
+            combined_domain.predicates[DUMMY_ADD_PREDICATE.name] = DUMMY_ADD_PREDICATE
+            self._add_dummy_actions(combined_domain)
+
         return combined_domain
 
-    def export_combined_domain(self) -> None:
-        """Export the multi-agent domains to a single PDDL domain file."""
-        combined_domain = self.locate_domains()
-        DomainExporter().export_domain(combined_domain, self.domains_directory_path / f"combined_domain.pddl")
+    def export_combined_domain(self, add_dummy_actions: bool = False, output_folder: Optional[Path] = None) -> Path:
+        """Export the multi-agent domains to a single PDDL domain file.
+
+        :param add_dummy_actions: whether to add dummy actions to the domain.
+        :param output_folder: the folder to export the combined domain to.
+        :return: the path to the exported domain file.
+        """
+        combined_domain = self.locate_domains(add_dummy_actions)
+        output_folder_path = output_folder if output_folder is not None else self.domains_directory_path
+        domain_path = output_folder_path / f"{combined_domain.name.lower()}_combined_domain.pddl"
+        DomainExporter().export_domain(combined_domain, domain_path)
+        return domain_path

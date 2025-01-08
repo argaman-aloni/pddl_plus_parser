@@ -23,7 +23,8 @@ class DomainExporter:
         formatted_effects = "{content}"
         return formatted_effects.format(content=" ".join(action_effect_predicates))
 
-    def write_action(self, action: Action) -> str:
+    @staticmethod
+    def write_action(action: Action) -> str:
         """Write the action formatted string from the action data.
 
         :param action: The action that needs to be formatted into a string.
@@ -32,22 +33,10 @@ class DomainExporter:
         action_params = " ".join(
             [f"{name} - {parameter_type.name}" for name, parameter_type in action.signature.items()])
 
-        discrete_preconditions = self.write_action_predicates(action.positive_preconditions,
-                                                              action.negative_preconditions)
-        discrete_preconditions = f"(and {discrete_preconditions})"
-        numeric_preconditions = "\n\t\t".join([fluent.to_pddl() for fluent in action.numeric_preconditions])
-        if len(numeric_preconditions) > 0:
-            numeric_preconditions += "\n"
-
-        discrete_effects = self.write_action_predicates(action.add_effects, action.delete_effects)
-        numeric_effects = "\n\t".join([fluent.to_pddl() for fluent in action.numeric_effects])
-        if len(numeric_effects) > 0:
-            numeric_effects += "\n"
-
         return f"(:action {action.name}\n" \
                f"\t:parameters   ({action_params})\n" \
-               f"\t:precondition {discrete_preconditions}\n{numeric_preconditions}" \
-               f"\t:effect       (and {discrete_effects}\n{numeric_effects})" \
+               f"\t:precondition {action.preconditions.print(should_simplify=False)}" \
+               f"\t:effect       {action.effects_to_pddl()}" \
                f")\n"
 
     @staticmethod
@@ -147,7 +136,7 @@ class DomainExporter:
                f"{functions}" \
                f"{actions}\n)"
 
-    def export_domain(self, domain: Domain, export_path: Path) -> NoReturn:
+    def export_domain(self, domain: Domain, export_path: Path) -> None:
         """Export the domain object to a correct PDDL file.
 
         :param domain: the domain object to be exported.

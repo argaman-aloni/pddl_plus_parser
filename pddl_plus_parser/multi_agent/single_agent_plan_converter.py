@@ -4,7 +4,8 @@ import re
 from pathlib import Path
 from typing import List, Tuple, Set
 
-from pddl_plus_parser.models import Domain, ActionCall, Operator, JointActionCall, NOP_ACTION, Problem, State
+from pddl_plus_parser.models import Domain, ActionCall, Operator, JointActionCall, NOP_ACTION, Problem, State, \
+    GroundedPredicate
 from pddl_plus_parser.multi_agent.common import create_initial_state, apply_actions
 
 PLAN_COMPONENT_REGEX = r"[\d+ : ]?\(([\w+\s?-]+)\)"
@@ -42,6 +43,20 @@ class PlanConverter:
 
         return plan_seq
 
+    def _extract_grounded_preconditions(self, operator: Operator) -> Set[str]:
+        """Extracts the grounded discrete preconditions of the operator.
+
+        :param operator: the operator.
+        :return: the grounded preconditions.
+        """
+        self.logger.debug("Extracting the grounded preconditions of the operator!")
+        preconditions = set()
+        for precondition in operator.grounded_preconditions:
+            if isinstance(precondition, GroundedPredicate):
+                preconditions.add(precondition.untyped_representation)
+
+        return preconditions
+
     def _extract_grounded_effects(self, operator: Operator) -> Tuple[Set[str], Set[str]]:
         """Extracts the grounded add and delete effects of the operator.
 
@@ -76,7 +91,7 @@ class PlanConverter:
         self.logger.debug("Validating that the literals are well-defined!")
         accumulated_add_effects = set()
         accumulated_delete_effects = set()
-
+        accumulated_preconditions = set()
         for action_call in combined_actions:
             if action_call.name == NOP_ACTION:
                 continue
@@ -86,11 +101,13 @@ class PlanConverter:
             action_add_effect, action_del_effect = self._extract_grounded_effects(op)
             accumulated_add_effects.update(action_add_effect)
             accumulated_delete_effects.update(action_del_effect)
+            accumulated_preconditions.update(self._extract_grounded_preconditions(op))
 
         next_action_add_effects, next_action_del_effects = self._extract_grounded_effects(next_action)
 
         return not (len(accumulated_add_effects.intersection(next_action_del_effects)) > 0 or
-                    len(accumulated_delete_effects.intersection(next_action_add_effects)) > 0)
+                    len(accumulated_delete_effects.intersection(next_action_add_effects)) > 0 or
+                    len(accumulated_preconditions.intersection(next_action_del_effects)) > 0)
 
     def _validate_well_defined_joint_action(self, current_state: State,
                                             combined_actions: List[ActionCall], next_action: ActionCall,

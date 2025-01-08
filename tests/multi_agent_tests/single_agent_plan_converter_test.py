@@ -8,7 +8,8 @@ from pddl_plus_parser.multi_agent import PlanConverter
 from tests.multi_agent_tests.consts import SOKOBAN_DOMAIN_FILE_PATH, SOKOBAN_UNPARSED_PLAN_PATH, \
     WOODWORKING_UNPARSED_PLAN_PATH, WOODWORKING_AGENT_NAMES, COMBINED_PROBLEM_PATH, \
     SOKOBAN_PROBLEM_PATH, COMBINED_DOMAIN_PATH, SOKOBAN_PROBLEM_WITH_INTERACTING_ACTIONS_PATH, \
-    SOKOBAN_UNPARSED_PLAN_WITH_INTERACTING_ACTIONS_PATH
+    SOKOBAN_UNPARSED_PLAN_WITH_INTERACTING_ACTIONS_PATH, DEPOT1_MA_PROBLEM_PATH, \
+    DEPOT1_MA_DOMAIN_PATH, DEPOT1_MA_SOLUTION_PATH
 
 SOKOBAN_AGENT_NAMES = ["player-01", "player-02"]
 
@@ -49,6 +50,23 @@ def sokoban_problem_with_interacting_actions(sokoban_domain: Domain) -> Problem:
 @fixture()
 def woodworking_plan_converter(woodworking_domain: Domain) -> PlanConverter:
     return PlanConverter(woodworking_domain)
+
+
+@fixture()
+def depots_domain() -> Domain:
+    domain_parser = DomainParser(DEPOT1_MA_DOMAIN_PATH, partial_parsing=False)
+    return domain_parser.parse_domain()
+
+
+@fixture()
+def depots_plan_converter(depots_domain: Domain) -> PlanConverter:
+    return PlanConverter(depots_domain)
+
+
+@fixture()
+def depots_problem_with_conflicting_joint_actions(depots_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=DEPOT1_MA_PROBLEM_PATH,
+                         domain=depots_domain).parse_problem()
 
 
 def test_convert_plan_does_not_remove_actions_from_original_plan(sokoban_plan_converter: PlanConverter,
@@ -131,3 +149,13 @@ def test_convert_plan_when_removing_concurrency_constraint_creates_shorter_plan_
     print()
     for joint_action in short_joint_actions:
         print(joint_action)
+
+
+def test_convert_plan_when_some_actions_contain_effects_that_delete_preconditions_do_not_combine_to_the_same_joint_actions(
+        depots_plan_converter: PlanConverter, depots_problem_with_conflicting_joint_actions: Problem):
+    depots_agents = ["depot0","depot1","depot2","depot3","distributor0","distributor1","distributor2","distributor3","driver0","driver1","driver2","driver3"]
+    short_joint_actions = depots_plan_converter.convert_plan(depots_problem_with_conflicting_joint_actions,
+                                                                  DEPOT1_MA_SOLUTION_PATH,
+                                                                  agent_names=depots_agents)
+    for joint_action in short_joint_actions:
+        assert "[(nop ),(nop ),(unload depot2 hoist2 crate3 truck0),(nop ),(nop ),(nop ),(nop ),(nop ),(drive driver0 truck0 depot2 depot0),(nop ),(nop ),(nop )]" != str(joint_action)

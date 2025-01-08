@@ -24,6 +24,7 @@ class Action:
         self.numeric_effects = set()
         self.conditional_effects = set()
         self.universal_effects = set()
+        self.preconditions = CompoundPrecondition()  # type: ignore
 
     def __str__(self):
         signature_str_items = []
@@ -36,3 +37,23 @@ class Action:
     @property
     def parameter_names(self) -> List[str]:
         return list(self.signature.keys())
+
+    def effects_to_pddl(self) -> str:
+        """Converts the effects to the needed PDDL format.
+
+        :return: the PDDL format of the effects.
+        """
+        simple_effects = "\n\t\t".join(sorted([effect.untyped_representation for effect in self.discrete_effects]))
+
+        conditional_effects = "\n\t\t"
+        conditional_effects += "\t\t\n".join(
+            [str(conditional_effect) for conditional_effect in self.conditional_effects])
+
+        universal_effects = "\n\t\t"
+        universal_effects += "\t\t\n".join([str(universal_effect) for universal_effect in self.universal_effects])
+
+        if len(self.numeric_effects) > 0:
+            numeric_effects = "\t\t\n".join([effect.to_pddl() for effect in self.numeric_effects])
+            return f"(and {simple_effects}\n" f"\t\t{conditional_effects}\n" f"\t\t{universal_effects}\n" f"{numeric_effects})"
+
+        return f"(and {simple_effects} {conditional_effects} {universal_effects})"

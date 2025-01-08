@@ -33,3 +33,8 @@ DEPOT_MA_SOLUTION_PATH = Path(CWD, "pfile1_depots.solution")
 LOGISTICS_MA_DOMAIN_PATH = Path(CWD, "logistics_combined_domain.pddl")
 LOGISTICS_MA_PROBLEM_PATH = Path(CWD, "logistics_combined_problem.pddl")
 LOGISTICS_MA_SOLUTION_PATH = Path(CWD, "logistics_concurrent_plan.solution")
+
+
+DEPOT1_MA_DOMAIN_PATH = Path(CWD, "depots_domain.pddl")
+DEPOT1_MA_PROBLEM_PATH = Path(CWD, "depots_problem.pddl")
+DEPOT1_MA_SOLUTION_PATH = Path(CWD, "depots_plan.txt")

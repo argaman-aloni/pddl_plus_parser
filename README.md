@@ -81,5 +81,6 @@
 * version 3.9.0 - Added the ability to query the size of an observation.
 * version 3.10.0 - Added the ability to handle untyped domains and domains containing predicates / functions / actions where their parameters are grouped to the same type.
 * version 3.10.2 - Added the ability to convert a string representing a predicate into a Predicate object.
-* version 3.10.3 - Added the ability to support larger numerical error when comparing numbers. 
+* version 3.10.3 - Added the ability to support larger numerical error when comparing numbers.
+* version 3.10.5 - Fixed a bug in the plan parser that caused the creation of invalid joint actions.
 
