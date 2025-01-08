@@ -1,4 +1,5 @@
 """Class that represents a numerical expression that can be evaluated."""
+import math
 import os
 from typing import List, Union, Dict, Optional, Iterator, Tuple
 
@@ -7,8 +8,8 @@ from anytree import AnyNode, RenderTree
 from .numeric_symbolic_operations import simplify_complex_numeric_expression
 from .pddl_function import PDDLFunction
 
-EPSILON = os.environ.get("EPSILON", 0.0001)
-DEFAULT_DIGITS = os.environ.get("NUMERIC_PRECISION", 4)
+EPSILON = float(os.environ.get("EPSILON", 0.0001))
+DEFAULT_DIGITS = int(os.environ.get("NUMERIC_PRECISION", 4))
 
 LEGAL_NUMERICAL_EXPRESSIONS = ["=", "!=", "<=", ">=", ">", "<", "+", "-", "/", "*", "increase", "decrease", "assign"]
 
@@ -82,12 +83,12 @@ def assign(assigned_variable: PDDLFunction, value_to_assign: float) -> None:
 
 
 COMPARISON_OPERATORS = {
-    "=": lambda x, y: abs(x - y) <= EPSILON,
-    "!=": lambda x, y: abs(x - y) > EPSILON,
-    "<=": lambda x, y: x <= y,
-    ">=": lambda x, y: x >= y,
-    ">": lambda x, y: x > y,
-    "<": lambda x, y: x < y,
+    "=": lambda x, y: math.isclose(x, y, abs_tol=EPSILON),
+    "!=": lambda x, y: not math.isclose(x, y, abs_tol=EPSILON),
+    "<=": lambda x, y: math.isclose(x, y, abs_tol=EPSILON) or (x < y),
+    ">=": lambda x, y: math.isclose(x, y, abs_tol=EPSILON) or (x > y),
+    ">": lambda x, y: x > y - EPSILON,
+    "<": lambda x, y: x < y + EPSILON,
 }
 
 INEQUALITY_OPERATORS = ["<=", ">=", ">", "<"]
