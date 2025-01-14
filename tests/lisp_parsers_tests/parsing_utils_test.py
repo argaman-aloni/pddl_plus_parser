@@ -13,3 +13,18 @@ def test_from_string_with_predicate_string_returns_predicate_object():
     assert result.name == "predicate_name"
     assert result.signature == {"?param1": ObjectType, "?param2": ObjectType}
     print(result.untyped_representation)
+
+
+def test_from_string_with_predicate_string_returns_predicate_object_when_predicate_is_negative():
+    # Arrange
+    predicate_str = "(not (predicate_name ?param1 - type1 ?param2 - type2))"
+    types_map = {"type1": ObjectType, "type2": ObjectType}
+
+    # Act
+    result = parse_predicate_from_string(predicate_str, types_map)
+
+    # Assert
+    assert result.name == "predicate_name"
+    assert result.signature == {"?param1": ObjectType, "?param2": ObjectType}
+    assert result.is_positive == False
+    print(result.untyped_representation)
