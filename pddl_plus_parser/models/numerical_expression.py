@@ -87,8 +87,8 @@ COMPARISON_OPERATORS = {
     "!=": lambda x, y: not math.isclose(x, y, abs_tol=EPSILON),
     "<=": lambda x, y: math.isclose(x, y, abs_tol=EPSILON) or (x < y),
     ">=": lambda x, y: math.isclose(x, y, abs_tol=EPSILON) or (x > y),
-    ">": lambda x, y: x > y - EPSILON,
-    "<": lambda x, y: x < y + EPSILON,
+    ">": lambda x, y: x > y,
+    "<": lambda x, y: x < y,
 }
 
 INEQUALITY_OPERATORS = ["<=", ">=", ">", "<"]

@@ -46,6 +46,16 @@ def test_inequality_with_epsilon_returns_true_when_numbers_are_larger_to_epsilon
     assert COMPARISON_OPERATORS["!="](0.0001, 0.0003)
 
 
+def test_greater_than_when_two_numbers_are_equal_returns_false():
+    """Test that the function returns true when the numbers are close to epsilon."""
+    assert not COMPARISON_OPERATORS[">"](1, 1)
+
+
+def test_less_than_when_two_numbers_are_equal_returns_false():
+    """Test that the function returns true when the numbers are close to epsilon."""
+    assert not COMPARISON_OPERATORS["<"](1, 1)
+
+
 def test_construct_expression_tree_constructs_simple_expression_correctly():
     node_tree = construct_expression_tree(SIMPLE_EXPRESSION, TEST_DOMAIN_FUNCTIONS)
     print(RenderTree(node_tree))
