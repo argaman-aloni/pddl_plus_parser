@@ -83,4 +83,5 @@
 * version 3.10.2 - Added the ability to convert a string representing a predicate into a Predicate object.
 * version 3.10.3 - Added the ability to support larger numerical error when comparing numbers.
 * version 3.10.5 - Fixed a bug in the plan parser that caused the creation of invalid joint actions.
+* version 3.11.0 - Added functionality to represent type hierarchy as a graph and iterate over it. 
 

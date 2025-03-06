@@ -1,5 +1,7 @@
 """Module that contains the definition of PDDL+ types"""
-from typing import Optional
+import networkx as nx
+
+from typing import Optional, Dict
 
 
 class PDDLType:
@@ -42,3 +44,21 @@ class PDDLType:
 
 
 ObjectType = PDDLType(name="object", parent=None)
+
+
+def create_type_hierarchy_graph(types: Dict[str, PDDLType]) -> nx.DiGraph:
+    """
+    Constructs a NetworkX directed graph representing the type hierarchy.
+
+    :param types: Dictionary mapping type names to PDDLType objects.
+    :return: A directed graph where edges point from a type to its parent.
+    """
+    hierarchy_graph = nx.DiGraph()
+
+    # Add nodes and edges
+    for type_name, pddl_type in types.items():
+        hierarchy_graph.add_node(type_name)  # Add node for the type
+        if pddl_type.parent:
+            hierarchy_graph.add_edge(pddl_type.parent.name, type_name)
+
+    return hierarchy_graph
