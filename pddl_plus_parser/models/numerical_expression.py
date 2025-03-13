@@ -82,6 +82,31 @@ def assign(assigned_variable: PDDLFunction, value_to_assign: float) -> None:
     assigned_variable.set_value(value_to_assign)
 
 
+def scale_up(value_to_scale: PDDLFunction, scale_factor: float) -> None:
+    """Scale up the value of the first numerical fluent by the value of the other.
+
+    Note: currently supporting scaling by a constant factor only.
+
+    :param value_to_scale: the parameter that is to be scaled up.
+    :param scale_factor: the factor to scale the parameter by.
+    """
+    previous_value = value_to_scale.value
+    value_to_scale.set_value(previous_value * scale_factor)
+
+def scale_down(value_to_scale: PDDLFunction, scale_factor: float) -> None:
+    """Scale down the value of the first numerical fluent by the value of the other.
+
+    Note: currently supporting scaling by a constant factor only.
+
+    :param value_to_scale: the parameter that is to be scaled down.
+    :param scale_factor: the factor to scale the parameter by.
+    """
+    if scale_factor == 0:
+        raise ValueError("Cannot scale down by zero!")
+
+    previous_value = value_to_scale.value
+    value_to_scale.set_value(previous_value / scale_factor)
+
 COMPARISON_OPERATORS = {
     "=": lambda x, y: math.isclose(x, y, abs_tol=EPSILON),
     "!=": lambda x, y: not math.isclose(x, y, abs_tol=EPSILON),
@@ -96,7 +121,9 @@ INEQUALITY_OPERATORS = ["<=", ">=", ">", "<"]
 ASSIGNMENT_EXPRESSIONS = {
     "increase": increase,
     "decrease": decrease,
-    "assign": assign
+    "assign": assign,
+    "scale-up": scale_up,
+    "scale-down": scale_down
 }
 
 NUMERICAL_BINARY_OPERATORS = {

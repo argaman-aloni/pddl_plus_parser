@@ -36,7 +36,10 @@ def generate_strips_problems(output_directory: Path, max_num_trucks: int = 8, ma
         # Generate problems for the easy difficulty
         problem_name = f"pfile{i}.pddl"
         problem_path = output_directory / problem_name
-        generate_problem_command = f"./dlgen {random.randint(1, 100)} {random.randint(3, 10)} {random.randint(3, max_drivers)} {random.randint(2, max_num_packages)} {random.randint(2, max_num_trucks)} 100 > {problem_path}"
+        generate_problem_command = (f"./dlgen {random.randint(1, 100)} {random.randint(3, 10)} "
+                                    f"{random.randint(3, max_drivers)} "
+                                    f"{random.randint(2, max_num_packages)}"
+                                    f" {random.randint(2, max_num_trucks)} 100 > {problem_path}")
         print(f"generating problem {problem_name}...")
         subprocess.check_output(generate_problem_command, shell=True)
 

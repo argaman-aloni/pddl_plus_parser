@@ -57,15 +57,16 @@ class PlanConverter:
 
         return preconditions
 
-    def _extract_grounded_effects(self, operator: Operator) -> Tuple[Set[str], Set[str]]:
+    def _extract_grounded_effects(self, operator: Operator) -> Tuple[Set[str], Set[str], Set[str]]:
         """Extracts the grounded add and delete effects of the operator.
 
         :param operator: the operator.
-        :return: the grounded add and delete effects.
+        :return: the grounded add, delete and affected numeric functions.
         """
         self.logger.debug("Extracting the grounded add and delete effects of the operator!")
         add_effects = set()
         delete_effects = set()
+        numeric_effects = set()
         for effect in operator.grounded_effects:
             for discrete_effect in effect.grounded_discrete_effects:
                 if discrete_effect.is_positive:
@@ -73,13 +74,17 @@ class PlanConverter:
                 else:
                     delete_effects.add(discrete_effect.untyped_representation)
 
-        return add_effects, delete_effects
+            for numeric_effect in effect.grounded_numeric_effects:
+                affected_variable = numeric_effect.root.children[0].value.untyped_representation
+                numeric_effects.add(affected_variable)
 
-    def _validate_well_defined_action_literals(self, combined_actions: List[ActionCall], next_action: Operator) -> bool:
-        """Validates whether the actions' grounded literals are well-defined.
+        return add_effects, delete_effects, numeric_effects
+
+    def _validate_well_defined_action_insertion(self, combined_actions: List[ActionCall], next_action: Operator) -> bool:
+        """Validates whether the actions' inserting the new grounded action is still are well-defined.
 
         We define a contradiction as the following:
-            If a fluent and its negation exist in the same time, than it is considered a contradiction.
+            If a fluent and its negation exist in the same time, then it is considered a contradiction.
 
         Note: extending to numeric actions is easy when considering that two actions cannot change the same function at
         the same time.
@@ -92,22 +97,25 @@ class PlanConverter:
         accumulated_add_effects = set()
         accumulated_delete_effects = set()
         accumulated_preconditions = set()
+        accumulated_affected_numeric_functions = set()
         for action_call in combined_actions:
             if action_call.name == NOP_ACTION:
                 continue
 
             op = Operator(self.ma_domain.actions[action_call.name], self.ma_domain, action_call.parameters)
             op.ground()
-            action_add_effect, action_del_effect = self._extract_grounded_effects(op)
+            action_add_effect, action_del_effect, numeric_effects = self._extract_grounded_effects(op)
             accumulated_add_effects.update(action_add_effect)
             accumulated_delete_effects.update(action_del_effect)
+            accumulated_affected_numeric_functions.update(numeric_effects)
             accumulated_preconditions.update(self._extract_grounded_preconditions(op))
 
-        next_action_add_effects, next_action_del_effects = self._extract_grounded_effects(next_action)
+        next_action_add_effects, next_action_del_effects, numeric_effects = self._extract_grounded_effects(next_action)
 
         return not (len(accumulated_add_effects.intersection(next_action_del_effects)) > 0 or
                     len(accumulated_delete_effects.intersection(next_action_add_effects)) > 0 or
-                    len(accumulated_preconditions.intersection(next_action_del_effects)) > 0)
+                    len(accumulated_preconditions.intersection(next_action_del_effects)) > 0 or
+                    len(accumulated_affected_numeric_functions.intersection(numeric_effects)) > 0)
 
     def _validate_well_defined_joint_action(self, current_state: State,
                                             combined_actions: List[ActionCall], next_action: ActionCall,
@@ -150,7 +158,7 @@ class PlanConverter:
         if not next_action_op.is_applicable(current_state):
             return False
 
-        return self._validate_well_defined_action_literals(combined_actions, next_action_op)
+        return self._validate_well_defined_action_insertion(combined_actions, next_action_op)
 
     def _create_joint_actions(self, problem: Problem, plan_actions: List[Tuple[ActionCall, str]],
                               agent_names: List[str],

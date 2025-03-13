@@ -36,6 +36,10 @@ class Predicate:
         if not self.name == other.name or not self.is_positive == other.is_positive:
             return False
 
+        # Validate that the order of the parameters' names is the same.
+        if list(self.signature.keys()) != list(other.signature.keys()):
+            return False
+
         for parameter_name, parameter_type in self.signature.items():
             if parameter_name not in other.signature:
                 return False
@@ -132,7 +136,10 @@ class GroundedPredicate(Predicate):
             signature_str_items.append(f"{self.object_mapping[parameter_name]} - {str(parameter_type)}")
 
         signature_str = " ".join(signature_str_items)
-        return f"({self.name} {signature_str})"
+        if self.is_positive:
+            return f"({self.name} {signature_str})"
+
+        return f"(not ({self.name} {signature_str}))"
 
     def __hash__(self):
         return hash(self.__str__())

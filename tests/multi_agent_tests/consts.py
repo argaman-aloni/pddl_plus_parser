@@ -38,3 +38,13 @@ LOGISTICS_MA_SOLUTION_PATH = Path(CWD, "logistics_concurrent_plan.solution")
 DEPOT1_MA_DOMAIN_PATH = Path(CWD, "depots_domain.pddl")
 DEPOT1_MA_PROBLEM_PATH = Path(CWD, "depots_problem.pddl")
 DEPOT1_MA_SOLUTION_PATH = Path(CWD, "depots_plan.txt")
+
+
+BLOCKS_SOCS_DOMAIN_PATH = Path(CWD, "blocks_socs_experiment", "original_domain.pddl")
+BLOCKS_SOCS_PROBLEM_PATH = Path(CWD, "blocks_socs_experiment", "original_problem_3.pddl")
+BLOCKS_SOCS_SOLUTION_PATH = Path(CWD, "blocks_socs_experiment", "sol.txt")
+
+
+SATELLITE_NUMERIC_MULTI_DOMAIN_PATH = Path(CWD, "satellite_numeric_multi_agent", "metricSat.pddl")
+SATELLITE_NUMERIC_MULTI_PROBLEM_PATH = Path(CWD, "satellite_numeric_multi_agent", "pfile010.pddl")
+SATELLITE_NUMERIC_MULTI_SOLUTION_PATH = Path(CWD, "satellite_numeric_multi_agent", "pfile010.solution")

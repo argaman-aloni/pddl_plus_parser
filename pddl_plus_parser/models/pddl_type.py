@@ -1,7 +1,7 @@
 """Module that contains the definition of PDDL+ types"""
-import networkx as nx
-
 from typing import Optional, Dict
+
+import networkx as nx
 
 
 class PDDLType:
@@ -27,20 +27,29 @@ class PDDLType:
     def copy(self) -> "PDDLType":
         return PDDLType(self.name, self.parent)
 
+    @staticmethod
+    def is_sub_type_aux(my_type: "PDDLType", other_type: "PDDLType") -> bool:
+        """A recursion to validate that the type is a subtype of the other.
+
+        :param my_type: the type that is checked to see if it is a subtype of the other.
+        :param other_type: the type that is checked to see if the first is a subtype of.
+        :return: whether the first is a subtype of the other.
+        """
+        if my_type.name == other_type.name:
+            return True
+
+        if my_type.parent is None:
+            return False
+
+        return PDDLType.is_sub_type_aux(my_type.parent, other_type)
+
     def is_sub_type(self, other_type: "PDDLType") -> bool:
         """Checks if a type a subtype of the other.
 
         :param other_type: the type that is checked to se if the first is subtype of.
-        :return: whether or not the first is a subtype of the other.
+        :return: whether the first is a subtype of the other.
         """
-        compared_type = self
-        while compared_type.parent is not None:
-            if compared_type.name == other_type.name:
-                return True
-
-            compared_type = compared_type.parent
-
-        return False
+        return PDDLType.is_sub_type_aux(self, other_type)
 
 
 ObjectType = PDDLType(name="object", parent=None)
