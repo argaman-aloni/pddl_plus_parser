@@ -240,3 +240,14 @@ def test_change_signature_with_complex_action_returns_precondition_with_correct_
             for item in precond:
                 if isinstance(item, PDDLFunction):
                     assert set(item.signature.keys()).issubset(set(old_to_new_param_names.values()))
+
+
+def test_change_signature_with_complex_action_returns_precondition_with_correct_parameter_names_when_preconditions_contain_equality_condition(
+        zenotravel_two_types_inequality_domain: Domain):
+    tested_action = zenotravel_two_types_inequality_domain.actions["board"]
+    precondition = tested_action.preconditions
+    old_to_new_param_names = {action_param: f"?param_{i}" for i, action_param in
+                              enumerate(tested_action.signature.keys())}
+    precondition.root.add_equality_condition(("?a", "?c"))
+    precondition.change_signature(old_to_new_param_names)
+    assert precondition.root.equality_preconditions == {("?param_1", "?param_2")}

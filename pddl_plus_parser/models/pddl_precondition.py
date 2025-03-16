@@ -279,6 +279,19 @@ class Precondition:
             elif isinstance(condition, Precondition):
                 condition.change_signature(old_to_new_param_names)
 
+        new_equality_conditions = set()
+        new_inequality_conditions = set()
+        for equality_condition in self.equality_preconditions:
+            param_1, param_2 = equality_condition
+            new_equality_conditions.add((old_to_new_param_names[param_1], old_to_new_param_names[param_2]))
+
+        self.equality_preconditions = new_equality_conditions
+        for inequality_condition in self.inequality_preconditions:
+            param_1, param_2 = inequality_condition
+            new_inequality_conditions.add((old_to_new_param_names[param_1], old_to_new_param_names[param_2]))
+
+        self.inequality_preconditions = new_inequality_conditions
+
 
 class UniversalPrecondition(Precondition):
     """Class representing a universally quantified precondition."""

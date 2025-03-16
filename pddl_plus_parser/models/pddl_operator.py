@@ -41,9 +41,15 @@ class Operator:
 
     @property
     def typed_action_call(self) -> str:
-        signature_str_items = [f"{parameter_name} - {str(parameter_type)}"
-                               for parameter_name, parameter_type in
-                               zip(self.grounded_call_objects, self.action.signature.values())]
+        if self.problem_objects is not None:
+            signature_str_items = [
+                f"{parameter_name} - {str(self.problem_objects[parameter_name].type.name)}"
+                for parameter_name in self.grounded_call_objects]
+        else:
+            signature_str_items = [f"{parameter_name} - {str(parameter_type)}"
+                                   for parameter_name, parameter_type in
+                                   zip(self.grounded_call_objects, self.action.signature.values())]
+
         return f"({self.name} {' '.join(signature_str_items)})"
 
     def __str__(self):
@@ -124,7 +130,8 @@ class Operator:
 
         return self.grounded_preconditions.is_applicable(state, self.problem_objects)
 
-    def apply(self, previous_state: State, allow_inapplicable_actions: bool = False, skip_validation: bool = False) -> State:
+    def apply(self, previous_state: State, allow_inapplicable_actions: bool = False,
+              skip_validation: bool = False) -> State:
         """Applies an action on a state and changes the state according to the action's effects.
 
         :param previous_state: the state in which the operator is being applied on.

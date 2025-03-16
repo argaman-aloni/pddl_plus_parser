@@ -128,8 +128,15 @@ class TrajectoryParser:
             parameter_name: object_name for object_name, parameter_name in
             zip(predicate_signature_items, lifted_predicate.signature)
         }
+        if self.problem is not None:
+            object_and_consts = {**self.problem.objects, **self.partial_domain.constants}
+            grounded_signature = {
+                param_name: object_and_consts[object_name].type for param_name, object_name in object_mapping.items()
+            }
+        else:
+            grounded_signature = lifted_predicate.signature
 
-        return GroundedPredicate(name=predicate_name, signature=lifted_predicate.signature,
+        return GroundedPredicate(name=predicate_name, signature=grounded_signature,
                                  object_mapping=object_mapping, is_positive=True)
 
     def parse_action_call(self, action_call_ast: List[List[str]]) -> ActionCall:
