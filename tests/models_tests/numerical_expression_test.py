@@ -368,3 +368,15 @@ def test_using_simplify_after_variable_elimination_executes_and_does_not_return_
     tree.locate_and_replace(expression_to_eliminate, replacing_expression)
     simplified_expression = tree.simplify_complex_numerical_pddl_expression(decimal_digits=2)
     assert simplified_expression == "(<= (+ (+ (* (current_load ?x) -1.42) (* (fuel-cost ) 0.01)) 58.22) 3657.14)"
+
+
+def test_change_signature_changes_the_parameter_names_correctly_and_returns_the_expression_with_the_new_parameters():
+    original_expression = "(<= (+ (+ (+ (* (load_limit ?x) -0.71) (* (current_load ?x) -0.71)) (* (fuel-cost ) 0.01)) 58.22) 3657.14)"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    depot_domain = DomainParser(domain_path=DEPOT_NUMERIC_DOMAIN_PATH).parse_domain()
+    root = construct_expression_tree(tokens, depot_domain.functions)
+    tree = NumericalExpressionTree(root)
+    old_to_new_signature = {"?x": "?param_0"}
+    tree.change_signature(old_to_new_signature)
+    assert "(<= (+ (+ (+ (* (load_limit ?param_0) -0.71) (* (current_load ?param_0) -0.71)) (* (fuel-cost ) 0.01)) 58.22) 3657.14)" == tree.to_pddl(decimal_digits=2)

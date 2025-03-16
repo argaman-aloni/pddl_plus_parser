@@ -1,5 +1,5 @@
 """Module containing the classes representing the preconditions of a PDDL+ action."""
-from typing import Union, Set, Tuple, List
+from typing import Union, Set, Tuple, List, Dict
 
 from pddl_plus_parser.models.numeric_symbolic_operations import simplify_inequality, simplify_equality
 from pddl_plus_parser.models.numerical_expression import NumericalExpressionTree
@@ -47,7 +47,7 @@ class Precondition:
             numeric_preconditions = self._simplify_numeric_preconditions(numeric_expressions, decimal_digits)
 
         discrete_preconditions.sort()
-        numeric_preconditions = list(set(numeric_preconditions))    # remove duplicates
+        numeric_preconditions = list(set(numeric_preconditions))  # remove duplicates
         numeric_preconditions.sort()
         compound_preconditions.sort()
         compound_preconditions = discrete_preconditions + numeric_preconditions + compound_preconditions
@@ -176,7 +176,8 @@ class Precondition:
                 continue
 
             expression_to_eliminate, replacing_expression = eliminated_expression
-            assumptions.append(f"{expression_to_eliminate.to_mathematical()} = {replacing_expression.to_mathematical()}")
+            assumptions.append(
+                f"{expression_to_eliminate.to_mathematical()} = {replacing_expression.to_mathematical()}")
 
         simplified_conditions = []
         for condition in new_expressions:
@@ -262,6 +263,22 @@ class Precondition:
         else:
             self.inequality_preconditions.add(condition)
 
+    def change_signature(self, old_to_new_param_names: Dict[str, str]) -> None:
+        """Change the signature of the compound precondition.
+
+        :param old_to_new_param_names:
+        :return:
+        """
+        for _, condition in self:
+            if isinstance(condition, Predicate):
+                condition.change_signature(old_to_new_param_names)
+
+            elif isinstance(condition, NumericalExpressionTree):
+                condition.change_signature(old_to_new_param_names)
+
+            elif isinstance(condition, Precondition):
+                condition.change_signature(old_to_new_param_names)
+
 
 class UniversalPrecondition(Precondition):
     """Class representing a universally quantified precondition."""
@@ -323,6 +340,13 @@ class CompoundPrecondition:
         :param condition: the condition to remove.
         """
         self.root.remove_condition(condition)
+
+    def change_signature(self, old_to_new_param_names: Dict[str, str]) -> None:
+        """Change the signature of the compound precondition.
+
+        :param old_to_new_param_names:
+        """
+        self.root.change_signature(old_to_new_param_names)
 
     def print(self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
         """Print the compound precondition in PDDL format.

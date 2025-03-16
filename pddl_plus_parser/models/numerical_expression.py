@@ -280,6 +280,16 @@ class NumericalExpressionTree:
         """
         return self._convert_to_pddl(self.root, decimal_digits=decimal_digits)
 
+    def change_signature(self, old_to_new_parameter_map: Dict[str, str]) -> None:
+        """Method that changes the signature of the functions in the expression tree.
+
+        :param old_to_new_parameter_map: the mapping of the old parameter names to the new ones.
+        """
+        for node in self.root.descendants:
+            if isinstance(node.value, PDDLFunction):
+                function_to_change: PDDLFunction = node.value
+                function_to_change.change_signature(old_to_new_parameter_map)
+
     def locate_and_replace(self, expression_to_locate: "NumericalExpressionTree",
                            expression_to_replace: "NumericalExpressionTree") -> None:
         """locates the expression to replace and replaces it with the new expression.

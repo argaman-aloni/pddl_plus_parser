@@ -2,7 +2,8 @@
 from pytest import fixture
 
 from pddl_plus_parser.lisp_parsers import DomainParser
-from pddl_plus_parser.models import Domain, construct_expression_tree, NumericalExpressionTree
+from pddl_plus_parser.models import Domain, construct_expression_tree, NumericalExpressionTree, Predicate
+from pddl_plus_parser.models.pddl_function import PDDLFunction
 from pddl_plus_parser.models.pddl_precondition import Precondition
 from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, HARD_TEST_NUMERIC_DOMAIN, \
     DOMAIN_TO_TEST_INEQUALITY_REMOVAL, DOMAIN_TO_TEST_BOTH_TYPES_OF_INEQUALITY
@@ -222,3 +223,20 @@ def test_print_with_simplify_option_on_when_there_are_two_types_of_inequalities_
     assert len(simplified_precondition) == len(original_preconditions)
     assert "(<= (onboard ?a) 6)" in simplified_precondition
     assert "(>= (onboard ?a) 0)" in simplified_precondition
+
+
+def test_change_signature_with_complex_action_returns_precondition_with_correct_parameter_names(
+        zenotravel_two_types_inequality_domain: Domain):
+    tested_action = zenotravel_two_types_inequality_domain.actions["board"]
+    precondition = tested_action.preconditions
+    old_to_new_param_names = {action_param: f"?param_{i}" for i, action_param in
+                              enumerate(tested_action.signature.keys())}
+    precondition.change_signature(old_to_new_param_names)
+    for _, precond in precondition:
+        if isinstance(precond, Predicate):
+            assert set(precond.signature.keys()).issubset(set(old_to_new_param_names.values()))
+
+        if isinstance(precond, NumericalExpressionTree):
+            for item in precond:
+                if isinstance(item, PDDLFunction):
+                    assert set(item.signature.keys()).issubset(set(old_to_new_param_names.values()))

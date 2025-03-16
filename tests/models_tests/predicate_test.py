@@ -24,7 +24,6 @@ def test_predicate_copy_with_negated_option_true_returns_the_previous_predicate_
     assert result.is_positive != predicate.is_positive
 
 
-
 def test_predicate_returns_not_equal_when_the_order_in_the_signature_order_is_incorrect():
     # Arrange
     predicate1 = Predicate(name="predicate", signature={"param1": PDDLType("object"),
@@ -65,3 +64,17 @@ def test_predicate_returns_not_equal_when_the_order_in_the_signature_parameter_i
                                                         "param1": PDDLType("object")}, is_positive=True)
     # Act
     assert not predicate1 == predicate2
+
+
+def test_change_signature_returns_correct_form_of_predicate_with_signature_changed():
+    # Arrange
+    predicate = Predicate(name="predicate", signature={"?x": PDDLType("object"),
+                                                       "?y": PDDLType("object")}, is_positive=True)
+    expected_predicate_output = Predicate(name="predicate", signature={"?param_0": PDDLType("object"),
+                                                                       "?param_1": PDDLType("object")},
+                                          is_positive=True)
+    predicate.change_signature({
+        "?x": "?param_0",
+        "?y": "?param_1"
+    })
+    assert predicate == expected_predicate_output

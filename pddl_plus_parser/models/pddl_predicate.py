@@ -59,6 +59,17 @@ class Predicate:
         return Predicate(self.name, self.signature,
                          is_positive=self.is_positive if not is_negated else not self.is_positive)
 
+    def change_signature(self, old_to_new_param_names: Dict[str, str]) -> None:
+        """Performs inline changing of the predicate's signature.
+
+        :param old_to_new_param_names: the mapping of old parameter names to new parameter names.
+        """
+        for old_param_name, new_param_name in old_to_new_param_names.items():
+            if old_param_name not in self.signature:
+                continue
+
+            self.signature[new_param_name] = self.signature.pop(old_param_name)
+
     @property
     def untyped_representation(self) -> str:
         untyped_signature_str = " ".join(self.signature.keys())

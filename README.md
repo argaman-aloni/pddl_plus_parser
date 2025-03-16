@@ -85,4 +85,5 @@
 * version 3.10.5 - Fixed a bug in the plan parser that caused the creation of invalid joint actions.
 * version 3.11.0 - Added functionality to represent type hierarchy as a graph and iterate over it. 
 * version 3.12.0 - Supporting zipping numeric multi-agent plans to some degree.
+* version 3.13.0 - Added the ability to easily change the signature of the domain elements.
 

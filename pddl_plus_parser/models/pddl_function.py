@@ -100,6 +100,17 @@ class PDDLFunction:
         untyped_signature_str = " ".join(self.signature.keys())
         return f"({self.name} {untyped_signature_str})"
 
+    def change_signature(self, old_to_new_param_names: Dict[str, str]) -> None:
+        """Performs inline changing of the function's signature.
+
+        :param old_to_new_param_names: the mapping of old parameter names to new parameter names.
+        """
+        for old_param_name, new_param_name in old_to_new_param_names.items():
+            if old_param_name not in self.signature:
+                continue
+
+            self.signature[new_param_name] = self.signature.pop(old_param_name)
+
     def __str__(self):
         signature_str_items = []
         for parameter_name, parameter_type in self.signature.items():

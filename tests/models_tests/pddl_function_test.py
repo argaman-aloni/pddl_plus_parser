@@ -28,3 +28,16 @@ def test_state_typed_representation_returns_correct_string_when_function_is_grou
     """Test that the state representation returns the correct string."""
     fluent = PDDLFunction(name="distance", signature={"city0": CITY_TYPE}, repeating_variables={"city0": 2})
     assert fluent.state_typed_representation == "(= (distance city0 - city city0 - city) 0)"
+
+
+def test_change_signature_returns_correct_form_of_function_with_signature_changed():
+    # Arrange
+    func = PDDLFunction(name="predicate", signature={"?x": PDDLType("object"),
+                                                     "?y": PDDLType("object")})
+    expected_function_output = PDDLFunction(name="predicate", signature={"?param_0": PDDLType("object"),
+                                                                         "?param_1": PDDLType("object")})
+    func.change_signature({
+        "?x": "?param_0",
+        "?y": "?param_1"
+    })
+    assert func == expected_function_output

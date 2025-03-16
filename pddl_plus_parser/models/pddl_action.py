@@ -1,5 +1,5 @@
 """Module that represents a PDDL+ action."""
-from typing import Set, List
+from typing import Set, List, Dict
 
 from .conditional_effect import ConditionalEffect, UniversalEffect
 from .numerical_expression import NumericalExpressionTree
@@ -57,3 +57,20 @@ class Action:
             return f"(and {simple_effects}\n" f"\t\t{conditional_effects}\n" f"\t\t{universal_effects}\n" f"{numeric_effects})"
 
         return f"(and {simple_effects} {conditional_effects} {universal_effects})"
+
+    def change_signature(self, old_to_new_parameter_names: Dict[str, str]) -> None:
+        """Changes the action's signature.
+
+        old_to_new_parameter_names: the mapping between the old and new parameter names.
+        """
+        for old_param_name, new_param_name in old_to_new_parameter_names.items():
+            self.signature[new_param_name] = self.signature.pop(old_param_name)
+
+        self.preconditions.change_signature(old_to_new_parameter_names)
+        for effect in self.discrete_effects:
+            effect.change_signature(old_to_new_parameter_names)
+
+        for effect in self.numeric_effects:
+            effect.change_signature(old_to_new_parameter_names)
+
+        # TODO: change the signature of the conditional and universal effects.
