@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import List, Tuple, Set
 
 from pddl_plus_parser.models import Domain, ActionCall, Operator, JointActionCall, NOP_ACTION, Problem, State, \
-    GroundedPredicate
+    GroundedPredicate, NumericalExpressionTree
 from pddl_plus_parser.multi_agent.common import create_initial_state, apply_actions
 
 PLAN_COMPONENT_REGEX = r"[\d+ : ]?\(([\w+\s?-]+)\)"
@@ -43,19 +43,24 @@ class PlanConverter:
 
         return plan_seq
 
-    def _extract_grounded_preconditions(self, operator: Operator) -> Set[str]:
+    def _extract_grounded_preconditions(self, operator: Operator) -> Tuple[Set[str], Set[str]]:
         """Extracts the grounded discrete preconditions of the operator.
 
         :param operator: the operator.
         :return: the grounded preconditions.
         """
         self.logger.debug("Extracting the grounded preconditions of the operator!")
-        preconditions = set()
+        discrete_preconditions = set()
+        numeric_preconditions = set()
         for precondition in operator.grounded_preconditions:
             if isinstance(precondition, GroundedPredicate):
-                preconditions.add(precondition.untyped_representation)
+                discrete_preconditions.add(precondition.untyped_representation)
 
-        return preconditions
+            if isinstance(precondition, NumericalExpressionTree):
+                affected_variable = precondition.root.children[0].value.untyped_representation
+                numeric_preconditions.add(affected_variable)
+
+        return discrete_preconditions, numeric_preconditions
 
     def _extract_grounded_effects(self, operator: Operator) -> Tuple[Set[str], Set[str], Set[str]]:
         """Extracts the grounded add and delete effects of the operator.
@@ -96,8 +101,9 @@ class PlanConverter:
         self.logger.debug("Validating that the literals are well-defined!")
         accumulated_add_effects = set()
         accumulated_delete_effects = set()
-        accumulated_preconditions = set()
+        accumulated_discrete_preconditions = set()
         accumulated_affected_numeric_functions = set()
+        accumulated_precondition_numeric_functions = set()
         for action_call in combined_actions:
             if action_call.name == NOP_ACTION:
                 continue
@@ -108,14 +114,20 @@ class PlanConverter:
             accumulated_add_effects.update(action_add_effect)
             accumulated_delete_effects.update(action_del_effect)
             accumulated_affected_numeric_functions.update(numeric_effects)
-            accumulated_preconditions.update(self._extract_grounded_preconditions(op))
+            discrete_preconditions, numeric_preconditions = self._extract_grounded_preconditions(op)
+            accumulated_discrete_preconditions.update(discrete_preconditions)
+            accumulated_precondition_numeric_functions.update(numeric_preconditions)
 
         next_action_add_effects, next_action_del_effects, numeric_effects = self._extract_grounded_effects(next_action)
+        next_action_discrete_preconditions, next_action_numeric_preconditions = self._extract_grounded_preconditions(next_action)
 
         return not (len(accumulated_add_effects.intersection(next_action_del_effects)) > 0 or
                     len(accumulated_delete_effects.intersection(next_action_add_effects)) > 0 or
-                    len(accumulated_preconditions.intersection(next_action_del_effects)) > 0 or
-                    len(accumulated_affected_numeric_functions.intersection(numeric_effects)) > 0)
+                    len(accumulated_discrete_preconditions.intersection(next_action_del_effects)) > 0 or
+                    len(accumulated_affected_numeric_functions.intersection(numeric_effects)) > 0 or
+                    len(accumulated_precondition_numeric_functions.intersection(numeric_effects)) > 0 or
+                    len(accumulated_affected_numeric_functions.intersection(next_action_numeric_preconditions)) > 0 or
+                    len(accumulated_precondition_numeric_functions.intersection(next_action_numeric_preconditions)) > 0)
 
     def _validate_well_defined_joint_action(self, current_state: State,
                                             combined_actions: List[ActionCall], next_action: ActionCall,
