@@ -5,8 +5,19 @@ from pathlib import Path
 from typing import List, Union, Optional, Dict
 
 from pddl_plus_parser.lisp_parsers.pddl_tokenizer import PDDLTokenizer
-from pddl_plus_parser.models import Domain, Observation, State, ActionCall, PDDLFunction, Predicate, GroundedPredicate, \
-    Problem, MultiAgentObservation, NOP_ACTION, PDDLObject
+from pddl_plus_parser.models import (
+    Domain,
+    Observation,
+    State,
+    ActionCall,
+    PDDLFunction,
+    Predicate,
+    GroundedPredicate,
+    Problem,
+    MultiAgentObservation,
+    NOP_ACTION,
+    PDDLObject,
+)
 
 
 class TrajectoryParser:
@@ -47,13 +58,19 @@ class TrajectoryParser:
         state_predicates = defaultdict(set)
         state_fluents = {}
         for expression in state_data:
-            if expression[0] == "=":  # This is an assignment of a grounded numeric fluent.
+            if (
+                expression[0] == "="
+            ):  # This is an assignment of a grounded numeric fluent.
                 if len(expression) != 3:  # ['=', <function items as a list>, '<value>']
-                    raise SyntaxError("A numeric fluent should be of length 3. Fluent scheme: "
-                                      "(= (<fluent_name> <argument>) <value>)"
-                                      f"Received - {expression}")
+                    raise SyntaxError(
+                        "A numeric fluent should be of length 3. Fluent scheme: "
+                        "(= (<fluent_name> <argument>) <value>)"
+                        f"Received - {expression}"
+                    )
 
-                self.logger.debug("Component found is a numeric fluent, starting to process the fluent.")
+                self.logger.debug(
+                    "Component found is a numeric fluent, starting to process the fluent."
+                )
                 function_data = expression[1]
                 assigned_value = float(expression[2])
                 numeric_fluent = self.parse_grounded_numeric_fluent(function_data)
@@ -63,24 +80,34 @@ class TrajectoryParser:
                 continue
 
             if expression[0] in self.partial_domain.predicates:
-                self.logger.debug("Component found is a predicate, starting to process it.")
+                self.logger.debug(
+                    "Component found is a predicate, starting to process it."
+                )
                 lifted_predicate = self.partial_domain.predicates[expression[0]]
-                grounded_predicate = self.parse_grounded_predicate(expression, lifted_predicate)
-                state_predicates[lifted_predicate.untyped_representation].add(grounded_predicate)
+                grounded_predicate = self.parse_grounded_predicate(
+                    expression, lifted_predicate
+                )
+                state_predicates[lifted_predicate.untyped_representation].add(
+                    grounded_predicate
+                )
                 continue
 
             raise ValueError(f"Received illegal state component - {expression}")
 
         return State(predicates=state_predicates, fluents=state_fluents)
 
-    def parse_grounded_numeric_fluent(self, grounded_numeric_fluent: List[str]) -> PDDLFunction:
+    def parse_grounded_numeric_fluent(
+        self, grounded_numeric_fluent: List[str]
+    ) -> PDDLFunction:
         """Parse a single grounded numeric fluent in the problem.
 
         :param grounded_numeric_fluent: the grounded fluent that is present in the problem.
         :return: the function object representing the grounded fluent.
         """
         function_name = grounded_numeric_fluent[0]
-        self.logger.info(f"Starting to parse the grounded numeric fluent - {function_name}")
+        self.logger.info(
+            f"Starting to parse the grounded numeric fluent - {function_name}"
+        )
         assert function_name in self.partial_domain.functions
         lifted_function = self.partial_domain.functions[function_name]
         # For now, assuming that fluents have valid parameters.
@@ -88,10 +115,13 @@ class TrajectoryParser:
         if len(fluent_signature_items) != len(lifted_function.signature):
             raise ValueError(
                 f"Received fluent - {function_name} with wrong number of parameters! "
-                f"Expected - {len(lifted_function.signature)} and received - {len(fluent_signature_items)}")
+                f"Expected - {len(lifted_function.signature)} and received - {len(fluent_signature_items)}"
+            )
 
         if self.problem is None:
-            self.logger.debug("Since we don't know the objects in the problem, we don't need to validate their types.")
+            self.logger.debug(
+                "Since we don't know the objects in the problem, we don't need to validate their types."
+            )
             fluent_signature = {
                 object_name: list(lifted_function.signature.values())[index]
                 for index, object_name in enumerate(fluent_signature_items)
@@ -100,16 +130,19 @@ class TrajectoryParser:
 
         possible_objects = {**self.problem.objects, **self.partial_domain.constants}
         fluent_signature = {
-            object_name: possible_objects[object_name].type for object_name in fluent_signature_items
+            object_name: possible_objects[object_name].type
+            for object_name in fluent_signature_items
         }
-        for grounded_param_type, lifted_param_type in zip(fluent_signature.values(),
-                                                          lifted_function.signature.values()):
+        for grounded_param_type, lifted_param_type in zip(
+            fluent_signature.values(), lifted_function.signature.values()
+        ):
             assert grounded_param_type.is_sub_type(lifted_param_type)
 
         return PDDLFunction(name=function_name, signature=fluent_signature)
 
-    def parse_grounded_predicate(self, grounded_predicate_ast: List[str],
-                                 lifted_predicate: Predicate) -> GroundedPredicate:
+    def parse_grounded_predicate(
+        self, grounded_predicate_ast: List[str], lifted_predicate: Predicate
+    ) -> GroundedPredicate:
         """Parse the grounded predicate that appears in the problem definition.
 
         :param grounded_predicate_ast: the AST that represents the grounded predicate.
@@ -118,26 +151,39 @@ class TrajectoryParser:
         """
         predicate_name = lifted_predicate.name
         predicate_signature_items = grounded_predicate_ast[1:]
-        self.logger.info(f"Starting the parse the grounded predicate - {predicate_name} "
-                         f"with the signature - {predicate_signature_items}.")
+        self.logger.info(
+            f"Starting the parse the grounded predicate - {predicate_name} "
+            f"with the signature - {predicate_signature_items}."
+        )
         if len(predicate_signature_items) != len(lifted_predicate.signature):
             raise ValueError(
-                f"Received illegal grounded predicate with mismatching signature - {grounded_predicate_ast}")
+                f"Received illegal grounded predicate with mismatching signature - {grounded_predicate_ast}"
+            )
 
         object_mapping = {
-            parameter_name: object_name for object_name, parameter_name in
-            zip(predicate_signature_items, lifted_predicate.signature)
+            parameter_name: object_name
+            for object_name, parameter_name in zip(
+                predicate_signature_items, lifted_predicate.signature
+            )
         }
         if self.problem is not None:
-            object_and_consts = {**self.problem.objects, **self.partial_domain.constants}
+            object_and_consts = {
+                **self.problem.objects,
+                **self.partial_domain.constants,
+            }
             grounded_signature = {
-                param_name: object_and_consts[object_name].type for param_name, object_name in object_mapping.items()
+                param_name: object_and_consts[object_name].type
+                for param_name, object_name in object_mapping.items()
             }
         else:
             grounded_signature = lifted_predicate.signature
 
-        return GroundedPredicate(name=predicate_name, signature=grounded_signature,
-                                 object_mapping=object_mapping, is_positive=True)
+        return GroundedPredicate(
+            name=predicate_name,
+            signature=grounded_signature,
+            object_mapping=object_mapping,
+            is_positive=True,
+        )
 
     def parse_action_call(self, action_call_ast: List[List[str]]) -> ActionCall:
         """Parse the grounded action call in the trajectory.
@@ -147,10 +193,13 @@ class TrajectoryParser:
         """
         self.logger.debug(f"Parsing the grounded action call - {action_call_ast}")
         action_call_data = action_call_ast[0]
-        return ActionCall(name=action_call_data[0], grounded_parameters=action_call_data[1:])
+        return ActionCall(
+            name=action_call_data[0], grounded_parameters=action_call_data[1:]
+        )
 
-    def parse_joint_action(self, joint_action_call_ast: List[List[str]],
-                           executing_agents: List[str]) -> List[ActionCall]:
+    def parse_joint_action(
+        self, joint_action_call_ast: List[List[str]], executing_agents: List[str]
+    ) -> List[ActionCall]:
         """Parse the joint action call AST in the trajectory.
 
         :param joint_action_call_ast: the joint action call AST in the form.
@@ -169,7 +218,8 @@ class TrajectoryParser:
         return actions
 
     def deduce_problem_objects(
-            self, initial_state_expression: List[List[Union[str, List[str]]]]) -> Dict[str, PDDLObject]:
+        self, initial_state_expression: List[List[Union[str, List[str]]]]
+    ) -> Dict[str, PDDLObject]:
         """Deduce the problem objects from the state.
 
         :param initial_state_expression: the initial state expression that should contain predicates and functions that
@@ -179,29 +229,46 @@ class TrajectoryParser:
         self.logger.info("Extracting the observation objects.")
         observation_objects = {}
         for expression in initial_state_expression:
-            if expression[0] == "=":  # This is an assignment of a grounded numeric fluent.
+            if (
+                expression[0] == "="
+            ):  # This is an assignment of a grounded numeric fluent.
                 function_data = expression[1]
                 function_objects = function_data[1:]
-                lifted_function_signature = self.partial_domain.functions[function_data[0]].signature
-                for object_name, object_type in zip(function_objects, lifted_function_signature.values()):
-                    observation_objects[object_name] = PDDLObject(name=object_name, type=object_type)
+                lifted_function_signature = self.partial_domain.functions[
+                    function_data[0]
+                ].signature
+                for object_name, object_type in zip(
+                    function_objects, lifted_function_signature.values()
+                ):
+                    observation_objects[object_name] = PDDLObject(
+                        name=object_name, type=object_type
+                    )
 
                 continue
 
             if expression[0] in self.partial_domain.predicates:
                 lifted_predicate_name = expression[0]
                 grounded_predicate_signature = expression[1:]
-                lifted_predicate_signature = self.partial_domain.predicates[lifted_predicate_name].signature
-                for object_name, object_type in zip(grounded_predicate_signature, lifted_predicate_signature.values()):
-                    observation_objects[object_name] = PDDLObject(name=object_name, type=object_type)
+                lifted_predicate_signature = self.partial_domain.predicates[
+                    lifted_predicate_name
+                ].signature
+                for object_name, object_type in zip(
+                    grounded_predicate_signature, lifted_predicate_signature.values()
+                ):
+                    observation_objects[object_name] = PDDLObject(
+                        name=object_name, type=object_type
+                    )
 
                 continue
 
         return observation_objects
 
-    def parse_trajectory(self, trajectory_file_path: Path,
-                         executing_agents: List[str] = None, strict_trajectory_validation: bool = False) -> Union[
-        Observation, MultiAgentObservation]:
+    def parse_trajectory(
+        self,
+        trajectory_file_path: Path,
+        executing_agents: List[str] = None,
+        strict_trajectory_validation: bool = False,
+    ) -> Union[Observation, MultiAgentObservation]:
         """Parse a trajectory and extracts the observed data into objects.
 
         :param trajectory_file_path: the path to the trajectory file.
@@ -213,8 +280,11 @@ class TrajectoryParser:
         self.logger.info("Starting to read the trajectory file!")
         tokenizer = self._read_trajectory_file(trajectory_file_path)
         observation_expression = tokenizer.parse()
-        observation = MultiAgentObservation(
-            executing_agents=executing_agents) if executing_agents is not None else Observation()
+        observation = (
+            MultiAgentObservation(executing_agents=executing_agents)
+            if executing_agents is not None
+            else Observation()
+        )
 
         self.logger.debug("Parsing the initial state.")
         init_state_expression = observation_expression[0]
@@ -225,19 +295,27 @@ class TrajectoryParser:
             observation.add_problem_objects(self.problem.objects)
 
         else:
-            self.logger.debug("Parsing the initial state and extracting the objects from the state's data.")
-            observation.add_problem_objects(self.deduce_problem_objects(init_state_expression[1:]))
+            self.logger.debug(
+                "Parsing the initial state and extracting the objects from the state's data."
+            )
+            observation.add_problem_objects(
+                self.deduce_problem_objects(init_state_expression[1:])
+            )
 
         previous_state = self.parse_state(init_state_expression[1:])
 
-        self.logger.debug("Starting to generate the observation from the input trajectory.")
+        self.logger.debug(
+            "Starting to generate the observation from the input trajectory."
+        )
         for index in range(1, len(observation_expression), 2):
             macro_expression = observation_expression[index]
             if macro_expression[0] == "operator:":
                 action_call = self.parse_action_call(macro_expression[1:])
 
             elif macro_expression[0] == "operators:":
-                action_call = self.parse_joint_action(macro_expression[1:], executing_agents)
+                action_call = self.parse_joint_action(
+                    macro_expression[1:], executing_agents
+                )
 
             else:
                 raise SyntaxError("Encountered a trajectory without an action call!")

@@ -1,25 +1,40 @@
 """This module exports the domain object to a domain file."""
 from collections import defaultdict
 from pathlib import Path
-from typing import NoReturn, List, Dict, Set
+from typing import List, Dict, Set
 
-from pddl_plus_parser.models import Predicate, Action, Domain, PDDLConstant, PDDLFunction, PDDLType
+from pddl_plus_parser.models import (
+    Predicate,
+    Action,
+    Domain,
+    PDDLConstant,
+    PDDLFunction,
+    PDDLType,
+)
 
 
 class DomainExporter:
     """Class that is able to export a domain to a correct PDDL file."""
 
     @staticmethod
-    def write_action_predicates(positive_predicates: Set[Predicate], negative_predicates: Set[Predicate]) -> str:
+    def write_action_predicates(
+        positive_predicates: Set[Predicate], negative_predicates: Set[Predicate]
+    ) -> str:
         """Write the effects of an action according to the PDDL file format.
 
         :param positive_predicates: the add effects of an action.
         :param negative_predicates: the delete effects of an action.
         :return: the formatted string representing the action's predicates (preconditions or effects).
         """
-        action_effect_predicates = [predicate.untyped_representation for predicate in positive_predicates]
+        action_effect_predicates = [
+            predicate.untyped_representation for predicate in positive_predicates
+        ]
         action_effect_predicates.extend(
-            [f"(not {predicate.untyped_representation})" for predicate in negative_predicates])
+            [
+                f"(not {predicate.untyped_representation})"
+                for predicate in negative_predicates
+            ]
+        )
         formatted_effects = "{content}"
         return formatted_effects.format(content=" ".join(action_effect_predicates))
 
@@ -31,13 +46,19 @@ class DomainExporter:
         :return: the string format of the action.
         """
         action_params = " ".join(
-            [f"{name} - {parameter_type.name}" for name, parameter_type in action.signature.items()])
+            [
+                f"{name} - {parameter_type.name}"
+                for name, parameter_type in action.signature.items()
+            ]
+        )
 
-        return f"(:action {action.name}\n" \
-               f"\t:parameters   ({action_params})\n" \
-               f"\t:precondition {action.preconditions.print(should_simplify=False)}" \
-               f"\t:effect       {action.effects_to_pddl()}" \
-               f")\n"
+        return (
+            f"(:action {action.name}\n"
+            f"\t:parameters   ({action_params})\n"
+            f"\t:precondition {action.preconditions.print(should_simplify=False)}"
+            f"\t:effect       {action.effects_to_pddl()}"
+            f")\n"
+        )
 
     @staticmethod
     def write_predicates(predicates: Dict[str, Predicate]) -> str:
@@ -50,7 +71,8 @@ class DomainExporter:
         predicates_strings = []
         for predicate_name, predicate in predicates.items():
             predicate_params = " ".join(
-                [f"{name} - {types[0]}" for name, types in predicate.signature])
+                [f"{name} - {types[0]}" for name, types in predicate.signature]
+            )
             predicates_strings.append(f"\t({predicate_name} {predicate_params})")
 
         return predicates_str.format(predicates="\n".join(predicates_strings))
@@ -76,7 +98,9 @@ class DomainExporter:
         return "\n".join(types_strs)
 
     @staticmethod
-    def format_type_like_string(sorted_type_like_objects: Dict[str, List[str]]) -> List[str]:
+    def format_type_like_string(
+        sorted_type_like_objects: Dict[str, List[str]]
+    ) -> List[str]:
         """formats the string that are of the same format as types. This applies to both consts and types.
 
         :param sorted_type_like_objects: the type like objects that are being formatted into a list of strings.
@@ -85,7 +109,9 @@ class DomainExporter:
         type_like_object_content = []
         for pddl_type_name, sub_types in sorted_type_like_objects.items():
             type_like_object_pddl_str = "\t"
-            type_like_object_pddl_str += "\n\t".join([child_type for child_type in sub_types[:-1]])
+            type_like_object_pddl_str += "\n\t".join(
+                [child_type for child_type in sub_types[:-1]]
+            )
             type_like_object_pddl_str += f"\n\t{sub_types[-1]} - {pddl_type_name}"
             type_like_object_content.append(type_like_object_pddl_str)
 
@@ -125,16 +151,28 @@ class DomainExporter:
         :param domain: the learned domain object.
         """
         predicates = "\n\t".join([str(p) for p in domain.predicates.values()])
-        actions = "\n".join(self.write_action(action) for action in domain.actions.values())
-        constants = f"(:constants {self.write_constants(domain.constants)}\n)\n\n" if len(domain.constants) > 0 else ""
-        functions = f"(:functions {self.write_functions(domain.functions)}\n)\n\n" if len(domain.functions) > 0 else ""
-        return f"(define (domain {domain.name})\n" \
-               f"(:requirements {' '.join(domain.requirements)})\n" \
-               f"(:types {self.write_types(domain.types)}\n)\n\n" \
-               f"(:predicates {predicates}\n)\n\n" \
-               f"{constants}" \
-               f"{functions}" \
-               f"{actions}\n)"
+        actions = "\n".join(
+            self.write_action(action) for action in domain.actions.values()
+        )
+        constants = (
+            f"(:constants {self.write_constants(domain.constants)}\n)\n\n"
+            if len(domain.constants) > 0
+            else ""
+        )
+        functions = (
+            f"(:functions {self.write_functions(domain.functions)}\n)\n\n"
+            if len(domain.functions) > 0
+            else ""
+        )
+        return (
+            f"(define (domain {domain.name})\n"
+            f"(:requirements {' '.join(domain.requirements)})\n"
+            f"(:types {self.write_types(domain.types)}\n)\n\n"
+            f"(:predicates {predicates}\n)\n\n"
+            f"{constants}"
+            f"{functions}"
+            f"{actions}\n)"
+        )
 
     def export_domain(self, domain: Domain, export_path: Path) -> None:
         """Export the domain object to a correct PDDL file.

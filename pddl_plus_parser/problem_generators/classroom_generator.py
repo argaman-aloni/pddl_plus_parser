@@ -37,7 +37,9 @@ def generate_instance(instance_name: str, num_students: int) -> str:
     painting_count = 0
     math_count = 0
     for task_cell, task_type in zip(tasks_positions, task_distribution):
-        tasks_positions_strs.append(f"(position {task_type[0]}{painting_count if task_type == 'painting' else math_count} cell{task_cell})")
+        tasks_positions_strs.append(
+            f"(position {task_type[0]}{painting_count if task_type == 'painting' else math_count} cell{task_cell})"
+        )
         if task_type == "painting":
             painting_count += 1
         else:
@@ -48,16 +50,27 @@ def generate_instance(instance_name: str, num_students: int) -> str:
         "domain_name": "classroom",
         "cells_list": " ".join([f"cell{i}" for i in range(100)]),
         "students_list": " ".join([f"s{i}" for i in range(num_students)]),
-        "painting_list": " ".join([f"p{i}" for i in range(task_distribution.count("painting"))]),
-        "math_tasks_list": " ".join([f"m{i}" for i in range(task_distribution.count("math"))]),
-
+        "painting_list": " ".join(
+            [f"p{i}" for i in range(task_distribution.count("painting"))]
+        ),
+        "math_tasks_list": " ".join(
+            [f"m{i}" for i in range(task_distribution.count("math"))]
+        ),
         "teacher_initial_position": f"(position homerooomteacher cell{teacher_cell})",
         "students_initial_positions": "\n\t".join(
-            [f"(position s{i} cell{student_cell})" for i, student_cell in enumerate(students_positions)]),
+            [
+                f"(position s{i} cell{student_cell})"
+                for i, student_cell in enumerate(students_positions)
+            ]
+        ),
         "tasks_initial_positions": "\n\t".join(tasks_positions_strs),
         "initial_students_strengths": "\n\t".join(
-            [f"(= (strength-remaining s{i}) {random.randint(5, 10)})" for i in range(num_students)]),
-        "goal_constraints": f"(= (works-collected) {num_students})"
+            [
+                f"(= (strength-remaining s{i}) {random.randint(5, 10)})"
+                for i in range(num_students)
+            ]
+        ),
+        "goal_constraints": f"(= (works-collected) {num_students})",
     }
     return template.substitute(template_mapping)
 
@@ -65,14 +78,23 @@ def generate_instance(instance_name: str, num_students: int) -> str:
 def parse_arguments() -> argparse.Namespace:
     """Parse the command line arguments."""
     parser = argparse.ArgumentParser(description="Generate counters planning instance")
-    parser.add_argument("--max_students", required=True, help="Maximal number of students possible in the problems")
-    parser.add_argument("--output_path", required=True,
-                        help="The path to the output folder where the problems will be saved")
+    parser.add_argument(
+        "--max_students",
+        required=True,
+        help="Maximal number of students possible in the problems",
+    )
+    parser.add_argument(
+        "--output_path",
+        required=True,
+        help="The path to the output folder where the problems will be saved",
+    )
     args = parser.parse_args()
     return args
 
 
-def generate_multiple_problems(max_students: int, output_folder: Path, total_num_problems: int = 200) -> NoReturn:
+def generate_multiple_problems(
+    max_students: int, output_folder: Path, total_num_problems: int = 200
+) -> NoReturn:
     """Generate multiple problems based on the input arguments.
 
     :param max_students: the maximal number of students possible in the problems.
@@ -83,14 +105,16 @@ def generate_multiple_problems(max_students: int, output_folder: Path, total_num
         print(f"Generating problem with {num_students} counters")
         with open(output_folder / f"pfile{i}.pddl", "wt") as problem_file:
             problem_file.write(
-                generate_instance(f"instance_{random.randint(0,1000)}", num_students))
+                generate_instance(f"instance_{random.randint(0,1000)}", num_students)
+            )
 
 
 def main():
     args = parse_arguments()
-    generate_multiple_problems(max_students=int(args.max_students),
-                               output_folder=Path(args.output_path))
+    generate_multiple_problems(
+        max_students=int(args.max_students), output_folder=Path(args.output_path)
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

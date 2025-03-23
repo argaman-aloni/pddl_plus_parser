@@ -19,9 +19,11 @@ class ObservedComponent:
         self.next_state = next_state
 
     def __str__(self):
-        return f"previous state: {self.previous_state.serialize()}\n" \
-               f"operator: {str(self.grounded_action_call)}\n" \
-               f"next state: {self.next_state.serialize()}"
+        return (
+            f"previous state: {self.previous_state.serialize()}\n"
+            f"operator: {str(self.grounded_action_call)}\n"
+            f"next state: {self.next_state.serialize()}"
+        )
 
 
 class MultiAgentComponent:
@@ -31,15 +33,19 @@ class MultiAgentComponent:
     grounded_joint_action: JointActionCall
     next_state: State
 
-    def __init__(self, previous_state: State, joint_action: List[ActionCall], next_state: State):
+    def __init__(
+        self, previous_state: State, joint_action: List[ActionCall], next_state: State
+    ):
         self.previous_state = previous_state
         self.grounded_joint_action = JointActionCall(joint_action)
         self.next_state = next_state
 
     def __str__(self):
-        return f"previous state: {self.previous_state.serialize()}\n" \
-               f"operators: {str(self.grounded_joint_action)}\n" \
-               f"next state: {self.next_state.serialize()}"
+        return (
+            f"previous state: {self.previous_state.serialize()}\n"
+            f"operators: {str(self.grounded_joint_action)}\n"
+            f"next state: {self.next_state.serialize()}"
+        )
 
 
 class Observation:
@@ -62,7 +68,9 @@ class Observation:
         """
         self.grounded_objects = objects
 
-    def add_component(self, previous_state: State, call: ActionCall, next_state: State) -> None:
+    def add_component(
+        self, previous_state: State, call: ActionCall, next_state: State
+    ) -> None:
         """Add a new component to the observation data.
 
         :param previous_state: the state observed before the action call.
@@ -94,11 +102,15 @@ class MultiAgentObservation:
         """
         self.grounded_objects = objects
 
-    def add_component(self, previous_state: State, joint_action: List[ActionCall], next_state: State) -> None:
+    def add_component(
+        self, previous_state: State, joint_action: List[ActionCall], next_state: State
+    ) -> None:
         """Add a new component to the observation data.
 
         :param previous_state: the state observed before the action call.
         :param joint_action: the grounded joint action.
         :param next_state: the state after the action was executed.
         """
-        self.components.append(MultiAgentComponent(previous_state, joint_action, next_state))
+        self.components.append(
+            MultiAgentComponent(previous_state, joint_action, next_state)
+        )

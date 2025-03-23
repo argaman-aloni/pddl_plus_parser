@@ -4,8 +4,17 @@ import re
 from pathlib import Path
 from typing import List, Tuple, Set
 
-from pddl_plus_parser.models import Domain, ActionCall, Operator, JointActionCall, NOP_ACTION, Problem, State, \
-    GroundedPredicate, NumericalExpressionTree
+from pddl_plus_parser.models import (
+    Domain,
+    ActionCall,
+    Operator,
+    JointActionCall,
+    NOP_ACTION,
+    Problem,
+    State,
+    GroundedPredicate,
+    NumericalExpressionTree,
+)
 from pddl_plus_parser.multi_agent.common import create_initial_state, apply_actions
 
 PLAN_COMPONENT_REGEX = r"[\d+ : ]?\(([\w+\s?-]+)\)"
@@ -21,7 +30,9 @@ class PlanConverter:
         self.ma_domain = ma_domain
         self.logger = logging.getLogger(__name__)
 
-    def _extract_plan_actions(self, plan: str, agent_names: List[str]) -> List[Tuple[ActionCall, str]]:
+    def _extract_plan_actions(
+        self, plan: str, agent_names: List[str]
+    ) -> List[Tuple[ActionCall, str]]:
         """Extracts the actions from the multi-agent plan.
 
         :param plan: the multi-agent plan.
@@ -38,12 +49,18 @@ class PlanConverter:
             action_name = action_components[0]
             action_parameters = action_components[1:]
             # assuming that only one agent executes an action
-            executing_agent = [param for param in action_parameters if param in agent_names][0]
-            plan_seq.append((ActionCall(action_name, action_parameters), executing_agent))
+            executing_agent = [
+                param for param in action_parameters if param in agent_names
+            ][0]
+            plan_seq.append(
+                (ActionCall(action_name, action_parameters), executing_agent)
+            )
 
         return plan_seq
 
-    def _extract_grounded_preconditions(self, operator: Operator) -> Tuple[Set[str], Set[str]]:
+    def _extract_grounded_preconditions(
+        self, operator: Operator
+    ) -> Tuple[Set[str], Set[str]]:
         """Extracts the grounded discrete preconditions of the operator.
 
         :param operator: the operator.
@@ -57,18 +74,24 @@ class PlanConverter:
                 discrete_preconditions.add(precondition.untyped_representation)
 
             if isinstance(precondition, NumericalExpressionTree):
-                affected_variable = precondition.root.children[0].value.untyped_representation
+                affected_variable = precondition.root.children[
+                    0
+                ].value.untyped_representation
                 numeric_preconditions.add(affected_variable)
 
         return discrete_preconditions, numeric_preconditions
 
-    def _extract_grounded_effects(self, operator: Operator) -> Tuple[Set[str], Set[str], Set[str]]:
+    def _extract_grounded_effects(
+        self, operator: Operator
+    ) -> Tuple[Set[str], Set[str], Set[str]]:
         """Extracts the grounded add and delete effects of the operator.
 
         :param operator: the operator.
         :return: the grounded add, delete and affected numeric functions.
         """
-        self.logger.debug("Extracting the grounded add and delete effects of the operator!")
+        self.logger.debug(
+            "Extracting the grounded add and delete effects of the operator!"
+        )
         add_effects = set()
         delete_effects = set()
         numeric_effects = set()
@@ -80,12 +103,16 @@ class PlanConverter:
                     delete_effects.add(discrete_effect.untyped_representation)
 
             for numeric_effect in effect.grounded_numeric_effects:
-                affected_variable = numeric_effect.root.children[0].value.untyped_representation
+                affected_variable = numeric_effect.root.children[
+                    0
+                ].value.untyped_representation
                 numeric_effects.add(affected_variable)
 
         return add_effects, delete_effects, numeric_effects
 
-    def _validate_well_defined_action_insertion(self, combined_actions: List[ActionCall], next_action: Operator) -> bool:
+    def _validate_well_defined_action_insertion(
+        self, combined_actions: List[ActionCall], next_action: Operator
+    ) -> bool:
         """Validates whether the actions' inserting the new grounded action is still are well-defined.
 
         We define a contradiction as the following:
@@ -108,31 +135,73 @@ class PlanConverter:
             if action_call.name == NOP_ACTION:
                 continue
 
-            op = Operator(self.ma_domain.actions[action_call.name], self.ma_domain, action_call.parameters)
+            op = Operator(
+                self.ma_domain.actions[action_call.name],
+                self.ma_domain,
+                action_call.parameters,
+            )
             op.ground()
-            action_add_effect, action_del_effect, numeric_effects = self._extract_grounded_effects(op)
+            (
+                action_add_effect,
+                action_del_effect,
+                numeric_effects,
+            ) = self._extract_grounded_effects(op)
             accumulated_add_effects.update(action_add_effect)
             accumulated_delete_effects.update(action_del_effect)
             accumulated_affected_numeric_functions.update(numeric_effects)
-            discrete_preconditions, numeric_preconditions = self._extract_grounded_preconditions(op)
+            (
+                discrete_preconditions,
+                numeric_preconditions,
+            ) = self._extract_grounded_preconditions(op)
             accumulated_discrete_preconditions.update(discrete_preconditions)
             accumulated_precondition_numeric_functions.update(numeric_preconditions)
 
-        next_action_add_effects, next_action_del_effects, numeric_effects = self._extract_grounded_effects(next_action)
-        next_action_discrete_preconditions, next_action_numeric_preconditions = self._extract_grounded_preconditions(next_action)
+        (
+            next_action_add_effects,
+            next_action_del_effects,
+            numeric_effects,
+        ) = self._extract_grounded_effects(next_action)
+        (
+            next_action_discrete_preconditions,
+            next_action_numeric_preconditions,
+        ) = self._extract_grounded_preconditions(next_action)
 
-        return not (len(accumulated_add_effects.intersection(next_action_del_effects)) > 0 or
-                    len(accumulated_delete_effects.intersection(next_action_add_effects)) > 0 or
-                    len(accumulated_discrete_preconditions.intersection(next_action_del_effects)) > 0 or
-                    len(accumulated_affected_numeric_functions.intersection(numeric_effects)) > 0 or
-                    len(accumulated_precondition_numeric_functions.intersection(numeric_effects)) > 0 or
-                    len(accumulated_affected_numeric_functions.intersection(next_action_numeric_preconditions)) > 0 or
-                    len(accumulated_precondition_numeric_functions.intersection(next_action_numeric_preconditions)) > 0)
+        return not (
+            len(accumulated_add_effects.intersection(next_action_del_effects)) > 0
+            or len(accumulated_delete_effects.intersection(next_action_add_effects)) > 0
+            or len(
+                accumulated_discrete_preconditions.intersection(next_action_del_effects)
+            )
+            > 0
+            or len(accumulated_affected_numeric_functions.intersection(numeric_effects))
+            > 0
+            or len(
+                accumulated_precondition_numeric_functions.intersection(numeric_effects)
+            )
+            > 0
+            or len(
+                accumulated_affected_numeric_functions.intersection(
+                    next_action_numeric_preconditions
+                )
+            )
+            > 0
+            or len(
+                accumulated_precondition_numeric_functions.intersection(
+                    next_action_numeric_preconditions
+                )
+            )
+            > 0
+        )
 
-    def _validate_well_defined_joint_action(self, current_state: State,
-                                            combined_actions: List[ActionCall], next_action: ActionCall,
-                                            next_executing_agent: str, agent_names: List[str],
-                                            should_validate_concurrency_constraint: bool = True) -> bool:
+    def _validate_well_defined_joint_action(
+        self,
+        current_state: State,
+        combined_actions: List[ActionCall],
+        next_action: ActionCall,
+        next_executing_agent: str,
+        agent_names: List[str],
+        should_validate_concurrency_constraint: bool = True,
+    ) -> bool:
         """Validates if the joint action is well-defined.
 
         Note: the method in which the algorithm validates if a joint-action is well-defined is as follows:
@@ -153,28 +222,49 @@ class PlanConverter:
         :param should_validate_concurrency_constraint: whether to validate the concurrency constraint.
         :return: whether the joint action with the new action is well-defined.
         """
-        self.logger.info(f"Validating the joint action with the new action {str(next_action)}")
+        self.logger.info(
+            f"Validating the joint action with the new action {str(next_action)}"
+        )
         next_agent_action_index = agent_names.index(next_executing_agent)
         if combined_actions[next_agent_action_index].name != NOP_ACTION:
-            self.logger.debug("The agent already executes an action in the joint action")
+            self.logger.debug(
+                "The agent already executes an action in the joint action"
+            )
             return False
 
         joint_action = JointActionCall(actions=combined_actions)
-        if len(set(joint_action.joint_parameters).intersection(set(next_action.parameters))) > 0 \
-                and should_validate_concurrency_constraint:
+        if (
+            len(
+                set(joint_action.joint_parameters).intersection(
+                    set(next_action.parameters)
+                )
+            )
+            > 0
+            and should_validate_concurrency_constraint
+        ):
             self.logger.debug("The new action violates the concurrency constraint!")
             return False
 
-        next_action_op = Operator(self.ma_domain.actions[next_action.name], self.ma_domain, next_action.parameters)
+        next_action_op = Operator(
+            self.ma_domain.actions[next_action.name],
+            self.ma_domain,
+            next_action.parameters,
+        )
         next_action_op.ground()
         if not next_action_op.is_applicable(current_state):
             return False
 
-        return self._validate_well_defined_action_insertion(combined_actions, next_action_op)
+        return self._validate_well_defined_action_insertion(
+            combined_actions, next_action_op
+        )
 
-    def _create_joint_actions(self, problem: Problem, plan_actions: List[Tuple[ActionCall, str]],
-                              agent_names: List[str],
-                              should_validate_concurrency_constraint: bool = True) -> List[JointActionCall]:
+    def _create_joint_actions(
+        self,
+        problem: Problem,
+        plan_actions: List[Tuple[ActionCall, str]],
+        agent_names: List[str],
+        should_validate_concurrency_constraint: bool = True,
+    ) -> List[JointActionCall]:
         """Creates the joint actions from the single agent actions.
 
         :param plan_actions: the single agent actions.
@@ -182,11 +272,15 @@ class PlanConverter:
         :param should_validate_concurrency_constraint: whether to validate the concurrency constraint.
         :return: the joint actions.
         """
-        self.logger.info("Creating the joint actions from the single agent action plan!")
+        self.logger.info(
+            "Creating the joint actions from the single agent action plan!"
+        )
         joint_actions = []
         current_state = create_initial_state(problem)
         while len(plan_actions) > 0:
-            self.logger.debug("Initializing joint action to have only NOP for all the agents")
+            self.logger.debug(
+                "Initializing joint action to have only NOP for all the agents"
+            )
             joint_action = [ActionCall(NOP_ACTION, []) for _ in agent_names]
             action, agent = plan_actions.pop(0)
             joint_action[agent_names.index(agent)] = action
@@ -196,20 +290,37 @@ class PlanConverter:
                 break
 
             next_action, next_executing_agent = plan_actions[0]
-            while self._validate_well_defined_joint_action(current_state, joint_action, next_action,
-                                                           next_executing_agent,
-                                                           agent_names, should_validate_concurrency_constraint):
-                joint_action[agent_names.index(next_executing_agent)] = plan_actions.pop(0)[0]
+            while self._validate_well_defined_joint_action(
+                current_state,
+                joint_action,
+                next_action,
+                next_executing_agent,
+                agent_names,
+                should_validate_concurrency_constraint,
+            ):
+                joint_action[
+                    agent_names.index(next_executing_agent)
+                ] = plan_actions.pop(0)[0]
 
-            self.logger.debug(f"Created the joint action {[str(action) for action in joint_action]}")
-            current_state = apply_actions(self.ma_domain, current_state, [action for action in joint_action
-                                                                          if action.name != NOP_ACTION])
+            self.logger.debug(
+                f"Created the joint action {[str(action) for action in joint_action]}"
+            )
+            current_state = apply_actions(
+                self.ma_domain,
+                current_state,
+                [action for action in joint_action if action.name != NOP_ACTION],
+            )
             joint_actions.append(JointActionCall(joint_action))
 
         return joint_actions
 
-    def convert_plan(self, problem: Problem, plan_file_path: Path, agent_names: List[str],
-                     should_validate_concurrency_constraint: bool = True) -> List[JointActionCall]:
+    def convert_plan(
+        self,
+        problem: Problem,
+        plan_file_path: Path,
+        agent_names: List[str],
+        should_validate_concurrency_constraint: bool = True,
+    ) -> List[JointActionCall]:
         """Converts a single agent plan to a multi-agent plan containing joint actions.
 
         :param problem: the problem that the plan solves.
@@ -220,8 +331,9 @@ class PlanConverter:
         """
         with open(plan_file_path, "rt") as plan_file:
             plan_data = self._extract_plan_actions(plan_file.read(), agent_names)
-            plan_actions = self._create_joint_actions(problem, plan_data, agent_names,
-                                                      should_validate_concurrency_constraint)
+            plan_actions = self._create_joint_actions(
+                problem, plan_data, agent_names, should_validate_concurrency_constraint
+            )
 
         return plan_actions
 
@@ -233,5 +345,7 @@ class PlanConverter:
         :param plan_actions: the list of joint actions to export.
         """
         with open(plan_file_path, "wt") as plan_file:
-            plan_file.writelines([f"{str(joint_action)}\n" for joint_action in plan_actions[:-1]])
+            plan_file.writelines(
+                [f"{str(joint_action)}\n" for joint_action in plan_actions[:-1]]
+            )
             plan_file.write(str(plan_actions[-1]))

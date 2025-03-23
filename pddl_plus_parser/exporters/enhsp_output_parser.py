@@ -38,5 +38,5 @@ class ENHSPParser:
             output_file.writelines(action_sequence)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     ENHSPParser().parse_plan(Path(sys.argv[1]))

@@ -8,11 +8,15 @@ from typing import NoReturn, List, Tuple
 
 PLAN_COMPONENT_REGEX = r"\d: ([\w+\s?-]+)\n"
 VALID_PLAN_FOUND_PATTERN = "ff: found legal plan as follows"
-NO_SOLUTION_OPTIONS = ["problem proven unsolvable.",
-                       "ff: goal can be simplified to FALSE. No plan will solve it",
-                       "all increasers applied yet goal not fulfilled"]
+NO_SOLUTION_OPTIONS = [
+    "problem proven unsolvable.",
+    "ff: goal can be simplified to FALSE. No plan will solve it",
+    "all increasers applied yet goal not fulfilled",
+]
 NO_SOLUTION_FOUND_PATTERN = "problem proven unsolvable."
-NO_SOLUTION_FOUND_PATTERN_2 = "ff: goal can be simplified to FALSE. No plan will solve it"
+NO_SOLUTION_FOUND_PATTERN_2 = (
+    "ff: goal can be simplified to FALSE. No plan will solve it"
+)
 NO_SOLUTION_FOUND_PATTERN_3 = "all increasers applied yet goal not fulfilled"
 
 
@@ -88,5 +92,5 @@ class MetricFFParser:
         return "timeout", []
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     MetricFFParser().parse_plan(Path(sys.argv[1]), Path(sys.argv[2]))

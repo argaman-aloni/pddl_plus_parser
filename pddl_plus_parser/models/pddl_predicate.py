@@ -13,8 +13,13 @@ class Predicate:
     signature: SignatureType
     is_positive: bool
 
-    def __init__(self, name: Optional[str] = None, signature: Optional[SignatureType] = None,
-                 predicate: Optional["Predicate"] = None, is_positive: bool = True):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        signature: Optional[SignatureType] = None,
+        predicate: Optional["Predicate"] = None,
+        is_positive: bool = True,
+    ):
         if predicate:
             self.name = predicate.name
             self.signature = predicate.signature.copy()
@@ -45,7 +50,10 @@ class Predicate:
                 return False
 
             other_param_type = other.signature[parameter_name]
-            if not parameter_type == other_param_type and not parameter_type.is_sub_type(other_param_type):
+            if (
+                not parameter_type == other_param_type
+                and not parameter_type.is_sub_type(other_param_type)
+            ):
                 return False
 
         return True
@@ -56,8 +64,11 @@ class Predicate:
         :param is_negated: whether the predicate is negated.
         :return: the copy of the predicate.
         """
-        return Predicate(self.name, self.signature,
-                         is_positive=self.is_positive if not is_negated else not self.is_positive)
+        return Predicate(
+            self.name,
+            self.signature,
+            is_positive=self.is_positive if not is_negated else not self.is_positive,
+        )
 
     def change_signature(self, old_to_new_param_names: Dict[str, str]) -> None:
         """Performs inline changing of the predicate's signature.
@@ -91,10 +102,19 @@ class Predicate:
 
 class GroundedPredicate(Predicate):
     """Class defining a grounded predicate."""
+
     object_mapping: Dict[str, str]
 
-    def __init__(self, name: str, signature: SignatureType, object_mapping: Dict[str, str], is_positive: bool = True):
-        super(GroundedPredicate, self).__init__(name=name, signature=signature, is_positive=is_positive)
+    def __init__(
+        self,
+        name: str,
+        signature: SignatureType,
+        object_mapping: Dict[str, str],
+        is_positive: bool = True,
+    ):
+        super(GroundedPredicate, self).__init__(
+            name=name, signature=signature, is_positive=is_positive
+        )
         self.object_mapping = object_mapping
 
     def __eq__(self, other: "GroundedPredicate") -> bool:
@@ -119,8 +139,12 @@ class GroundedPredicate(Predicate):
         :param is_negated: whether the predicate is negated.
         :return: the copy of the grounded predicate.
         """
-        return GroundedPredicate(self.name, self.signature, self.object_mapping,
-                                 self.is_positive if not is_negated else not self.is_positive)
+        return GroundedPredicate(
+            self.name,
+            self.signature,
+            self.object_mapping,
+            self.is_positive if not is_negated else not self.is_positive,
+        )
 
     @property
     def untyped_representation(self) -> str:
@@ -144,7 +168,9 @@ class GroundedPredicate(Predicate):
     def __str__(self):
         signature_str_items = []
         for parameter_name, parameter_type in self.signature.items():
-            signature_str_items.append(f"{self.object_mapping[parameter_name]} - {str(parameter_type)}")
+            signature_str_items.append(
+                f"{self.object_mapping[parameter_name]} - {str(parameter_type)}"
+            )
 
         signature_str = " ".join(signature_str_items)
         if self.is_positive:

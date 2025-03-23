@@ -5,11 +5,15 @@ from typing import Optional
 
 from pddl_plus_parser.exporters import DomainExporter
 from pddl_plus_parser.lisp_parsers import DomainParser
-from pddl_plus_parser.models import Domain, Predicate, Action, Precondition
+from pddl_plus_parser.models import Domain, Predicate, Action
 
 DUMMY_PREDICATE_NAME = "dummy-additional-predicate"
-DUMMY_ADD_PREDICATE = Predicate(name=DUMMY_PREDICATE_NAME, signature={}, is_positive=True)
-DUMMY_DEL_PREDICATE = Predicate(name=DUMMY_PREDICATE_NAME, signature={}, is_positive=False)
+DUMMY_ADD_PREDICATE = Predicate(
+    name=DUMMY_PREDICATE_NAME, signature={}, is_positive=True
+)
+DUMMY_DEL_PREDICATE = Predicate(
+    name=DUMMY_PREDICATE_NAME, signature={}, is_positive=False
+)
 
 
 class MultiAgentDomainsConverter:
@@ -49,8 +53,9 @@ class MultiAgentDomainsConverter:
         for domain_path in self.domains_directory_path.glob("domain-*.pddl"):
             self.logger.debug(f"Working on the domain - {domain_path.stem}")
             domain_file_name = domain_path.stem
-            agent_domain = DomainParser(domain_path=domain_path, partial_parsing=False,
-                                        enable_disjunctions=True).parse_domain()
+            agent_domain = DomainParser(
+                domain_path=domain_path, partial_parsing=False, enable_disjunctions=True
+            ).parse_domain()
 
             combined_domain.name = agent_domain.name
             combined_domain.requirements = agent_domain.requirements
@@ -68,7 +73,9 @@ class MultiAgentDomainsConverter:
 
         return combined_domain
 
-    def export_combined_domain(self, add_dummy_actions: bool = False, output_folder: Optional[Path] = None) -> Path:
+    def export_combined_domain(
+        self, add_dummy_actions: bool = False, output_folder: Optional[Path] = None
+    ) -> Path:
         """Export the multi-agent domains to a single PDDL domain file.
 
         :param add_dummy_actions: whether to add dummy actions to the domain.
@@ -76,7 +83,11 @@ class MultiAgentDomainsConverter:
         :return: the path to the exported domain file.
         """
         combined_domain = self.locate_domains(add_dummy_actions)
-        output_folder_path = output_folder if output_folder is not None else self.domains_directory_path
-        domain_path = output_folder_path / f"{combined_domain.name.lower()}_combined_domain.pddl"
+        output_folder_path = (
+            output_folder if output_folder is not None else self.domains_directory_path
+        )
+        domain_path = (
+            output_folder_path / f"{combined_domain.name.lower()}_combined_domain.pddl"
+        )
         DomainExporter().export_domain(combined_domain, domain_path)
         return domain_path

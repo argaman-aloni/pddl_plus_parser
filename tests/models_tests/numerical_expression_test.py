@@ -108,6 +108,32 @@ def test_evaluate_expression_evaluates_simple_pddl_ast():
     assert result == True
 
 
+def test_construct_numerical_expression_tree_with_numerical_operator_on_numbers_instead_of_functions_returns_correct_expression():
+    original_expression = "( increase ( amount ?jug1 ) ( * 10 2 ) )"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    root = construct_expression_tree(tokens, TEST_DOMAIN_FUNCTIONS)
+    print(RenderTree(root))
+
+    result = evaluate_expression(root)
+    assert result is not None
+    assert isinstance(result, PDDLFunction)
+    assert result.value == 20.0
+
+def test_construct_numerical_expression_tree_with_numerical_operator_on_numbers_instead_of_functions_returns_correct_expression_with_nested_expressions():
+    original_expression = "( increase ( amount ?jug1 ) ( + 1 ( / 1 2 ) ) )"
+    expression_tokenizer = PDDLTokenizer(pddl_str=original_expression)
+    tokens = expression_tokenizer.parse()
+    root = construct_expression_tree(tokens, TEST_DOMAIN_FUNCTIONS)
+    print(RenderTree(root))
+
+    result = evaluate_expression(root)
+    assert result is not None
+    assert isinstance(result, PDDLFunction)
+    assert result.value == 1.5
+
+
+
 def test_evaluate_expression_evaluates_another_simple_pddl_ast():
     test_expression = ['>=', ['amount', '?jug1'], '3.5']
     root = construct_expression_tree(test_expression, TEST_DOMAIN_FUNCTIONS)
@@ -379,4 +405,5 @@ def test_change_signature_changes_the_parameter_names_correctly_and_returns_the_
     tree = NumericalExpressionTree(root)
     old_to_new_signature = {"?x": "?param_0"}
     tree.change_signature(old_to_new_signature)
-    assert "(<= (+ (+ (+ (* (load_limit ?param_0) -0.71) (* (current_load ?param_0) -0.71)) (* (fuel-cost ) 0.01)) 58.22) 3657.14)" == tree.to_pddl(decimal_digits=2)
+    assert "(<= (+ (+ (+ (* (load_limit ?param_0) -0.71) (* (current_load ?param_0) -0.71)) (* (fuel-cost ) 0.01)) 58.22) 3657.14)" == tree.to_pddl(
+        decimal_digits=2)

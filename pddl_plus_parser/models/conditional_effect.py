@@ -20,11 +20,17 @@ class ConditionalEffect:
         self.numeric_effects = set()
 
     def __str__(self):
-        discrete_effect = "\n\t".join([effect.untyped_representation for effect in self.discrete_effects])
-        numeric_effect = "\n\t".join([effect.to_pddl() for effect in self.numeric_effects])
+        discrete_effect = "\n\t".join(
+            [effect.untyped_representation for effect in self.discrete_effects]
+        )
+        numeric_effect = "\n\t".join(
+            [effect.to_pddl() for effect in self.numeric_effects]
+        )
 
-        return f"(when {str(self.antecedents)} " \
-               f"(and {discrete_effect}{numeric_effect}))"
+        return (
+            f"(when {str(self.antecedents)} "
+            f"(and {discrete_effect}{numeric_effect}))"
+        )
 
 
 class UniversalEffect:
@@ -45,6 +51,8 @@ class UniversalEffect:
 
         combined_universal_effect = ""
         for conditional_effect in self.conditional_effects:
-            combined_universal_effect += f"(forall ({self.quantified_parameter} - {self.quantified_type.name})" \
-                                         f"\n\t\t{str(conditional_effect)})\n\t"
+            combined_universal_effect += (
+                f"(forall ({self.quantified_parameter} - {self.quantified_type.name})"
+                f"\n\t\t{str(conditional_effect)})\n\t"
+            )
         return combined_universal_effect

@@ -13,7 +13,7 @@ class PDDLTokenizer:
     pddl_file_content: List[str]
 
     def __init__(
-            self, file_path: Optional[Path] = None, pddl_str: Optional[str] = None
+        self, file_path: Optional[Path] = None, pddl_str: Optional[str] = None
     ):
         if file_path is None and pddl_str is None:
             raise ValueError(

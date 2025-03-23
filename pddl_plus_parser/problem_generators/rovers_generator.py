@@ -4,7 +4,9 @@ import sys
 from pathlib import Path
 
 
-def generate_numeric_problems(output_directory: Path, num_probs_per_difficulty: int = 200):
+def generate_numeric_problems(
+    output_directory: Path, num_probs_per_difficulty: int = 200
+):
     """Creates numeric problems for the rovers domain.
 
         :param output_directory: The directory where the generated problems will be saved.
@@ -27,7 +29,9 @@ def generate_numeric_problems(output_directory: Path, num_probs_per_difficulty: 
         _export_problem(problem_path, result)
 
 
-def generate_strips_problems(output_directory: Path, num_probs_per_difficulty: int = 200):
+def generate_strips_problems(
+    output_directory: Path, num_probs_per_difficulty: int = 200
+):
     """Creates numeric problems for the rovers domain.
 
         :param output_directory: The directory where the generated problems will be saved.

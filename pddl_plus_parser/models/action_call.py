@@ -6,6 +6,7 @@ NOP_ACTION = "nop"
 
 class ActionCall:
     """An object representing a single action call."""
+
     name: str
     parameters: List[str]
 

@@ -3,9 +3,15 @@ import logging
 from typing import Set, Dict, Optional
 
 from pddl_plus_parser.models.grounded_precondition import GroundedPrecondition
-from pddl_plus_parser.models.grounding_utils import ground_predicate, ground_numeric_calculation_tree
-from pddl_plus_parser.models.numerical_expression import NumericalExpressionTree, evaluate_expression, \
-    set_expression_value
+from pddl_plus_parser.models.grounding_utils import (
+    ground_predicate,
+    ground_numeric_calculation_tree,
+)
+from pddl_plus_parser.models.numerical_expression import (
+    NumericalExpressionTree,
+    evaluate_expression,
+    set_expression_value,
+)
 from pddl_plus_parser.models.pddl_action import Action
 from pddl_plus_parser.models.pddl_domain import Domain
 from pddl_plus_parser.models.pddl_function import PDDLFunction
@@ -16,6 +22,7 @@ from pddl_plus_parser.models.pddl_state import State
 
 class GroundedEffect:
     """Class that represents the grounded version of an action's effect."""
+
     _lifted_discrete_effects: Set[Predicate]
     _lifted_numeric_effects: Set[NumericalExpressionTree]
 
@@ -23,11 +30,19 @@ class GroundedEffect:
     grounded_discrete_effects: Set[GroundedPredicate]
     grounded_numeric_effects: Set[NumericalExpressionTree]
 
-    def __init__(self, lifted_antecedents: Optional[CompoundPrecondition],
-                 lifted_discrete_effects: Set[Predicate], lifted_numeric_effects: Set[NumericalExpressionTree],
-                 domain: Domain, action: Action):
-        self.grounded_antecedents = GroundedPrecondition(lifted_antecedents, domain,
-                                                         action) if lifted_antecedents is not None else None
+    def __init__(
+        self,
+        lifted_antecedents: Optional[CompoundPrecondition],
+        lifted_discrete_effects: Set[Predicate],
+        lifted_numeric_effects: Set[NumericalExpressionTree],
+        domain: Domain,
+        action: Action,
+    ):
+        self.grounded_antecedents = (
+            GroundedPrecondition(lifted_antecedents, domain, action)
+            if lifted_antecedents is not None
+            else None
+        )
         self._lifted_discrete_effects = lifted_discrete_effects
         self._lifted_numeric_effects = lifted_numeric_effects
         self.domain = domain
@@ -46,12 +61,18 @@ class GroundedEffect:
             self.grounded_antecedents.ground_preconditions(parameters_map)
 
         for effect in self._lifted_discrete_effects:
-            self.grounded_discrete_effects.add(ground_predicate(effect, parameters_map, self.domain, self.action))
+            self.grounded_discrete_effects.add(
+                ground_predicate(effect, parameters_map, self.domain, self.action)
+            )
 
         for effect in self._lifted_numeric_effects:
-            self.grounded_numeric_effects.add(ground_numeric_calculation_tree(effect, parameters_map, self.domain))
+            self.grounded_numeric_effects.add(
+                ground_numeric_calculation_tree(effect, parameters_map, self.domain)
+            )
 
-    def antecedents_hold(self, state: State, allow_inapplicable_actions: bool = False) -> bool:
+    def antecedents_hold(
+        self, state: State, allow_inapplicable_actions: bool = False
+    ) -> bool:
         """Checks whether the antecedents of the effect hold in the given state.
 
         :param state: the state that the effect is applied to.
@@ -63,7 +84,9 @@ class GroundedEffect:
 
         return self.grounded_antecedents.is_applicable(state)
 
-    def _apply_discrete_effects(self, next_state_predicates: Dict[str, Set[GroundedPredicate]]) -> None:
+    def _apply_discrete_effects(
+        self, next_state_predicates: Dict[str, Set[GroundedPredicate]]
+    ) -> None:
         """Applies the discrete effects to the given state.
 
         Note: This method works according to the delete then add semantics of PDDL+.
@@ -71,32 +94,53 @@ class GroundedEffect:
         :param next_state_predicates: the next state predicates to update with the effect's data.
         """
         # delete effects
-        delete_effects = [effect for effect in self.grounded_discrete_effects if not effect.is_positive]
-        add_effects = [effect for effect in self.grounded_discrete_effects if effect.is_positive]
+        delete_effects = [
+            effect
+            for effect in self.grounded_discrete_effects
+            if not effect.is_positive
+        ]
+        add_effects = [
+            effect for effect in self.grounded_discrete_effects if effect.is_positive
+        ]
         for predicate in delete_effects:
             positive_predicate = predicate.copy()
             positive_predicate.is_positive = True
-            if positive_predicate.lifted_untyped_representation not in next_state_predicates:
+            if (
+                positive_predicate.lifted_untyped_representation
+                not in next_state_predicates
+            ):
                 continue
 
-            for state_predicate in next_state_predicates[positive_predicate.lifted_untyped_representation]:
-                if state_predicate.untyped_representation == positive_predicate.untyped_representation:
-                    next_state_predicates[positive_predicate.lifted_untyped_representation].discard(state_predicate)
+            for state_predicate in next_state_predicates[
+                positive_predicate.lifted_untyped_representation
+            ]:
+                if (
+                    state_predicate.untyped_representation
+                    == positive_predicate.untyped_representation
+                ):
+                    next_state_predicates[
+                        positive_predicate.lifted_untyped_representation
+                    ].discard(state_predicate)
                     break
 
         for predicate in add_effects:
             lifted_predicate_str = predicate.lifted_untyped_representation
-            next_state_grounded_predicates = next_state_predicates.get(lifted_predicate_str, set())
+            next_state_grounded_predicates = next_state_predicates.get(
+                lifted_predicate_str, set()
+            )
             next_state_grounded_predicates.add(predicate)
             next_state_predicates[lifted_predicate_str] = next_state_grounded_predicates
 
     @staticmethod
-    def _update_single_numeric_expression(numeric_expression: NumericalExpressionTree,
-                                          previous_state_functions: Dict[str, PDDLFunction]) -> PDDLFunction:
+    def _update_single_numeric_expression(
+        numeric_expression: NumericalExpressionTree,
+        previous_state_functions: Dict[str, PDDLFunction],
+    ) -> PDDLFunction:
         """Updates the numeric value of a single numeric expression.
 
         :param numeric_expression: the expression that represents the change to the state.
-        :param previous_state_functions: the previous values of the numeric expressions to use to evaluate the next state functions.
+        :param previous_state_functions: the previous values of the numeric expressions to use to evaluate
+            the next state functions.
         """
         set_expression_value(numeric_expression.root, previous_state_functions)
         return evaluate_expression(numeric_expression.root)
@@ -124,8 +168,11 @@ class GroundedEffect:
         self._apply_discrete_effects(next_state_predicates=state.state_predicates)
         new_values = []
         for grounded_expression in self.grounded_numeric_effects:
-            new_values.append(self._update_single_numeric_expression(grounded_expression,
-                                                                     previous_state_functions=state.state_fluents))
+            new_values.append(
+                self._update_single_numeric_expression(
+                    grounded_expression, previous_state_functions=state.state_fluents
+                )
+            )
 
         for new_value in new_values:
             state.state_fluents[new_value.untyped_representation] = new_value

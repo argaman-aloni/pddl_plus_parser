@@ -25,7 +25,7 @@ def generate_instance(instance_name: str, num_trees: int) -> str:
         "count_planks_in_inventory_initial": f"(= (count_planks_in_inventory) {random.randint(0, 2)})",
         "count_stick_in_inventory_initial": f"(= (count_stick_in_inventory) {random.randint(0, 2)})",
         "count_sack_polyisoprene_pellets_in_inventory_initial": f"(= (count_sack_polyisoprene_pellets_in_inventory) {random.randint(0, 1)})",
-        "count_tree_tap_in_inventory_initial": f"(= (count_tree_tap_in_inventory) {random.randint(0, 1)})"
+        "count_tree_tap_in_inventory_initial": f"(= (count_tree_tap_in_inventory) {random.randint(0, 1)})",
     }
     return template.substitute(template_mapping)
 
@@ -48,5 +48,5 @@ def main():
     generate_multiple_problems(output_folder=Path(sys.argv[1]))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

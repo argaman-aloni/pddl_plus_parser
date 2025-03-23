@@ -4,7 +4,9 @@ import sys
 from pathlib import Path
 
 
-def generate_numeric_problems(output_directory: Path, num_probs_per_difficulty: int = 100):
+def generate_numeric_problems(
+    output_directory: Path, num_probs_per_difficulty: int = 100
+):
     # The following code is a part of the driverlog_generator.py file
     # It is used to generate problems for the driverlog domain
     # The code is used to generate problems for learning purposes
@@ -27,8 +29,12 @@ def generate_numeric_problems(output_directory: Path, num_probs_per_difficulty: 
         subprocess.check_output(generate_problem_command, shell=True)
 
 
-def generate_strips_problems(output_directory: Path, max_num_trucks: int = 8, max_num_packages: int = 50,
-                             max_drivers: int = 8):
+def generate_strips_problems(
+    output_directory: Path,
+    max_num_trucks: int = 8,
+    max_num_packages: int = 50,
+    max_drivers: int = 8,
+):
     # The following code is a part of the driverlog_generator.py file
     # It is used to generate problems with multiple drivers in strips format.
     print("generating propositional problems for the driverlog domain...")
@@ -36,10 +42,12 @@ def generate_strips_problems(output_directory: Path, max_num_trucks: int = 8, ma
         # Generate problems for the easy difficulty
         problem_name = f"pfile{i}.pddl"
         problem_path = output_directory / problem_name
-        generate_problem_command = (f"./dlgen {random.randint(1, 100)} {random.randint(3, 10)} "
-                                    f"{random.randint(3, max_drivers)} "
-                                    f"{random.randint(2, max_num_packages)}"
-                                    f" {random.randint(2, max_num_trucks)} 100 > {problem_path}")
+        generate_problem_command = (
+            f"./dlgen {random.randint(1, 100)} {random.randint(3, 10)} "
+            f"{random.randint(3, max_drivers)} "
+            f"{random.randint(2, max_num_packages)}"
+            f" {random.randint(2, max_num_trucks)} 100 > {problem_path}"
+        )
         print(f"generating problem {problem_name}...")
         subprocess.check_output(generate_problem_command, shell=True)
 

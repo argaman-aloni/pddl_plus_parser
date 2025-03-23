@@ -1,8 +1,13 @@
-from collections import defaultdict
 from typing import List
 
-from pddl_plus_parser.models import Problem, State, ActionCall, Domain, Operator, GroundedPredicate, \
-    NOP_ACTION
+from pddl_plus_parser.models import (
+    Problem,
+    State,
+    ActionCall,
+    Domain,
+    Operator,
+    NOP_ACTION,
+)
 
 
 def create_initial_state(problem: Problem) -> State:
@@ -13,11 +18,19 @@ def create_initial_state(problem: Problem) -> State:
     """
     initial_state_predicates = problem.initial_state_predicates
     initial_state_numeric_fluents = problem.initial_state_fluents
-    return State(predicates=initial_state_predicates, fluents=initial_state_numeric_fluents, is_init=True)
+    return State(
+        predicates=initial_state_predicates,
+        fluents=initial_state_numeric_fluents,
+        is_init=True,
+    )
 
 
-def apply_actions(domain: Domain, current_state: State, joint_action: List[ActionCall],
-                  allow_inapplicable_actions: bool = False) -> State:
+def apply_actions(
+    domain: Domain,
+    current_state: State,
+    joint_action: List[ActionCall],
+    allow_inapplicable_actions: bool = False,
+) -> State:
     """
 
     :param domain: the domain with the action scheme.
@@ -29,8 +42,12 @@ def apply_actions(domain: Domain, current_state: State, joint_action: List[Actio
     if len(joint_action) == 1:
         action_call = joint_action[0]
         action = domain.actions[action_call.name]
-        return Operator(action=action, domain=domain, grounded_action_call=action_call.parameters).apply(
-            previous_state=current_state, allow_inapplicable_actions=allow_inapplicable_actions)
+        return Operator(
+            action=action, domain=domain, grounded_action_call=action_call.parameters
+        ).apply(
+            previous_state=current_state,
+            allow_inapplicable_actions=allow_inapplicable_actions,
+        )
 
     accumulative_changed_state = current_state.copy()
     for action_call in joint_action:
@@ -38,9 +55,13 @@ def apply_actions(domain: Domain, current_state: State, joint_action: List[Actio
             continue
 
         action = domain.actions[action_call.name]
-        operator = Operator(action=action, domain=domain, grounded_action_call=action_call.parameters)
+        operator = Operator(
+            action=action, domain=domain, grounded_action_call=action_call.parameters
+        )
         if operator.is_applicable(current_state) or allow_inapplicable_actions:
-            accumulative_changed_state = operator.apply(accumulative_changed_state, allow_inapplicable_actions=True)
+            accumulative_changed_state = operator.apply(
+                accumulative_changed_state, allow_inapplicable_actions=True
+            )
         else:
             raise ValueError("Cannot apply an action when it is not applicable!")
 

@@ -11,18 +11,35 @@ from .pddl_function import PDDLFunction
 EPSILON = float(os.environ.get("EPSILON", 0.0001))
 DEFAULT_DIGITS = int(os.environ.get("NUMERIC_PRECISION", 4))
 
-LEGAL_NUMERICAL_EXPRESSIONS = ["=", "!=", "<=", ">=", ">", "<", "+", "-", "/", "*", "increase", "decrease", "assign"]
+LEGAL_NUMERICAL_EXPRESSIONS = [
+    "=",
+    "!=",
+    "<=",
+    ">=",
+    ">",
+    "<",
+    "+",
+    "-",
+    "/",
+    "*",
+    "increase",
+    "decrease",
+    "assign",
+]
+LEGAL_NUMERIC_OPERATORS = ["+", "-", "/", "*"]
 
 
-def construct_expression_tree(expression_ast: List[Union[str, List[str]]],
-                              domain_functions: Dict[str, PDDLFunction]) -> AnyNode:
+def construct_expression_tree(
+    expression_ast: List[Union[str, List[str]]],
+    domain_functions: Dict[str, PDDLFunction],
+) -> AnyNode:
     """Constructs a tree that represents the numerical expression and that is later on able to be evaluated.
 
     :param expression_ast: the AST representing the numeric expression that is to be parsed.
     :param domain_functions: the functions that are defined in the domain.
     :return: the tree representing the numeric calculation.
     """
-    if type(expression_ast) == str:
+    if isinstance(expression_ast, str):
         if expression_ast in LEGAL_NUMERICAL_EXPRESSIONS:
             raise SyntaxError("Leaf node cannot be a numerical operator!")
 
@@ -34,22 +51,45 @@ def construct_expression_tree(expression_ast: List[Union[str, List[str]]],
             raise SyntaxError("Leaf node with bad string was encountered!")
 
     # This means that we have a list as a leaf --> a function that we need to create.
-    elif all([type(item) == str for item in expression_ast]):
+    elif all([isinstance(item, str) for item in expression_ast]):
+        if expression_ast[0] in LEGAL_NUMERIC_OPERATORS:
+            # Probably someone trying to perform numerical operation on constants.
+            first_operand = float(expression_ast[1])
+            second_operand = float(expression_ast[2])
+            node = AnyNode(
+                id=expression_ast[0],
+                value=expression_ast[0],
+                children=[
+                    AnyNode(id=f"{first_operand}", value=first_operand),
+                    AnyNode(id=f"{second_operand}", value=second_operand),
+                ],
+            )
+            return node
+
         function_name = expression_ast[0]
         extracted_function = domain_functions[function_name]
         if len(expression_ast) == 1:
             return AnyNode(id=str(extracted_function), value=extracted_function)
 
-        new_function = PDDLFunction(name=function_name, signature={
-            param_name: param_type for param_name, param_type in
-            zip(expression_ast[1:], extracted_function.signature.values())
-        })
+        new_function = PDDLFunction(
+            name=function_name,
+            signature={
+                param_name: param_type
+                for param_name, param_type in zip(
+                    expression_ast[1:], extracted_function.signature.values()
+                )
+            },
+        )
         return AnyNode(id=str(new_function), value=new_function)
 
-    node = AnyNode(id=expression_ast[0], value=expression_ast[0], children=[
-        construct_expression_tree(expression_ast[1], domain_functions),
-        construct_expression_tree(expression_ast[2], domain_functions)
-    ])
+    node = AnyNode(
+        id=expression_ast[0],
+        value=expression_ast[0],
+        children=[
+            construct_expression_tree(expression_ast[1], domain_functions),
+            construct_expression_tree(expression_ast[2], domain_functions),
+        ],
+    )
     return node
 
 
@@ -93,6 +133,7 @@ def scale_up(value_to_scale: PDDLFunction, scale_factor: float) -> None:
     previous_value = value_to_scale.value
     value_to_scale.set_value(previous_value * scale_factor)
 
+
 def scale_down(value_to_scale: PDDLFunction, scale_factor: float) -> None:
     """Scale down the value of the first numerical fluent by the value of the other.
 
@@ -106,6 +147,7 @@ def scale_down(value_to_scale: PDDLFunction, scale_factor: float) -> None:
 
     previous_value = value_to_scale.value
     value_to_scale.set_value(previous_value / scale_factor)
+
 
 COMPARISON_OPERATORS = {
     "=": lambda x, y: math.isclose(x, y, abs_tol=EPSILON),
@@ -123,7 +165,7 @@ ASSIGNMENT_EXPRESSIONS = {
     "decrease": decrease,
     "assign": assign,
     "scale-up": scale_up,
-    "scale-down": scale_down
+    "scale-down": scale_down,
 }
 
 NUMERICAL_BINARY_OPERATORS = {
@@ -153,7 +195,9 @@ def calculate(expression_node: AnyNode) -> float:
     return NUMERICAL_BINARY_OPERATORS[numerical_operator](left_operand, right_operand)
 
 
-def evaluate_expression(expression_tree: AnyNode) -> Optional[Union[bool, PDDLFunction]]:
+def evaluate_expression(
+    expression_tree: AnyNode,
+) -> Optional[Union[bool, PDDLFunction]]:
     """Evaluates the value of a PDDL expression based on parsing the content of its AST.
 
     :param expression_tree: the PDDL expression to evaluate.
@@ -162,15 +206,21 @@ def evaluate_expression(expression_tree: AnyNode) -> Optional[Union[bool, PDDLFu
     if expression_tree.value in ASSIGNMENT_EXPRESSIONS:
         assigned_variable: PDDLFunction = expression_tree.children[0].value
         evaluated_operand = calculate(expression_tree.children[1])
-        ASSIGNMENT_EXPRESSIONS[expression_tree.value](assigned_variable, evaluated_operand)
+        ASSIGNMENT_EXPRESSIONS[expression_tree.value](
+            assigned_variable, evaluated_operand
+        )
         return assigned_variable
 
     compared_operator = calculate(expression_tree.children[0])
     evaluated_operand = calculate(expression_tree.children[1])
-    return COMPARISON_OPERATORS[expression_tree.value](compared_operator, evaluated_operand)
+    return COMPARISON_OPERATORS[expression_tree.value](
+        compared_operator, evaluated_operand
+    )
 
 
-def set_expression_value(expression_node: AnyNode, state_fluents: Dict[str, PDDLFunction]) -> None:
+def set_expression_value(
+    expression_node: AnyNode, state_fluents: Dict[str, PDDLFunction]
+) -> None:
     """Set the value of the expression according to the fluents present in the state.
 
     :param expression_node: the node that is currently being observed.
@@ -182,7 +232,9 @@ def set_expression_value(expression_node: AnyNode, state_fluents: Dict[str, PDDL
 
         grounded_fluent: PDDLFunction = expression_node.value
         try:
-            grounded_fluent.set_value(state_fluents[grounded_fluent.untyped_representation].value)
+            grounded_fluent.set_value(
+                state_fluents[grounded_fluent.untyped_representation].value
+            )
 
         except KeyError:
             grounded_fluent.set_value(0.0)
@@ -233,7 +285,9 @@ class NumericalExpressionTree:
     def __copy__(self) -> "NumericalExpressionTree":
         return NumericalExpressionTree(self._copy_internal(self.root))
 
-    def _convert_to_pddl(self, node: AnyNode, decimal_digits: int = DEFAULT_DIGITS) -> str:
+    def _convert_to_pddl(
+        self, node: AnyNode, decimal_digits: int = DEFAULT_DIGITS
+    ) -> str:
         """Recursive method that converts the expression tree to a PDDL string.
 
         :param node: the node that the recursion is currently working on.
@@ -245,11 +299,18 @@ class NumericalExpressionTree:
                 function: PDDLFunction = node.value
                 return function.untyped_representation
 
-            return "{number:.{digits}f}".format(number=node.value, digits=decimal_digits) if not float(
-                node.value).is_integer() else f"{int(node.value)}"
+            return (
+                "{number:.{digits}f}".format(number=node.value, digits=decimal_digits)
+                if not float(node.value).is_integer()
+                else f"{int(node.value)}"
+            )
 
-        left_operand = self._convert_to_pddl(node.children[0], decimal_digits=decimal_digits)
-        right_operand = self._convert_to_pddl(node.children[1], decimal_digits=decimal_digits)
+        left_operand = self._convert_to_pddl(
+            node.children[0], decimal_digits=decimal_digits
+        )
+        right_operand = self._convert_to_pddl(
+            node.children[1], decimal_digits=decimal_digits
+        )
         return f"({node.value} {left_operand} {right_operand})"
 
     def _convert_to_mathematical(self, node: AnyNode) -> str:
@@ -290,8 +351,11 @@ class NumericalExpressionTree:
                 function_to_change: PDDLFunction = node.value
                 function_to_change.change_signature(old_to_new_parameter_map)
 
-    def locate_and_replace(self, expression_to_locate: "NumericalExpressionTree",
-                           expression_to_replace: "NumericalExpressionTree") -> None:
+    def locate_and_replace(
+        self,
+        expression_to_locate: "NumericalExpressionTree",
+        expression_to_replace: "NumericalExpressionTree",
+    ) -> None:
         """locates the expression to replace and replaces it with the new expression.
 
         :param expression_to_locate: the expression to locate.
@@ -301,11 +365,16 @@ class NumericalExpressionTree:
             if str(NumericalExpressionTree(node)) == str(expression_to_locate):
                 item_to_replace_copy = expression_to_replace.__copy__()
                 prev_children = list(node.parent.children)
-                new_children = [item_to_replace_copy.root if child == node else child for child in prev_children]
+                new_children = [
+                    item_to_replace_copy.root if child == node else child
+                    for child in prev_children
+                ]
                 node.parent.children = tuple(new_children)
 
-    def extract_eliminated_expressions(self) -> Optional[Tuple["NumericalExpressionTree", "NumericalExpressionTree"]]:
-        """Method that evaluates the two sides of an equality and returns the expressions to eliminate and the one to replace it.
+    def extract_eliminated_expressions(
+        self,
+    ) -> Optional[Tuple["NumericalExpressionTree", "NumericalExpressionTree"]]:
+        """Evaluates the two sides of an equality and returns the expressions to eliminate and the one to replace it.
 
         :return: the expressions to eliminate and the one to replace it.
         """
@@ -313,30 +382,52 @@ class NumericalExpressionTree:
             return None
 
         copied_tree = self.__copy__()
-        left_operand, right_operand = copied_tree.root.children[0], copied_tree.root.children[1]
+        left_operand, right_operand = (
+            copied_tree.root.children[0],
+            copied_tree.root.children[1],
+        )
         if left_operand.value != "+":
             # currently supporting linear equations only
             return None
 
-        left_op_first_child, left_op_second_child = left_operand.children[0], left_operand.children[1]
+        left_op_first_child, left_op_second_child = (
+            left_operand.children[0],
+            left_operand.children[1],
+        )
         expression_to_eliminate = NumericalExpressionTree(left_op_first_child)
 
-        replacing_expression = NumericalExpressionTree(
-            AnyNode(id="*", value="*", children=[AnyNode(id="-1", value=-1), left_op_second_child])) if \
-            right_operand.value == 0 else NumericalExpressionTree(AnyNode(id="-", value="-", children=[
-            right_operand, left_op_second_child
-        ]))
+        replacing_expression = (
+            NumericalExpressionTree(
+                AnyNode(
+                    id="*",
+                    value="*",
+                    children=[AnyNode(id="-1", value=-1), left_op_second_child],
+                )
+            )
+            if right_operand.value == 0
+            else NumericalExpressionTree(
+                AnyNode(
+                    id="-", value="-", children=[right_operand, left_op_second_child]
+                )
+            )
+        )
 
         return expression_to_eliminate, replacing_expression
 
-    def simplify_complex_numerical_pddl_expression(self, decimal_digits: int = DEFAULT_DIGITS) -> str:
+    def simplify_complex_numerical_pddl_expression(
+        self, decimal_digits: int = DEFAULT_DIGITS
+    ) -> str:
         """Method that minimizes complex numeric expression by applying the simplify algorithm on the expression.
 
         :param decimal_digits: the number of decimal digits to show in the PDDL string.
         """
         left_side_op = NumericalExpressionTree(self.root.children[0]).to_mathematical()
-        right_side_op = self._convert_to_pddl(self.root.children[1], decimal_digits=decimal_digits)
-        simplified_left_side = simplify_complex_numeric_expression(left_side_op, decimal_digits=decimal_digits)
+        right_side_op = self._convert_to_pddl(
+            self.root.children[1], decimal_digits=decimal_digits
+        )
+        simplified_left_side = simplify_complex_numeric_expression(
+            left_side_op, decimal_digits=decimal_digits
+        )
         return f"({self.root.value} {simplified_left_side} {right_side_op})"
 
     def to_mathematical(self) -> str:

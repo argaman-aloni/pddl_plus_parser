@@ -8,10 +8,7 @@ from .pddl_function import PDDLFunction
 from .pddl_object import PDDLObject
 from .pddl_predicate import GroundedPredicate
 
-METRICS = {
-    "maximize": max,
-    "minimize": min
-}
+METRICS = {"maximize": max, "minimize": min}
 
 
 class Problem:
@@ -44,8 +41,10 @@ class Problem:
         for p in self.initial_state_predicates.values():
             grounded_predicates.extend(p)
 
-        return f"<Problem - {self.name} of domain - {self.domain.name}.\n" \
-               f"Initial state predicates - {[str(p) for p in grounded_predicates]}\n" \
-               f"Initial state numeric fluents - {[f for f in self.initial_state_fluents]}\n" \
-               f"Goal state - {[str(p) for p in self.goal_state_predicates]}" \
-               ">"
+        return (
+            f"<Problem - {self.name} of domain - {self.domain.name}.\n"
+            f"Initial state predicates - {[str(p) for p in grounded_predicates]}\n"
+            f"Initial state numeric fluents - {[f for f in self.initial_state_fluents]}\n"
+            f"Goal state - {[str(p) for p in self.goal_state_predicates]}"
+            ">"
+        )

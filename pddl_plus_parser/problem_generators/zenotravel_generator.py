@@ -12,25 +12,31 @@ random.seed(42)
 
 class AllowedDomainTypes(Enum):
     """Enum for the allowed domain types."""
+
     STRIPS = 1
     NUMERIC = 2
 
 
 class CityMap:
     """Defines the map of the problem."""
+
     num_locations: int
     num_distances: int
     map: numpy.ndarray
     domain_type: AllowedDomainTypes
 
-    def __init__(self, num_locations: int, num_distances: int, domain_type: AllowedDomainTypes):
+    def __init__(
+        self, num_locations: int, num_distances: int, domain_type: AllowedDomainTypes
+    ):
         self.domain_type = domain_type
         self.num_locations = num_locations
         self.num_distances = num_distances
         self.map = numpy.zeros((num_locations, num_distances))
         for i in range(num_locations):
             for j in range(i + 1, num_locations):
-                self.map[i][j] = random.randint(0, num_distances // 2) + num_distances / 2
+                self.map[i][j] = (
+                    random.randint(0, num_distances // 2) + num_distances / 2
+                )
                 self.map[j][i] = self.map[i][j]
 
     def define_city_map(self) -> List[str]:
@@ -42,7 +48,9 @@ class CityMap:
         if self.domain_type == AllowedDomainTypes.NUMERIC:
             for i in range(self.num_locations):
                 for j in range(self.num_locations):
-                    map_str.append(f"\t(= (distance city{i} city{j}) {int(self.map[i][j])})")
+                    map_str.append(
+                        f"\t(= (distance city{i} city{j}) {int(self.map[i][j])})"
+                    )
 
         return map_str
 
@@ -68,13 +76,20 @@ class Locatable:
 
 class Airplane(Locatable):
     """Defines the airplane."""
+
     id: int
     airplane_data: Dict[str, Any]
     domain_type: AllowedDomainTypes
     num_planes: int
 
-    def __init__(self, id: int, num_locations: int, num_distances: int, num_planes: int,
-                 domain_type: AllowedDomainTypes):
+    def __init__(
+        self,
+        id: int,
+        num_locations: int,
+        num_distances: int,
+        num_planes: int,
+        domain_type: AllowedDomainTypes,
+    ):
         super(Airplane, self).__init__(num_locations)
         self.id = id
         self.num_planes = num_planes
@@ -84,11 +99,15 @@ class Airplane(Locatable):
             "slow_burn_rate": random.randint(1, 5),
             # "slow_speed": random.randint(0, 100) + 100,
             "fuel": random.randint(0, slow_burn_rate * num_distances),
-            "capacity": random.randint(0, int(2.1 * random.random()) * slow_burn_rate * num_distances),
+            "capacity": random.randint(
+                0, int(2.1 * random.random()) * slow_burn_rate * num_distances
+            ),
             # "fast_speed": random.randint(0, int(1.0 + random.random() * 2) * slow_speed),
-            "fast_burn_rate": random.randint(0, int(2.0 + random.random() * 2) * slow_burn_rate),
+            "fast_burn_rate": random.randint(
+                0, int(2.0 + random.random() * 2) * slow_burn_rate
+            ),
             "refuel_rate": 2 * random.randint(0, slow_burn_rate * num_distances),
-            "zoom_limit": 1 + random.randint(0, 10)
+            "zoom_limit": 1 + random.randint(0, 10),
         }
         self.domain_type = domain_type
         if random.randint(0, 10) < 7:
@@ -106,7 +125,9 @@ class Airplane(Locatable):
         airplane_map = [f"\t(at plane{self.id} city{self.location})"]
         if self.domain_type == AllowedDomainTypes.NUMERIC:
             for field_name, field_value in self.airplane_data.items():
-                airplane_map.append(f"\t(= ({field_name} plane{self.id}) {field_value})")
+                airplane_map.append(
+                    f"\t(= ({field_name} plane{self.id}) {field_value})"
+                )
 
             airplane_map.append(f"\t(= (onboard plane{self.id}) 0)")
 
@@ -125,6 +146,7 @@ class Airplane(Locatable):
 
 class Person(Locatable):
     """Defines the person."""
+
     id: int
     person_data: Dict[str, Any]
     domain_type: AllowedDomainTypes
@@ -170,21 +192,42 @@ class ZenoTravelGenerator:
     cities_map: CityMap
     domain_type: AllowedDomainTypes
 
-    def __init__(self, domain_type: AllowedDomainTypes, number_people: int, number_airplanes: int, num_locations: int):
+    def __init__(
+        self,
+        domain_type: AllowedDomainTypes,
+        number_people: int,
+        number_airplanes: int,
+        num_locations: int,
+    ):
         """Initialize the generator."""
         self.num_people = number_people
         self.num_planes = number_airplanes
         self.domain_type = domain_type
-        self.cities_map = CityMap(num_locations=num_locations, num_distances=100, domain_type=domain_type)
-        self.people = [Person(id=index, num_people=number_people, domain_type=domain_type) for index in
-                       range(number_people)]
-        self.airplanes = [Airplane(id=index, num_locations=num_locations, num_distances=100, domain_type=domain_type,
-                                   num_planes=number_airplanes) for index in range(number_airplanes)]
+        self.cities_map = CityMap(
+            num_locations=num_locations, num_distances=100, domain_type=domain_type
+        )
+        self.people = [
+            Person(id=index, num_people=number_people, domain_type=domain_type)
+            for index in range(number_people)
+        ]
+        self.airplanes = [
+            Airplane(
+                id=index,
+                num_locations=num_locations,
+                num_distances=100,
+                domain_type=domain_type,
+                num_planes=number_airplanes,
+            )
+            for index in range(number_airplanes)
+        ]
 
     def generate_problem(self) -> str:
         """Generate the problem."""
-        problem = [f"(define (problem ZTRAVEL-{self.num_people}-{self.num_planes})",
-                   "\t(:domain zeno-travel)", "(:objects"]
+        problem = [
+            f"(define (problem ZTRAVEL-{self.num_people}-{self.num_planes})",
+            "\t(:domain zeno-travel)",
+            "(:objects",
+        ]
         for person in self.people:
             problem.append(person.define_person_object())
 
@@ -223,7 +266,9 @@ class ZenoTravelGenerator:
             # define the metric function
             value1 = random.randint(0, 5) + 1
             value2 = random.randint(0, 5) + 1
-            problem.append(f"(:metric minimize (+ (* {value2} (total-time))  (* {value1} (total-fuel-used))))")
+            problem.append(
+                f"(:metric minimize (+ (* {value2} (total-time))  (* {value1} (total-fuel-used))))"
+            )
 
         problem.append(")")
 
@@ -232,17 +277,36 @@ class ZenoTravelGenerator:
 
 def parse_arguments() -> argparse.Namespace:
     """Parse the command line arguments."""
-    parser = argparse.ArgumentParser(description="Generate a single zenotravel planning problem.")
-    parser.add_argument("--number_people", required=True, help="The number of people in the problem.", type=int)
-    parser.add_argument("--number_airplanes", required=True, help="The number of airplanes in the problem.", type=int)
-    parser.add_argument("--num_locations", required=True, help="The number of locations in the problem.", type=int)
+    parser = argparse.ArgumentParser(
+        description="Generate a single zenotravel planning problem."
+    )
+    parser.add_argument(
+        "--number_people",
+        required=True,
+        help="The number of people in the problem.",
+        type=int,
+    )
+    parser.add_argument(
+        "--number_airplanes",
+        required=True,
+        help="The number of airplanes in the problem.",
+        type=int,
+    )
+    parser.add_argument(
+        "--num_locations",
+        required=True,
+        help="The number of locations in the problem.",
+        type=int,
+    )
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_arguments()
-    generator = ZenoTravelGenerator(domain_type=AllowedDomainTypes.NUMERIC,
-                                    number_people=args.number_people,
-                                    number_airplanes=args.number_airplanes,
-                                    num_locations=args.num_locations)
+    generator = ZenoTravelGenerator(
+        domain_type=AllowedDomainTypes.NUMERIC,
+        number_people=args.number_people,
+        number_airplanes=args.number_airplanes,
+        num_locations=args.num_locations,
+    )
     print(generator.generate_problem())

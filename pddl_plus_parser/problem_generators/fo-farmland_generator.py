@@ -21,7 +21,9 @@ class GraphGeneratorTypes(Enum):
     strogaz = 2
 
 
-def generate_adjacent_graph(graph_generator: GraphGeneratorTypes, num_farms: int) -> nx.Graph:
+def generate_adjacent_graph(
+    graph_generator: GraphGeneratorTypes, num_farms: int
+) -> nx.Graph:
     """Generates the graph of farms where there are adjacent farms represented in a graph.
 
     :param graph_generator: the type of graph generator to use.
@@ -32,7 +34,9 @@ def generate_adjacent_graph(graph_generator: GraphGeneratorTypes, num_farms: int
         G = nx.star_graph(num_farms - 1)
 
     elif graph_generator == GraphGeneratorTypes.strogaz:
-        G = nx.connected_watts_strogatz_graph(num_farms, k=min(2, num_farms - 1), tries=10000, p=0.5)
+        G = nx.connected_watts_strogatz_graph(
+            num_farms, k=min(2, num_farms - 1), tries=10000, p=0.5
+        )
 
     else:
         G = nx.ladder_graph(num_farms // 2)
@@ -40,7 +44,11 @@ def generate_adjacent_graph(graph_generator: GraphGeneratorTypes, num_farms: int
 
 
 def generate_instance(
-        instance_name: str, num_farms: int, num_units: int, graph_generator: GraphGeneratorTypes) -> str:
+    instance_name: str,
+    num_farms: int,
+    num_units: int,
+    graph_generator: GraphGeneratorTypes,
+) -> str:
     """Generates the farmland planning problem instance.
 
     :param instance_name: the name of the problem instance.
@@ -62,8 +70,11 @@ def generate_instance(
     farms = " ".join([f"farm{i} " for i in range(num_farms)])
     for i in range(num_farms):
         weight_bound = "{0:.1f}".format(random.random() + 1.0) if i != source else 1.0
-        init_fluent = f"(= (x farm{i}) {str(random.randint(0, 1))})\n\t\t" if i != source else \
-            f"(= (x farm{i}) {num_units})\n\t\t"
+        init_fluent = (
+            f"(= (x farm{i}) {str(random.randint(0, 1))})\n\t\t"
+            if i != source
+            else f"(= (x farm{i}) {num_units})\n\t\t"
+        )
         farms_init_fluents.append(init_fluent)
         farms_reward_bound.append(f"(+ (* {weight_bound} (x farm{i}))")
         farms_goal_fluents.append(f"(>= (x farm{i}) 1)\n\t\t\t")
@@ -75,11 +86,11 @@ def generate_instance(
     farms_reward_bound.append(")" * num_farms)
     farms_reward_bound.append(f" {str(num_units * 1.4)})")
 
-    template_mapping['farm_name_list'] = farms
-    template_mapping['farm_init_allocation'] = "".join(farms_init_fluents)
-    template_mapping['farm_connections'] = "".join(adjacents)
-    template_mapping['farm_final_requirement'] = "".join(farms_goal_fluents)
-    template_mapping['overall_reward_bound'] = "".join(farms_reward_bound)
+    template_mapping["farm_name_list"] = farms
+    template_mapping["farm_init_allocation"] = "".join(farms_init_fluents)
+    template_mapping["farm_connections"] = "".join(adjacents)
+    template_mapping["farm_final_requirement"] = "".join(farms_goal_fluents)
+    template_mapping["overall_reward_bound"] = "".join(farms_reward_bound)
 
     return template.substitute(template_mapping)
 
@@ -87,21 +98,43 @@ def generate_instance(
 def parse_arguments() -> argparse.Namespace:
     """Parses the command line arguments."""
     parser = argparse.ArgumentParser(description="Generate farmland planning instance")
-    parser.add_argument("--min_farms", required=True, help="The minimal number of farms possible in a planning problem")
-    parser.add_argument("--max_farms", required=True, help="The maximal number of farms possible in a planning problem")
-    parser.add_argument("--min_num_units", required=True, help="Minimal number of units")
-    parser.add_argument("--max_num_units", required=True, help="Maximal number of units")
-    parser.add_argument("--output_folder", required=True, help="The path to the output folder")
-    parser.add_argument("--graph_generator", required=False,
-                        help="Graph Generator between star (default) or strogatz or ladder",
-                        default=GraphGeneratorTypes.star)
+    parser.add_argument(
+        "--min_farms",
+        required=True,
+        help="The minimal number of farms possible in a planning problem",
+    )
+    parser.add_argument(
+        "--max_farms",
+        required=True,
+        help="The maximal number of farms possible in a planning problem",
+    )
+    parser.add_argument(
+        "--min_num_units", required=True, help="Minimal number of units"
+    )
+    parser.add_argument(
+        "--max_num_units", required=True, help="Maximal number of units"
+    )
+    parser.add_argument(
+        "--output_folder", required=True, help="The path to the output folder"
+    )
+    parser.add_argument(
+        "--graph_generator",
+        required=False,
+        help="Graph Generator between star (default) or strogatz or ladder",
+        default=GraphGeneratorTypes.star,
+    )
     return parser.parse_args()
 
 
-def generate_multiple_problems(min_farms: int, max_farms: int, min_num_units: int, max_num_units: int,
-                               output_folder: Path,
-                               graph_generator: GraphGeneratorTypes = GraphGeneratorTypes.star,
-                               total_num_problems: int = 200) -> NoReturn:
+def generate_multiple_problems(
+    min_farms: int,
+    max_farms: int,
+    min_num_units: int,
+    max_num_units: int,
+    output_folder: Path,
+    graph_generator: GraphGeneratorTypes = GraphGeneratorTypes.star,
+    total_num_problems: int = 200,
+) -> NoReturn:
     """Generate multiple problems based on the input arguments.
 
     :param min_farms: the minimal number of farms possible in a planning problem.
@@ -118,19 +151,27 @@ def generate_multiple_problems(min_farms: int, max_farms: int, min_num_units: in
         num_units = random.choice(units_range)
         print(f"Generating problem with {num_farms} farms and {num_units} units")
         with open(output_folder / f"pfile{i}.pddl", "wt") as problem_file:
-            problem_file.write(generate_instance(f"instance_{num_farms}_{num_units}", num_farms, num_units,
-                                                 graph_generator))
+            problem_file.write(
+                generate_instance(
+                    f"instance_{num_farms}_{num_units}",
+                    num_farms,
+                    num_units,
+                    graph_generator,
+                )
+            )
 
 
 def main():
     args = parse_arguments()
-    generate_multiple_problems(min_farms=int(args.min_farms),
-                               max_farms=int(args.max_farms),
-                               min_num_units=int(args.min_num_units),
-                               max_num_units=int(args.max_num_units),
-                               output_folder=Path(args.output_folder),
-                               graph_generator=args.graph_generator)
+    generate_multiple_problems(
+        min_farms=int(args.min_farms),
+        max_farms=int(args.max_farms),
+        min_num_units=int(args.min_num_units),
+        max_num_units=int(args.max_num_units),
+        output_folder=Path(args.output_folder),
+        graph_generator=args.graph_generator,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

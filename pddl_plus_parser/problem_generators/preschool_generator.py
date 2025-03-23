@@ -37,10 +37,20 @@ def generate_instance(instance_name: str, num_students: int) -> str:
         "students_list": " ".join([f"s{i}" for i in range(num_students)]),
         "teacher_initial_position": f"(= (x-teacher teacher) {teacher_x})\n\t(= (y-teacher teacher) {teacher_y})",
         "students_initial_positions": "\n\t".join(
-            [f"(= (x-student s{i}) {x})\n\t(= (y-student s{i}) {y})" for i, (x, y) in enumerate(students_positions)]),
+            [
+                f"(= (x-student s{i}) {x})\n\t(= (y-student s{i}) {y})"
+                for i, (x, y) in enumerate(students_positions)
+            ]
+        ),
         "counters_initial_values": "\n\t".join(
-            [f"(= (value c{2 * i} s{i}) 0)\n\t(= (value c{2 * i + 1} s{i}) 0)" for i in range(num_students)]),
-        "goal_constraints": "\n\t".join([f"(question-answered s{i})" for i in range(num_students)])
+            [
+                f"(= (value c{2 * i} s{i}) 0)\n\t(= (value c{2 * i + 1} s{i}) 0)"
+                for i in range(num_students)
+            ]
+        ),
+        "goal_constraints": "\n\t".join(
+            [f"(question-answered s{i})" for i in range(num_students)]
+        ),
     }
     return template.substitute(template_mapping)
 
@@ -48,14 +58,23 @@ def generate_instance(instance_name: str, num_students: int) -> str:
 def parse_arguments() -> argparse.Namespace:
     """Parse the command line arguments."""
     parser = argparse.ArgumentParser(description="Generate counters planning instance")
-    parser.add_argument("--max_students", required=True, help="Maximal number of students possible in the problems")
-    parser.add_argument("--output_path", required=True,
-                        help="The path to the output folder where the problems will be saved")
+    parser.add_argument(
+        "--max_students",
+        required=True,
+        help="Maximal number of students possible in the problems",
+    )
+    parser.add_argument(
+        "--output_path",
+        required=True,
+        help="The path to the output folder where the problems will be saved",
+    )
     args = parser.parse_args()
     return args
 
 
-def generate_multiple_problems(max_students: int, output_folder: Path, total_num_problems: int = 200) -> NoReturn:
+def generate_multiple_problems(
+    max_students: int, output_folder: Path, total_num_problems: int = 200
+) -> NoReturn:
     """Generate multiple problems based on the input arguments.
 
     :param max_students: the maximal number of students possible in the problems.
@@ -66,14 +85,16 @@ def generate_multiple_problems(max_students: int, output_folder: Path, total_num
         print(f"Generating problem with {num_students} counters")
         with open(output_folder / f"pfile{i}.pddl", "wt") as problem_file:
             problem_file.write(
-                generate_instance(f"instance_{random.randint(0,1000)}", num_students))
+                generate_instance(f"instance_{random.randint(0,1000)}", num_students)
+            )
 
 
 def main():
     args = parse_arguments()
-    generate_multiple_problems(max_students=int(args.max_students),
-                               output_folder=Path(args.output_path))
+    generate_multiple_problems(
+        max_students=int(args.max_students), output_folder=Path(args.output_path)
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

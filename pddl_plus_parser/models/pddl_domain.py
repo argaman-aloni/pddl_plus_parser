@@ -34,16 +34,16 @@ class Domain:
 
     def __str__(self):
         return (
-                "< Domain definition: %s\n Requirements: %s\n Predicates: %s\n Functions: %s\n Actions: %s\n "
-                "Constants: %s >"
-                % (
-                    self.name,
-                    [req for req in self.requirements],
-                    [str(p) for p in self.predicates.values()],
-                    [str(f) for f in self.functions.values()],
-                    [str(a) for a in self.actions],
-                    [str(c) for c in self.constants],
-                )
+            "< Domain definition: %s\n Requirements: %s\n Predicates: %s\n Functions: %s\n Actions: %s\n "
+            "Constants: %s >"
+            % (
+                self.name,
+                [req for req in self.requirements],
+                [str(p) for p in self.predicates.values()],
+                [str(f) for f in self.functions.values()],
+                [str(a) for a in self.actions],
+                [str(c) for c in self.constants],
+            )
         )
 
     def shallow_copy(self) -> "Domain":

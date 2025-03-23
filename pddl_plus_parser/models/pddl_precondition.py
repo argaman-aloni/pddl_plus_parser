@@ -1,7 +1,10 @@
 """Module containing the classes representing the preconditions of a PDDL+ action."""
 from typing import Union, Set, Tuple, List, Dict
 
-from pddl_plus_parser.models.numeric_symbolic_operations import simplify_inequality, simplify_equality
+from pddl_plus_parser.models.numeric_symbolic_operations import (
+    simplify_inequality,
+    simplify_equality,
+)
 from pddl_plus_parser.models.numerical_expression import NumericalExpressionTree
 from pddl_plus_parser.models.pddl_predicate import Predicate, GroundedPredicate
 from pddl_plus_parser.models.pddl_type import PDDLType
@@ -11,6 +14,7 @@ DEFAULT_DECIMAL_DIGITS = 2
 
 class Precondition:
     """class representing a single precondition in a PDDL+ action."""
+
     binary_operator: str
     operands: Set[Union["Precondition", Predicate, NumericalExpressionTree]]
     equality_preconditions: Set[Tuple[str, str]]
@@ -22,7 +26,9 @@ class Precondition:
         self.equality_preconditions = set()
         self.inequality_preconditions = set()
 
-    def _print_self(self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
+    def _print_self(
+        self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS
+    ) -> str:
         """Print the precondition in a human-readable format.
 
         :param should_simplify: whether to print the precondition in a simplified format (for numeric expressions).
@@ -41,19 +47,29 @@ class Precondition:
                 numeric_expressions.append(operand)
 
         if not should_simplify:
-            numeric_preconditions = [operand.to_pddl(decimal_digits) for operand in numeric_expressions]
+            numeric_preconditions = [
+                operand.to_pddl(decimal_digits) for operand in numeric_expressions
+            ]
 
         else:
-            numeric_preconditions = self._simplify_numeric_preconditions(numeric_expressions, decimal_digits)
+            numeric_preconditions = self._simplify_numeric_preconditions(
+                numeric_expressions, decimal_digits
+            )
 
         discrete_preconditions.sort()
         numeric_preconditions = list(set(numeric_preconditions))  # remove duplicates
         numeric_preconditions.sort()
         compound_preconditions.sort()
-        compound_preconditions = discrete_preconditions + numeric_preconditions + compound_preconditions
+        compound_preconditions = (
+            discrete_preconditions + numeric_preconditions + compound_preconditions
+        )
         combined_conditions = "\n\t".join(compound_preconditions)
-        equality_conditions = "\n\t".join([f"(= {o1} {o2})" for o1, o2 in self.equality_preconditions])
-        inequality_conditions = "\n\t".join([f"(not (= {o1} {o2}))" for o1, o2 in self.inequality_preconditions])
+        equality_conditions = "\n\t".join(
+            [f"(= {o1} {o2})" for o1, o2 in self.equality_preconditions]
+        )
+        inequality_conditions = "\n\t".join(
+            [f"(not (= {o1} {o2}))" for o1, o2 in self.inequality_preconditions]
+        )
         return f"({self.binary_operator} {combined_conditions}{equality_conditions}{inequality_conditions})"
 
     def _validate_equality(self, other: "Precondition") -> bool:
@@ -64,17 +80,33 @@ class Precondition:
         if self.binary_operator != other.binary_operator:
             return False
 
-        self_nested_conditions = [cond for cond in self.operands if isinstance(cond, Precondition)]
-        self_primitive_predicates = {cond.untyped_representation for cond in self.operands if
-                                     isinstance(cond, Predicate)}
-        self_primitive_numeric_conditions = {cond.to_pddl() for cond in self.operands if
-                                             isinstance(cond, NumericalExpressionTree)}
+        self_nested_conditions = [
+            cond for cond in self.operands if isinstance(cond, Precondition)
+        ]
+        self_primitive_predicates = {
+            cond.untyped_representation
+            for cond in self.operands
+            if isinstance(cond, Predicate)
+        }
+        self_primitive_numeric_conditions = {
+            cond.to_pddl()
+            for cond in self.operands
+            if isinstance(cond, NumericalExpressionTree)
+        }
 
-        other_nested_conditions = [cond for cond in other.operands if isinstance(cond, Precondition)]
-        other_primitive_predicates = {cond.untyped_representation for cond in other.operands if
-                                      isinstance(cond, Predicate)}
-        other_primitive_numeric_conditions = {cond.to_pddl() for cond in other.operands if
-                                              isinstance(cond, NumericalExpressionTree)}
+        other_nested_conditions = [
+            cond for cond in other.operands if isinstance(cond, Precondition)
+        ]
+        other_primitive_predicates = {
+            cond.untyped_representation
+            for cond in other.operands
+            if isinstance(cond, Predicate)
+        }
+        other_primitive_numeric_conditions = {
+            cond.to_pddl()
+            for cond in other.operands
+            if isinstance(cond, NumericalExpressionTree)
+        }
         if self_primitive_predicates != other_primitive_predicates:
             return False
         if self_primitive_numeric_conditions != other_primitive_numeric_conditions:
@@ -97,7 +129,9 @@ class Precondition:
     def __str__(self):
         return self._print_self()
 
-    def print(self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
+    def print(
+        self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS
+    ) -> str:
         """Print the precondition in a human-readable format.
 
         :param should_simplify: whether to print the precondition in a simplified format.
@@ -105,7 +139,12 @@ class Precondition:
         """
         return self._print_self(should_simplify, decimal_digits)
 
-    def __iter__(self) -> Tuple[str, Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]]:
+    def __iter__(
+        self,
+    ) -> Tuple[
+        str,
+        Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree],
+    ]:
         for operand in self.operands:
             if isinstance(operand, Precondition):
                 yield from operand
@@ -114,15 +153,22 @@ class Precondition:
                 yield self.binary_operator, operand
 
     def __eq__(self, other: "Precondition") -> bool:
-        return self.binary_operator == other.binary_operator and \
-            self.operands == other.operands and \
-            self.equality_preconditions == other.equality_preconditions and \
-            self.inequality_preconditions == other.inequality_preconditions
+        return (
+            self.binary_operator == other.binary_operator
+            and self.operands == other.operands
+            and self.equality_preconditions == other.equality_preconditions
+            and self.inequality_preconditions == other.inequality_preconditions
+        )
 
     def __hash__(self) -> int:
         return hash(str(self))
 
-    def __contains__(self, item: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]) -> bool:
+    def __contains__(
+        self,
+        item: Union[
+            "Precondition", Predicate, GroundedPredicate, NumericalExpressionTree
+        ],
+    ) -> bool:
         if len(self.operands) == 0:
             return False
 
@@ -136,29 +182,41 @@ class Precondition:
 
         return False
 
-    def _unique_add_predicate(self, condition: Union[Predicate, GroundedPredicate]) -> None:
+    def _unique_add_predicate(
+        self, condition: Union[Predicate, GroundedPredicate]
+    ) -> None:
         """Adds a new predicate to the precondition if it does not already exist.
 
         :param condition: the condition to add.
         """
-        current_predicates = [cond.untyped_representation for _, cond in self.__iter__() if
-                              isinstance(cond, Predicate)]
+        current_predicates = [
+            cond.untyped_representation
+            for _, cond in self.__iter__()
+            if isinstance(cond, Predicate)
+        ]
         if condition.untyped_representation not in current_predicates:
             self.operands.add(condition)
 
-    def _unique_add_numeric_expression(self, condition: NumericalExpressionTree) -> None:
+    def _unique_add_numeric_expression(
+        self, condition: NumericalExpressionTree
+    ) -> None:
         """Adds a new numeric expression to the precondition if it does not already exist.
 
         :param condition: the condition to add.
         """
-        current_expressions = [cond.to_pddl() for _, cond in self.__iter__() if
-                               isinstance(cond, NumericalExpressionTree)]
+        current_expressions = [
+            cond.to_pddl()
+            for _, cond in self.__iter__()
+            if isinstance(cond, NumericalExpressionTree)
+        ]
         if condition.to_pddl() not in current_expressions:
             self.operands.add(condition)
 
     @staticmethod
-    def _simplify_numeric_preconditions(numeric_preconditions: List[NumericalExpressionTree],
-                                        decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> List[str]:
+    def _simplify_numeric_preconditions(
+        numeric_preconditions: List[NumericalExpressionTree],
+        decimal_digits: int = DEFAULT_DECIMAL_DIGITS,
+    ) -> List[str]:
         """Simplify the numeric preconditions by eliminating redundant conditions as well as removing redundant preconditions.
 
         :param numeric_preconditions: the numeric preconditions to simplify.
@@ -166,8 +224,12 @@ class Precondition:
         :return: the simplified numeric preconditions.
         """
         # start by searching for the equality conditions that can be used to eliminate some variables in the other conditions
-        new_expressions = [precondition.__copy__() for precondition in numeric_preconditions]
-        equality_conditions = [condition for condition in new_expressions if condition.root.value == "="]
+        new_expressions = [
+            precondition.__copy__() for precondition in numeric_preconditions
+        ]
+        equality_conditions = [
+            condition for condition in new_expressions if condition.root.value == "="
+        ]
 
         assumptions = []
         for equality_condition in equality_conditions:
@@ -177,29 +239,38 @@ class Precondition:
 
             expression_to_eliminate, replacing_expression = eliminated_expression
             assumptions.append(
-                f"{expression_to_eliminate.to_mathematical()} = {replacing_expression.to_mathematical()}")
+                f"{expression_to_eliminate.to_mathematical()} = {replacing_expression.to_mathematical()}"
+            )
 
         simplified_conditions = []
         for condition in new_expressions:
             if condition.root.value == "=":
-                simplified_equation = simplify_equality(condition.to_mathematical()[1:-1])
+                simplified_equation = simplify_equality(
+                    condition.to_mathematical()[1:-1]
+                )
                 if simplified_equation:
                     simplified_conditions.append(simplified_equation)
 
                 continue
 
-            simplified_inequality = simplify_inequality(condition.to_mathematical(),
-                                                        condition.root.value,
-                                                        [assumption for assumption in assumptions],
-                                                        decimal_digits=decimal_digits)
+            simplified_inequality = simplify_inequality(
+                condition.to_mathematical(),
+                condition.root.value,
+                [assumption for assumption in assumptions],
+                decimal_digits=decimal_digits,
+            )
             if simplified_inequality:
                 simplified_conditions.append(simplified_inequality)
 
         return simplified_conditions
 
-    def add_condition(self,
-                      condition: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree],
-                      check_duplications: bool = False) -> None:
+    def add_condition(
+        self,
+        condition: Union[
+            "Precondition", Predicate, GroundedPredicate, NumericalExpressionTree
+        ],
+        check_duplications: bool = False,
+    ) -> None:
         """Add a condition to the precondition.
 
         :param condition: the condition to add.
@@ -220,14 +291,21 @@ class Precondition:
                 self._unique_add_numeric_expression(condition)
 
         else:
-            current_compound_conditions = [str(cond) for _, cond in self.__iter__() if isinstance(cond, Precondition)]
+            current_compound_conditions = [
+                str(cond)
+                for _, cond in self.__iter__()
+                if isinstance(cond, Precondition)
+            ]
             if str(condition) not in current_compound_conditions:
                 self.operands.add(condition)
 
     @staticmethod
     def _remove_condition(
-            condition_to_remove: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree],
-            searched_condition: "Precondition") -> bool:
+        condition_to_remove: Union[
+            "Precondition", Predicate, GroundedPredicate, NumericalExpressionTree
+        ],
+        searched_condition: "Precondition",
+    ) -> bool:
         """Tries to remove the input precondition from the searched precondition.
 
         :param condition_to_remove: the condition to remove.
@@ -235,7 +313,10 @@ class Precondition:
         :return: True if the condition was removed, False otherwise.
         """
         for operand in searched_condition.operands:
-            if type(operand) == type(condition_to_remove) and operand == condition_to_remove:
+            if (
+                isinstance(operand, type(condition_to_remove))
+                and operand == condition_to_remove
+            ):
                 searched_condition.operands.remove(operand)
                 return True
 
@@ -244,7 +325,11 @@ class Precondition:
                     return True
 
     def remove_condition(
-            self, condition: Union["Precondition", Predicate, GroundedPredicate, NumericalExpressionTree]) -> bool:
+        self,
+        condition: Union[
+            "Precondition", Predicate, GroundedPredicate, NumericalExpressionTree
+        ],
+    ) -> bool:
         """Remove a condition from the precondition.
 
         :param condition: the condition to remove.
@@ -252,7 +337,9 @@ class Precondition:
         """
         return self._remove_condition(condition, self)
 
-    def add_equality_condition(self, condition: Tuple[str, str], inequality: bool = False) -> None:
+    def add_equality_condition(
+        self, condition: Tuple[str, str], inequality: bool = False
+    ) -> None:
         """Add an equality condition to the precondition.
 
         :param condition: the equality condition to add
@@ -283,12 +370,16 @@ class Precondition:
         new_inequality_conditions = set()
         for equality_condition in self.equality_preconditions:
             param_1, param_2 = equality_condition
-            new_equality_conditions.add((old_to_new_param_names[param_1], old_to_new_param_names[param_2]))
+            new_equality_conditions.add(
+                (old_to_new_param_names[param_1], old_to_new_param_names[param_2])
+            )
 
         self.equality_preconditions = new_equality_conditions
         for inequality_condition in self.inequality_preconditions:
             param_1, param_2 = inequality_condition
-            new_inequality_conditions.add((old_to_new_param_names[param_1], old_to_new_param_names[param_2]))
+            new_inequality_conditions.add(
+                (old_to_new_param_names[param_1], old_to_new_param_names[param_2])
+            )
 
         self.inequality_preconditions = new_inequality_conditions
 
@@ -299,7 +390,12 @@ class UniversalPrecondition(Precondition):
     quantified_parameter: str
     quantified_type: PDDLType
 
-    def __init__(self, quantified_parameter: str, quantified_type: PDDLType, binary_operator: str = "and"):
+    def __init__(
+        self,
+        quantified_parameter: str,
+        quantified_type: PDDLType,
+        binary_operator: str = "and",
+    ):
         self.quantified_parameter = quantified_parameter
         self.quantified_type = quantified_type
         super().__init__(binary_operator)
@@ -309,20 +405,25 @@ class UniversalPrecondition(Precondition):
             return ""
 
         internal_condition_string = super()._print_self()
-        return f"(forall ({self.quantified_parameter} - {self.quantified_type.name})" \
-               f"\n\t{internal_condition_string})"
+        return (
+            f"(forall ({self.quantified_parameter} - {self.quantified_type.name})"
+            f"\n\t{internal_condition_string})"
+        )
 
     def __hash__(self) -> int:
         return hash(str(self))
 
     def __eq__(self, other: "UniversalPrecondition") -> bool:
-        return super().__eq__(other) and \
-            self.quantified_parameter == other.quantified_parameter and \
-            self.quantified_type == other.quantified_type
+        return (
+            super().__eq__(other)
+            and self.quantified_parameter == other.quantified_parameter
+            and self.quantified_type == other.quantified_type
+        )
 
 
 class CompoundPrecondition:
     """class representing a single precondition in a PDDL+ action."""
+
     root: Union[Precondition, UniversalPrecondition]
 
     def __init__(self):
@@ -338,16 +439,31 @@ class CompoundPrecondition:
         return self.root == other.root
 
     def add_condition(
-            self, condition: Union[
-                Precondition, UniversalPrecondition, Predicate, GroundedPredicate, NumericalExpressionTree]) -> None:
+        self,
+        condition: Union[
+            Precondition,
+            UniversalPrecondition,
+            Predicate,
+            GroundedPredicate,
+            NumericalExpressionTree,
+        ],
+    ) -> None:
         """Add a condition to the compound precondition.
 
         :param condition: the condition to add.
         """
         self.root.add_condition(condition)
 
-    def remove_condition(self, condition: Union[
-        Precondition, UniversalPrecondition, Predicate, GroundedPredicate, NumericalExpressionTree]) -> None:
+    def remove_condition(
+        self,
+        condition: Union[
+            Precondition,
+            UniversalPrecondition,
+            Predicate,
+            GroundedPredicate,
+            NumericalExpressionTree,
+        ],
+    ) -> None:
         """Remove a condition from the compound precondition.
 
         :param condition: the condition to remove.
@@ -361,7 +477,9 @@ class CompoundPrecondition:
         """
         self.root.change_signature(old_to_new_param_names)
 
-    def print(self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
+    def print(
+        self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS
+    ) -> str:
         """Print the compound precondition in PDDL format.
 
         Note:
