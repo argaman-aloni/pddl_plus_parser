@@ -39,3 +39,5 @@ jobs:
         echo "Running tests"
         cd tests/lisp_parsers_tests/
         pytest .
+        cd ../models_tests/
+        pytest .
