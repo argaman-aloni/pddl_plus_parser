@@ -41,3 +41,7 @@ jobs:
         pytest .
         cd ../models_tests/
         pytest .
+        cd ../exporters_tests/
+        pytest .
+        cd ../multi_agent_tests/
+        pytest .
