@@ -38,4 +38,4 @@ jobs:
       run: |
         echo "Running tests"
         cd tests
-        pytest tests/lisp_parsers_tests/
+        pytest lisp_parsers_tests/
