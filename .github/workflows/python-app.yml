@@ -36,5 +36,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude=tests/,*.pddl,pddl_plus_parser/problem_generators/,*/__init__.py --ignore=C901,W503,W293
     - name: Test with pytest
       run: |
+        echo "Running tests"
+        echo ls
         pytest pddl_plus_parser/tests/lisp_parsers_tests/
         pytest pddl_plus_parser/tests/models_tests/
