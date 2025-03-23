@@ -37,6 +37,4 @@ jobs:
     - name: Test with pytest
       run: |
         echo "Running tests"
-        ls
-        pytest pddl_plus_parser/tests/lisp_parsers_tests/
-        pytest pddl_plus_parser/tests/models_tests/
+        pytest tests/
