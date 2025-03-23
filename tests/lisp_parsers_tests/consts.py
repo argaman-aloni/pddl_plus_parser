@@ -8,7 +8,9 @@ TEST_NUMERIC_DEPOT_DOMAIN_PATH = Path(CWD, "depot_numeric_domain.pddl")
 TEST_NUMERIC_PROBLEM = Path(CWD, "test_agricola_problem.pddl")
 TEST_NUMERIC_DOMAIN = Path(CWD, "test_agricola_domain.pddl")
 TEST_BLOCKS_DOMAIN_NO_TYPES_PATH = Path(CWD, "blocks_no_types_domain.pddl")
-TEST_DOMAIN_WITH_COMBINED_TYPED_PARAMS = Path(CWD, "domain_with_combined_typed_parameters.pddl")
+TEST_DOMAIN_WITH_COMBINED_TYPED_PARAMS = Path(
+    CWD, "domain_with_combined_typed_parameters.pddl"
+)
 
 
 TEST_NUMERIC_DEPOT_DOMAIN = Path(CWD, "depot_numeric.pddl")
@@ -26,7 +28,9 @@ PLANT_WATERING_DOMAIN = Path(CWD, "plant_watering_domain.pddl")
 
 WOODWORKING_COMBINED_DOMAIN_PATH = Path(CWD) / "woodworking_combined_domain.pddl"
 WOODWORKING_COMBINED_PROBLEM_PATH = Path(CWD) / "woodworking_combined_problem.pddl"
-WOODWORKING_COMBINED_TRAJECTORY_PATH = Path(CWD) / "ma_woodworking_trajectory.trajectory"
+WOODWORKING_COMBINED_TRAJECTORY_PATH = (
+    Path(CWD) / "ma_woodworking_trajectory.trajectory"
+)
 
 MICONIC_LEARNED_DOMAIN_PATH = Path(CWD) / "learned_domain_miconic.pddl"
 
