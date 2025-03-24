@@ -75,7 +75,9 @@ class Action:
 
         old_to_new_parameter_names: the mapping between the old and new parameter names.
         """
-        for old_param_name, new_param_name in old_to_new_parameter_names.items():
+        ordered_old_signature = list(self.signature.keys())
+        for old_param_name in ordered_old_signature:
+            new_param_name = old_to_new_parameter_names[old_param_name]
             self.signature[new_param_name] = self.signature.pop(old_param_name)
 
         self.preconditions.change_signature(old_to_new_parameter_names)

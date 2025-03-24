@@ -117,10 +117,9 @@ class PDDLFunction:
 
         :param old_to_new_param_names: the mapping of old parameter names to new parameter names.
         """
-        for old_param_name, new_param_name in old_to_new_param_names.items():
-            if old_param_name not in self.signature:
-                continue
-
+        ordered_old_parameters = list(self.signature.keys())
+        for old_param_name in ordered_old_parameters:
+            new_param_name = old_to_new_param_names[old_param_name]
             self.signature[new_param_name] = self.signature.pop(old_param_name)
 
     def __str__(self):
