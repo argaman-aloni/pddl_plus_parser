@@ -103,6 +103,7 @@ class GroundedPredicate(Predicate):
     """Class defining a grounded predicate."""
 
     object_mapping: Dict[str, str]
+    is_masked: bool
 
     def __init__(
         self,
@@ -110,11 +111,13 @@ class GroundedPredicate(Predicate):
         signature: SignatureType,
         object_mapping: Dict[str, str],
         is_positive: bool = True,
+        is_masked: bool = False,
     ):
         super(GroundedPredicate, self).__init__(
             name=name, signature=signature, is_positive=is_positive
         )
         self.object_mapping = object_mapping
+        self.is_masked = is_masked
 
     def __eq__(self, other: "GroundedPredicate") -> bool:
         """Checks whether or not two grounded predicates are considered equal.
