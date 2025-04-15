@@ -87,4 +87,5 @@
 * version 3.12.0 - Supporting zipping numeric multi-agent plans to some degree.
 * version 3.13.0 - Added the ability to easily change the signature of the domain elements.
 * version 3.13.6 - Added the is_masked property to the GroundedPredicate class.
+* version 3.14.0 - Starting to address unsuccessful state transitions - for online action model learning algorithms.
 

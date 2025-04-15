@@ -12,11 +12,19 @@ class ObservedComponent:
     previous_state: State
     grounded_action_call: ActionCall
     next_state: State
+    is_successful: bool
 
-    def __init__(self, previous_state: State, call: ActionCall, next_state: State):
+    def __init__(
+        self,
+        previous_state: State,
+        call: ActionCall,
+        next_state: State,
+        is_successful: bool = True,
+    ):
         self.previous_state = previous_state
         self.grounded_action_call = call
         self.next_state = next_state
+        self.is_successful = is_successful
 
     def __str__(self):
         return (
@@ -32,13 +40,19 @@ class MultiAgentComponent:
     previous_state: State
     grounded_joint_action: JointActionCall
     next_state: State
+    is_successful: bool
 
     def __init__(
-        self, previous_state: State, joint_action: List[ActionCall], next_state: State
+        self,
+        previous_state: State,
+        joint_action: List[ActionCall],
+        next_state: State,
+        is_successful: bool = True,
     ):
         self.previous_state = previous_state
         self.grounded_joint_action = JointActionCall(joint_action)
         self.next_state = next_state
+        self.is_successful = is_successful
 
     def __str__(self):
         return (
@@ -69,15 +83,24 @@ class Observation:
         self.grounded_objects = objects
 
     def add_component(
-        self, previous_state: State, call: ActionCall, next_state: State
+        self,
+        previous_state: State,
+        call: ActionCall,
+        next_state: State,
+        is_successful_transition: bool = True,
     ) -> None:
         """Add a new component to the observation data.
 
         :param previous_state: the state observed before the action call.
         :param call: the grounded action call.
         :param next_state: the state after the action was executed.
+        :param is_successful_transition: whether the transition was successful.
         """
-        self.components.append(ObservedComponent(previous_state, call, next_state))
+        self.components.append(
+            ObservedComponent(
+                previous_state, call, next_state, is_successful=is_successful_transition
+            )
+        )
 
 
 class MultiAgentObservation:
@@ -103,14 +126,24 @@ class MultiAgentObservation:
         self.grounded_objects = objects
 
     def add_component(
-        self, previous_state: State, joint_action: List[ActionCall], next_state: State
+        self,
+        previous_state: State,
+        joint_action: List[ActionCall],
+        next_state: State,
+        is_successful_transition: bool = True,
     ) -> None:
         """Add a new component to the observation data.
 
         :param previous_state: the state observed before the action call.
         :param joint_action: the grounded joint action.
         :param next_state: the state after the action was executed.
+        :param is_successful_transition: whether the transition was successful.
         """
         self.components.append(
-            MultiAgentComponent(previous_state, joint_action, next_state)
+            MultiAgentComponent(
+                previous_state,
+                joint_action,
+                next_state,
+                is_successful=is_successful_transition,
+            )
         )
