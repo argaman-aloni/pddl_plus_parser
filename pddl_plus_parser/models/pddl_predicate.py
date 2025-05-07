@@ -93,7 +93,9 @@ class Predicate:
             signature_str_items.append(f"{parameter_name} - {str(parameter_type)}")
 
         signature_str = " ".join(signature_str_items)
-        return f"({self.name} {signature_str})"
+        if self.is_positive:
+            return f"({self.name} {signature_str})"
+        return f"(not ({self.name} {signature_str}))"
 
     def __hash__(self):
         return hash(self.__str__())
