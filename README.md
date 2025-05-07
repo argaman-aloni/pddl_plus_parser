@@ -88,4 +88,6 @@
 * version 3.13.0 - Added the ability to easily change the signature of the domain elements.
 * version 3.13.6 - Added the is_masked property to the GroundedPredicate class.
 * version 3.14.0 - Starting to address unsuccessful state transitions - for online action model learning algorithms.
+* version 3.14.1 - Added the correct hashing of predicates.
+* version 3.14.2 - Added the support for negative goal conditions.
 

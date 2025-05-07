@@ -152,12 +152,16 @@ class ProblemParser:
         )
 
     def parse_grounded_predicate(
-        self, grounded_predicate_ast: List[str], lifted_predicate: Predicate
+        self,
+        grounded_predicate_ast: List[str],
+        lifted_predicate: Predicate,
+        is_positive: bool = True,
     ) -> GroundedPredicate:
         """Parse the grounded predicate that appears in the problem definition.
 
         :param grounded_predicate_ast: the AST that represents the grounded predicate.
         :param lifted_predicate: the lifted predicate that the domain defines.
+        :param is_positive: whether the predicate is positive or negative.
         :return: the grounded predicate represented by the lifted predicate.
         """
         predicate_name = lifted_predicate.name
@@ -183,6 +187,7 @@ class ProblemParser:
             name=predicate_name,
             signature=lifted_predicate.signature,
             object_mapping=object_mapping,
+            is_positive=is_positive,
         )
 
     def parse_state_component(self, expression: List[Union[str, List[str]]]) -> None:
@@ -248,14 +253,21 @@ class ProblemParser:
             if (
                 expression[0] not in self.domain.predicates
                 and expression[0] not in LEGAL_GOAL_OPERATORS
+                and expression[0] != "not"
             ):
                 raise ValueError(f"Received illegal state component - {expression}")
 
             if (
                 expression[0] not in LEGAL_GOAL_OPERATORS
             ):  # This is an assignment of a grounded numeric fluent.
+                is_positive = not (expression[0] == "not")
+                if expression[0] == "not":
+                    expression = expression[1]
+
                 grounded_predicate = self.parse_grounded_predicate(
-                    expression, self.domain.predicates[expression[0]]
+                    expression,
+                    self.domain.predicates[expression[0]],
+                    is_positive=is_positive,
                 )
                 self.problem.goal_state_predicates.append(grounded_predicate)
                 continue
