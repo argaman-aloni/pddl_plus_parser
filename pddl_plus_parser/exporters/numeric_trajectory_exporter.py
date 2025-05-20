@@ -1,7 +1,7 @@
 """Module that encapsulates the numeric trajectory functionalities."""
 import logging
 from pathlib import Path
-from typing import List, NoReturn, Optional, Dict
+from typing import List, Optional, Dict
 
 from pddl_plus_parser.models import (
     Domain,
@@ -162,7 +162,7 @@ class TrajectoryExporter:
 
     def export_to_file(
         self, triplets: List[TrajectoryTriplet], output_path: Path
-    ) -> NoReturn:
+    ) -> None:
         """Export the trajectory to a file.
 
         :param triplets: the trajectory triples.

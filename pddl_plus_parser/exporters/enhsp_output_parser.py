@@ -3,7 +3,7 @@ import logging
 import sys
 
 from pathlib import Path
-from typing import NoReturn, List
+from typing import List
 
 
 class ENHSPParser:
@@ -28,7 +28,7 @@ class ENHSPParser:
 
         return plan_seq
 
-    def parse_plan(self, input_path: Path) -> NoReturn:
+    def parse_plan(self, input_path: Path) -> None:
         """Parse the output file and exports a plan if exists.
 
         :param input_path: the path to the output log of metricFF planner.

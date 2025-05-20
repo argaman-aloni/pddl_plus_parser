@@ -4,7 +4,7 @@ import re
 import sys
 
 from pathlib import Path
-from typing import NoReturn, List, Tuple
+from typing import List, Tuple
 
 PLAN_COMPONENT_REGEX = r"\d: ([\w+\s?-]+)\n"
 VALID_PLAN_FOUND_PATTERN = "ff: found legal plan as follows"
@@ -57,7 +57,7 @@ class MetricFFParser:
 
         return plan_seq
 
-    def parse_plan(self, input_path: Path, output_path: Path) -> NoReturn:
+    def parse_plan(self, input_path: Path, output_path: Path) -> None:
         """Parse the output file and exports a plan if exists.
 
         :param input_path: the path to the output log of metricFF planner.

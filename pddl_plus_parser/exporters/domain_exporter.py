@@ -12,6 +12,7 @@ from pddl_plus_parser.models import (
     PDDLType,
 )
 
+DEFAULT_DECIMAL_DIGITS = 2
 
 class DomainExporter:
     """Class that is able to export a domain to a correct PDDL file."""
@@ -39,10 +40,11 @@ class DomainExporter:
         return formatted_effects.format(content=" ".join(action_effect_predicates))
 
     @staticmethod
-    def write_action(action: Action) -> str:
+    def write_action(action: Action, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
         """Write the action formatted string from the action data.
 
         :param action: The action that needs to be formatted into a string.
+        :param decimal_digits: the number of decimal digits to use to display the preconditions.
         :return: the string format of the action.
         """
         action_params = " ".join(
@@ -55,7 +57,7 @@ class DomainExporter:
         return (
             f"(:action {action.name}\n"
             f"\t:parameters   ({action_params})\n"
-            f"\t:precondition {action.preconditions.print(should_simplify=False)}"
+            f"\t:precondition {action.preconditions.print(decimal_digits=decimal_digits)}\n""
             f"\t:effect       {action.effects_to_pddl()}"
             f")\n"
         )

@@ -95,6 +95,7 @@ class Predicate:
         signature_str = " ".join(signature_str_items)
         if self.is_positive:
             return f"({self.name} {signature_str})"
+
         return f"(not ({self.name} {signature_str}))"
 
     def __hash__(self):

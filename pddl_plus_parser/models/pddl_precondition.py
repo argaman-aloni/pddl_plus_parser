@@ -26,12 +26,10 @@ class Precondition:
         self.equality_preconditions = set()
         self.inequality_preconditions = set()
 
-    def _print_self(
-        self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS
-    ) -> str:
+    def _print_self(self, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
         """Print the precondition in a human-readable format.
 
-        :param should_simplify: whether to print the precondition in a simplified format (for numeric expressions).
+        :param decimal_digits: the number of decimal digits to keep.
         """
         discrete_preconditions = []
         compound_preconditions = []
@@ -46,15 +44,9 @@ class Precondition:
             elif isinstance(operand, NumericalExpressionTree):
                 numeric_expressions.append(operand)
 
-        if not should_simplify:
-            numeric_preconditions = [
-                operand.to_pddl(decimal_digits) for operand in numeric_expressions
-            ]
-
-        else:
-            numeric_preconditions = self._simplify_numeric_preconditions(
-                numeric_expressions, decimal_digits
-            )
+        numeric_preconditions = [
+            operand.to_pddl(decimal_digits) for operand in numeric_expressions
+        ]
 
         discrete_preconditions.sort()
         numeric_preconditions = list(set(numeric_preconditions))  # remove duplicates
@@ -129,15 +121,12 @@ class Precondition:
     def __str__(self):
         return self._print_self()
 
-    def print(
-        self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS
-    ) -> str:
+    def print(self, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
         """Print the precondition in a human-readable format.
 
-        :param should_simplify: whether to print the precondition in a simplified format.
         :param decimal_digits: the number of decimal digits to keep.
         """
-        return self._print_self(should_simplify, decimal_digits)
+        return self._print_self(decimal_digits)
 
     def __iter__(
         self,
@@ -324,6 +313,8 @@ class Precondition:
                 if Precondition._remove_condition(condition_to_remove, operand):
                     return True
 
+        return False
+
     def remove_condition(
         self,
         condition: Union[
@@ -477,15 +468,12 @@ class CompoundPrecondition:
         """
         self.root.change_signature(old_to_new_param_names)
 
-    def print(
-        self, should_simplify: bool = True, decimal_digits: int = DEFAULT_DECIMAL_DIGITS
-    ) -> str:
+    def print(self, decimal_digits: int = DEFAULT_DECIMAL_DIGITS) -> str:
         """Print the compound precondition in PDDL format.
 
         Note:
             This code is used for legacy support for the new NSAM paper and will be deleted in future versions.
 
-        :param should_simplify: whether to print the precondition in a simplified format.
         :param decimal_digits: the number of decimal digits to keep.
         """
-        return self.root.print(should_simplify, decimal_digits)
+        return self.root.print(decimal_digits)
