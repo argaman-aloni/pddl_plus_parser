@@ -2,7 +2,7 @@
 from typing import Set, List, Dict
 
 from .conditional_effect import ConditionalEffect, UniversalEffect
-from .numerical_expression import NumericalExpressionTree
+from .numerical_expression import NumericalExpressionTree, DEFAULT_DIGITS
 from .pddl_precondition import CompoundPrecondition
 from .pddl_predicate import SignatureType, Predicate
 
@@ -37,6 +37,18 @@ class Action:
     @property
     def parameter_names(self) -> List[str]:
         return list(self.signature.keys())
+
+    def signature_to_pddl(self) -> str:
+        """Converts the action's signature to the PDDL format.
+
+        :return: the PDDL format of the signature.
+        """
+        signature_str_items = []
+        for parameter_name, parameter_type in self.signature.items():
+            signature_str_items.append(f"{parameter_name} - {str(parameter_type)}")
+
+        signature_str = " ".join(signature_str_items)
+        return f"({signature_str})"
 
     def effects_to_pddl(self) -> str:
         """Converts the effects to the needed PDDL format.
@@ -88,3 +100,22 @@ class Action:
             effect.change_signature(old_to_new_parameter_names)
 
         # TODO: change the signature of the conditional and universal effects.
+
+    def to_pddl(self, decimal_digits: int = DEFAULT_DIGITS) -> str:
+        """Returns the PDDL string representation of the action.
+
+        :param decimal_digits: the number of decimal digits to use to display the preconditions.
+        :return: the PDDL string representing the action.
+        """
+        action_string = (
+            f"(:action {self.name}\n"
+            f"\t:parameters {self.signature_to_pddl()}\n"
+            f"\t:precondition {self.preconditions.print(decimal_digits=decimal_digits)}\n"
+            f"\t:effect {self.effects_to_pddl()})"
+        )
+        formatted_string = "\n".join(
+            [line for line in action_string.split("\n") if line.strip()]
+        )
+        return f"{formatted_string}\n"
+
+        # for effect in self.conditional_effects:
