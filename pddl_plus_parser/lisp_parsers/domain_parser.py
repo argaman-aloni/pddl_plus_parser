@@ -356,7 +356,7 @@ class DomainParser:
                 domain.name = expression[1]
 
             elif expression[0] == ":requirements":
-                domain.requirements = expression[1:]
+                domain.requirements = set(expression[1:])
 
             elif expression[0] == ":types":
                 domain.types = self.parse_types(expression[1:])
