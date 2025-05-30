@@ -1,6 +1,8 @@
 """Module that represents a boolean predicate in a PDDL+ model."""
-from typing import Dict, Optional, List
+import itertools
+from typing import Dict, Optional, List, Set
 
+from . import PDDLObject
 from .pddl_type import PDDLType
 
 SignatureType = Dict[str, PDDLType]
@@ -185,3 +187,27 @@ class GroundedPredicate(Predicate):
 
     def __hash__(self):
         return hash(self.__str__())
+
+
+def get_all_possible_groundings(predicate: Predicate,
+                                grounded_objects: Dict[str, PDDLObject]) -> Set[GroundedPredicate]:
+    param_names = list(predicate.signature.keys())
+    param_types = list(predicate.signature.values())  # handles signature with multiple objects of the same type
+
+    # Get all objects compatible with each parameter type
+    object_domains = []
+    for t in param_types:
+        matches = [obj.name for obj in grounded_objects.values() if obj.type.is_sub_type(t)]
+        object_domains.append(matches)
+
+    grounded_predicates = set()
+
+    for values in itertools.product(*object_domains):
+        mapping = dict(zip(param_names, values))
+        grounded_predicates.add(GroundedPredicate(
+            name=predicate.name,
+            signature=predicate.signature,
+            object_mapping=mapping
+        ))
+
+    return grounded_predicates
