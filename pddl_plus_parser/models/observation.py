@@ -33,6 +33,15 @@ class ObservedComponent:
             f"next state: {self.next_state.serialize()}"
         )
 
+    def copy(self) -> "ObservedComponent":
+        """Creates a deep copy of the observed component."""
+        return ObservedComponent(
+            previous_state=self.previous_state.copy(),
+            call=self.grounded_action_call.copy(),
+            next_state=self.next_state.copy(),
+            is_successful=self.is_successful
+        )
+
 
 class MultiAgentComponent:
     """class representing a multi-agent observed component."""
@@ -101,6 +110,17 @@ class Observation:
                 previous_state, call, next_state, is_successful=is_successful_transition
             )
         )
+
+    def copy(self) -> "Observation":
+        """Creates a deep copy of the observation."""
+        copied_observation = Observation()
+        for component in self.components:
+            copied_component = component.copy()
+            copied_observation.components.append(copied_component)
+        copied_observation.grounded_objects = {
+            obj_name: obj.copy() for obj_name, obj in self.grounded_objects.items()
+        }
+        return copied_observation
 
 
 class MultiAgentObservation:
