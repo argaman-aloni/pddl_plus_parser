@@ -195,14 +195,14 @@ def get_all_possible_groundings(predicate: Predicate,
     param_types = list(predicate.signature.values())  # handles signature with multiple objects of the same type
 
     # Get all objects compatible with each parameter type
-    object_domains = []
+    objects_per_type = []
     for t in param_types:
         matches = [obj.name for obj in grounded_objects.values() if obj.type.is_sub_type(t)]
-        object_domains.append(matches)
+        objects_per_type.append(matches)
 
     grounded_predicates = set()
 
-    for values in itertools.product(*object_domains):
+    for values in itertools.product(*objects_per_type):
         mapping = dict(zip(param_names, values))
         grounded_predicates.add(GroundedPredicate(
             name=predicate.name,
