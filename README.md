@@ -90,4 +90,6 @@
 * version 3.14.0 - Starting to address unsuccessful state transitions - for online action model learning algorithms.
 * version 3.14.1 - Added the correct hashing of predicates.
 * version 3.14.2 - Added the support for negative goal conditions.
+* version 3.14.3 - Added the support for extended functionality in the Domain and Action classes.
+* version 3.15.0 - Added the ability to parse trajectories with transition statuses.
 

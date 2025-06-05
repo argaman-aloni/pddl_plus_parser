@@ -107,7 +107,7 @@ class Operator:
         :param current_state: the state that will change according to the action's effects.
         """
         if self.problem_objects is None:
-            self.logger.warning(
+            self.logger.debug(
                 "Did not receive the problem object so cannot apply the universal effects."
             )
             return
@@ -190,7 +190,7 @@ class Operator:
             self.ground()
 
         if not skip_validation and not self.is_applicable(previous_state):
-            self.logger.warning(
+            self.logger.debug(
                 "Tried to apply an action to a state where the action's preconditions don't hold!"
             )
             if not allow_inapplicable_actions:
