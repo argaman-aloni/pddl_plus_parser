@@ -2,7 +2,7 @@
 import itertools
 from typing import Dict, Optional, List, Set
 
-from . import PDDLObject
+from .pddl_object import PDDLObject
 from .pddl_type import PDDLType
 
 SignatureType = Dict[str, PDDLType]
