@@ -221,3 +221,34 @@ def test_parse_depot_trajectory_with_trajectory_parser_without_problem_and_witho
     depot_trajectory_parser = TrajectoryParser(domain)
     with pytest.raises(SyntaxError):
         depot_trajectory_parser.parse_trajectory(TEST_NUMERIC_DEPOT_TRAJECTORY, contain_transitions_status=True)
+
+
+def test_parse_trajectory_when_not_supplied_both_trajectory_path_and_trajectory_string_raises_error(
+    trajectory_parser: TrajectoryParser,
+):
+    with pytest.raises(ValueError):
+        trajectory_parser.parse_trajectory(trajectory_file_path=None, trajectory_string=None)
+
+
+def test_parse_trajectory_when_supplied_both_trajectory_path_and_trajectory_string_raises_error(
+    trajectory_parser: TrajectoryParser,
+):
+    with pytest.raises(ValueError):
+        trajectory_parser.parse_trajectory(
+            trajectory_file_path=TEST_NUMERIC_DEPOT_TRAJECTORY, trajectory_string="(some trajectory string)"
+        )
+
+
+def test_parse_trajectory_when_supplied_trajectory_string_parses_correctly(trajectory_parser: TrajectoryParser):
+    trajectory_string = (
+        "((:init (= (current_load truck0) 0.0) (= (load_limit truck0) 411.0) (= (current_load truck1) 0.0) (= (load_limit truck1) 390.0) (= (weight crate0) 32.0) (= (weight crate1) 4.0) (= (weight crate2) 89.0) (= (weight crate3) 62.0) (= (fuel-cost ) 0.0) (at pallet1 distributor0) (at hoist2 distributor1) (at hoist0 depot0) (at crate3 distributor0) (at crate2 distributor1) (at truck0 depot0) (at pallet2 distributor1) (at hoist1 distributor0) (at crate0 depot0) (at crate1 distributor1) (at pallet0 depot0) (at truck1 depot0) (clear crate0) (clear crate2) (clear crate3) (available hoist2) )"
+        "(operator: (drive truck0 depot0 distributor0))"
+        "(:transition_status (success))"
+        "(:state (= (current_load truck0) 0.0) (= (load_limit truck0) 411.0) (= (current_load truck1) 0.0) (= (load_limit truck1) 390.0) (= (weight crate0) 32.0) (= (weight crate1) 4.0) (= (weight crate2) 89.0) (= (weight crate3) 62.0) (= (fuel-cost ) 10.0) (at pallet1 distributor0) (at truck0 distributor0) (at hoist2 distributor1) (at hoist0 depot0) (at crate2 distributor1) (at pallet2 distributor1) (at hoist1 distributor0) (at crate1 distributor1) (at pallet0 depot0) (at truck1 depot0) (clear crate0) (clear crate2) (clear crate3) (available hoist2) )"
+        ")"
+    )
+    observation = trajectory_parser.parse_trajectory(
+        trajectory_file_path=None, trajectory_string=trajectory_string, contain_transitions_status=True
+    )
+    assert observation is not None
+    assert len(observation.components) == 1

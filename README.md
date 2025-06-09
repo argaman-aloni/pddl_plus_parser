@@ -92,4 +92,5 @@
 * version 3.14.2 - Added the support for negative goal conditions.
 * version 3.14.3 - Added the support for extended functionality in the Domain and Action classes.
 * version 3.15.0 - Added the ability to parse trajectories with transition statuses.
+* version 3.15.1 - Added the ability to parse trajectories from strings as well as from files.
 

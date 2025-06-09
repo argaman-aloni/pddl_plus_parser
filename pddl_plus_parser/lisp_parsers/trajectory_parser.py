@@ -244,7 +244,8 @@ class TrajectoryParser:
 
     def parse_trajectory(
         self,
-        trajectory_file_path: Path,
+        trajectory_file_path: Optional[Path] = None,
+        trajectory_string: Optional[str] = None,
         executing_agents: List[str] = None,
         strict_trajectory_validation: bool = False,
         contain_transitions_status: bool = False,
@@ -252,15 +253,29 @@ class TrajectoryParser:
         """Parse a trajectory and extracts the observed data into objects.
 
         :param trajectory_file_path: the path to the trajectory file.
+        :param trajectory_string: the string representation of the trajectory.
         :param executing_agents: the list of agents that partake in the observation.
         :param strict_trajectory_validation: whether to validate the trajectory's  syntax strictly
                 (mainly verify that the initial state.is labeled accordingly).
         :param contain_transitions_status: whether the trajectory contains transition status labels.
         :return: the observation extracted from the serialized trajectory.
         """
-        self.logger.info("Starting to read the trajectory file!")
-        tokenizer = self._read_trajectory_file(trajectory_file_path)
-        observation_expression = tokenizer.parse()
+        if trajectory_file_path is None and trajectory_string is None:
+            raise ValueError("Either trajectory_file_path or trajectory_string should be provided.")
+
+        if trajectory_file_path is not None and trajectory_string is not None:
+            raise ValueError("Only one of trajectory_file_path or trajectory_string should be provided.")
+
+        if trajectory_file_path is not None:
+            self.logger.info("Starting to read the trajectory file!")
+            tokenizer = self._read_trajectory_file(trajectory_file_path)
+            observation_expression = tokenizer.parse()
+
+        else:
+            self.logger.info("Starting to parse the trajectory string!")
+            tokenizer = PDDLTokenizer(pddl_str=trajectory_string)
+            observation_expression = tokenizer.parse()
+
         observation = (
             MultiAgentObservation(executing_agents=executing_agents) if executing_agents is not None else Observation()
         )
