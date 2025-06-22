@@ -1,4 +1,5 @@
 """Module to encapsulate the functionality of grounded preconditions."""
+
 import logging
 from typing import Set, Tuple, Dict, Optional
 
@@ -34,9 +35,7 @@ class GroundedPrecondition:
     _parameter_map: Dict[str, str]
     logger: logging.Logger
 
-    def __init__(
-        self, lifted_precondition: CompoundPrecondition, domain: Domain, action: Action
-    ):
+    def __init__(self, lifted_precondition: CompoundPrecondition, domain: Domain, action: Action):
         self._lifted_precondition = lifted_precondition
         self._grounded_precondition = CompoundPrecondition()
         self.domain = domain
@@ -56,10 +55,7 @@ class GroundedPrecondition:
         :param parameters_map: the mapping between the lifted and the grounded objects.
         :return: the grounded objects that should/n't be equal.
         """
-        return {
-            (parameters_map[obj1], parameters_map[obj2])
-            for obj1, obj2 in equality_preconditions
-        }
+        return {(parameters_map[obj1], parameters_map[obj2]) for obj1, obj2 in equality_preconditions}
 
     def _ground(
         self,
@@ -75,16 +71,12 @@ class GroundedPrecondition:
         """
         for precondition in lifted_conditions.operands:
             if isinstance(precondition, Predicate):
-                grounded_predicate = ground_predicate(
-                    precondition, parameters_map, self.domain, self.action
-                )
+                grounded_predicate = ground_predicate(precondition, parameters_map, self.domain, self.action)
                 grounded_conditions.add_condition(grounded_predicate)
 
             elif isinstance(precondition, NumericalExpressionTree):
                 grounded_conditions.add_condition(
-                    ground_numeric_calculation_tree(
-                        precondition, parameters_map, self.domain
-                    )
+                    ground_numeric_calculation_tree(precondition, parameters_map, self.domain)
                 )
 
             elif isinstance(precondition, UniversalPrecondition):
@@ -103,9 +95,7 @@ class GroundedPrecondition:
                 self._ground(precondition, grounded_condition, parameters_map)
 
             else:
-                raise ValueError(
-                    f"Unknown precondition type: {type(lifted_conditions)}"
-                )
+                raise ValueError(f"Unknown precondition type: {type(lifted_conditions)}")
 
     @staticmethod
     def _validate_equality_holds(preconditions: Precondition) -> bool:
@@ -114,9 +104,7 @@ class GroundedPrecondition:
         :param preconditions: the preconditions to validate.
         :return: whether the equality preconditions hold.
         """
-        return all(
-            [obj1 == obj2 for obj1, obj2 in preconditions.equality_preconditions]
-        ) and all(
+        return all([obj1 == obj2 for obj1, obj2 in preconditions.equality_preconditions]) and all(
             [obj1 != obj2 for obj1, obj2 in preconditions.inequality_preconditions]
         )
 
@@ -128,7 +116,7 @@ class GroundedPrecondition:
         state: State,
     ) -> bool:
         """Validate if the given numeric expression is applicable in the given state.
-        
+
         :param condition: the numeric expression to validate.
         :param prev_is_applicable: whether the previous conditions were applicable.
         :param preconditions: the preconditions to validate.
@@ -137,14 +125,15 @@ class GroundedPrecondition:
         """
         try:
             set_expression_value(condition.root, state.state_fluents)
-            self.logger.debug(
-                f"Validating if the expression {condition.to_pddl()} is applicable in the state"
-            )
+            self.logger.debug(f"Validating if the expression {condition.to_pddl()} is applicable in the state")
             is_applicable = BinaryOperator[preconditions.binary_operator](
                 prev_is_applicable, evaluate_expression(condition.root)
             )
 
         except KeyError:
+            self.logger.debug(
+                "The numeric expression cannot be evaluated since some of the numeric functions are missing."
+            )
             is_applicable = False
 
         return is_applicable
@@ -157,7 +146,7 @@ class GroundedPrecondition:
         state: State,
     ) -> bool:
         """Validate if the given predicate is applicable in the given state.
-        
+
         :param condition: the predicate to validate.
         :param prev_is_applicable: whether the previous conditions were applicable.
         :param preconditions: the preconditions to validate.
@@ -165,18 +154,18 @@ class GroundedPrecondition:
         :return: whether the predicate is applicable in the given state.
         """
         self.logger.debug(
-            f"Validating if the predicate {condition.untyped_representation} "
-            f"is applicable in the state"
+            f"Validating if the predicate {condition.untyped_representation} " f"is applicable in the state"
         )
         positive_condition_predicate = condition.copy()
         positive_condition_predicate.is_positive = True
 
         is_applicable = BinaryOperator[preconditions.binary_operator](
             prev_is_applicable,
-            condition.untyped_representation in state.serialize()
-            if condition.is_positive
-            else positive_condition_predicate.untyped_representation
-            not in state.serialize(),
+            (
+                condition.untyped_representation in state.serialize()
+                if condition.is_positive
+                else positive_condition_predicate.untyped_representation not in state.serialize()
+            ),
         )
         return is_applicable
 
@@ -184,7 +173,7 @@ class GroundedPrecondition:
         self, condition: UniversalPrecondition, extended_parameter_map: Dict[str, str]
     ) -> Precondition:
         """Ground the universal precondition.
-        
+
         :param condition: the universal precondition to ground.
         :param extended_parameter_map: the mapping between the lifted and the grounded objects with the quantified
             object as well.
@@ -196,16 +185,12 @@ class GroundedPrecondition:
         tmp_action.signature[condition.quantified_parameter] = condition.quantified_type
         for sub_condition in condition.operands:
             if isinstance(sub_condition, Predicate):
-                grounded_predicate = ground_predicate(
-                    sub_condition, extended_parameter_map, self.domain, tmp_action
-                )
+                grounded_predicate = ground_predicate(sub_condition, extended_parameter_map, self.domain, tmp_action)
                 grounded_preconditions.add_condition(grounded_predicate)
 
             elif isinstance(sub_condition, NumericalExpressionTree):
                 grounded_preconditions.add_condition(
-                    ground_numeric_calculation_tree(
-                        sub_condition, extended_parameter_map, self.domain
-                    )
+                    ground_numeric_calculation_tree(sub_condition, extended_parameter_map, self.domain)
                 )
 
         return grounded_preconditions
@@ -223,13 +208,9 @@ class GroundedPrecondition:
         :return: whether the universal precondition is applicable in the given state.
         """
         if not problem_objects:
-            raise ValueError(
-                "The objects of the problem should be provided for universal preconditions."
-            )
+            raise ValueError("The objects of the problem should be provided for universal preconditions.")
 
-        self.logger.debug(
-            "Validating if the universal precondition is applicable in the state"
-        )
+        self.logger.debug("Validating if the universal precondition is applicable in the state")
         is_applicable = self._validate_equality_holds(condition)
         self.logger.debug("We assume that universal preconditions are not nested.")
         extended_parameter_map = {**self._parameter_map}
@@ -238,38 +219,24 @@ class GroundedPrecondition:
                 continue
 
             extended_parameter_map[condition.quantified_parameter] = obj_name
-            grounded_precondition = self._ground_universal_condition(
-                condition, extended_parameter_map
-            )
+            grounded_precondition = self._ground_universal_condition(condition, extended_parameter_map)
             for sub_condition in grounded_precondition.operands:
                 if isinstance(sub_condition, GroundedPredicate):
-                    is_applicable = BinaryOperator[
-                        grounded_precondition.binary_operator
-                    ](
+                    is_applicable = BinaryOperator[grounded_precondition.binary_operator](
                         is_applicable,
-                        self._validate_predicates_hold(
-                            sub_condition, is_applicable, condition, state
-                        ),
+                        self._validate_predicates_hold(sub_condition, is_applicable, condition, state),
                     )
 
                 elif isinstance(sub_condition, NumericalExpressionTree):
-                    is_applicable = BinaryOperator[
-                        grounded_precondition.binary_operator
-                    ](
+                    is_applicable = BinaryOperator[grounded_precondition.binary_operator](
                         is_applicable,
-                        self._validate_numeric_expression_hold(
-                            sub_condition, is_applicable, condition, state
-                        ),
+                        self._validate_numeric_expression_hold(sub_condition, is_applicable, condition, state),
                     )
 
                 elif isinstance(sub_condition, Precondition):
-                    is_applicable = BinaryOperator[
-                        grounded_precondition.binary_operator
-                    ](
+                    is_applicable = BinaryOperator[grounded_precondition.binary_operator](
                         is_applicable,
-                        self._is_condition_applicable(
-                            sub_condition, state, problem_objects
-                        ),
+                        self._is_condition_applicable(sub_condition, state, problem_objects),
                     )
 
         return is_applicable
@@ -292,17 +259,13 @@ class GroundedPrecondition:
             if isinstance(condition, GroundedPredicate):
                 is_applicable = BinaryOperator[preconditions.binary_operator](
                     is_applicable,
-                    self._validate_predicates_hold(
-                        condition, is_applicable, preconditions, state
-                    ),
+                    self._validate_predicates_hold(condition, is_applicable, preconditions, state),
                 )
 
             elif isinstance(condition, NumericalExpressionTree):
                 is_applicable = BinaryOperator[preconditions.binary_operator](
                     is_applicable,
-                    self._validate_numeric_expression_hold(
-                        condition, is_applicable, preconditions, state
-                    ),
+                    self._validate_numeric_expression_hold(condition, is_applicable, preconditions, state),
                 )
 
             elif isinstance(condition, Precondition):
@@ -311,9 +274,7 @@ class GroundedPrecondition:
                 )
 
             elif isinstance(condition, UniversalPrecondition):
-                is_applicable = self._validate_universal_precondition(
-                    condition, state, problem_objects
-                )
+                is_applicable = self._validate_universal_precondition(condition, state, problem_objects)
                 continue
 
             else:
@@ -354,9 +315,7 @@ class GroundedPrecondition:
 
         return numerical_fluents
 
-    def is_applicable(
-        self, state: State, problem_objects: Optional[Dict[str, PDDLObject]] = None
-    ) -> bool:
+    def is_applicable(self, state: State, problem_objects: Optional[Dict[str, PDDLObject]] = None) -> bool:
         """Check whether the precondition is satisfied in the given state.
 
         :param state: the state to check.
@@ -364,6 +323,4 @@ class GroundedPrecondition:
         :return: True if the precondition is satisfied, False otherwise.
         """
         self.logger.debug("Validating if the preconditions hold in the state.")
-        return self._is_condition_applicable(
-            self._grounded_precondition.root, state, problem_objects
-        )
+        return self._is_condition_applicable(self._grounded_precondition.root, state, problem_objects)

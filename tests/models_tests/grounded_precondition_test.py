@@ -1,16 +1,35 @@
 """Module test for the grounded precondition class."""
+
 from typing import Dict, Set, List
 
 from pytest import fixture, fail
 
 from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser, PDDLTokenizer, TrajectoryParser
-from pddl_plus_parser.models import Domain, Action, GroundedPredicate, PDDLFunction, State, Problem, Precondition, \
-    NumericalExpressionTree, Observation
+from pddl_plus_parser.models import (
+    Domain,
+    Action,
+    GroundedPredicate,
+    PDDLFunction,
+    State,
+    Problem,
+    Precondition,
+    NumericalExpressionTree,
+    Observation,
+)
 from pddl_plus_parser.models.grounded_precondition import GroundedPrecondition
 from tests.lisp_parsers_tests.consts import SPIDER_PROBLEM_PATH
-from tests.models_tests.consts import TEST_HARD_NUMERIC_DOMAIN, TEST_NUMERIC_DOMAIN, SPIDER_DOMAIN_PATH, \
-    NURIKABE_DOMAIN_PATH, NURIKABE_PROBLEM_PATH, MICONIC_NESTED_DOMAIN_PATH, MICONIC_NESTED_PROBLEM_PATH, \
-    MICONIC_DOMAIN_PATH, MICONIC_TRAJECTORY_PATH
+from tests.models_tests.consts import (
+    TEST_HARD_NUMERIC_DOMAIN,
+    TEST_NUMERIC_DOMAIN,
+    SPIDER_DOMAIN_PATH,
+    NURIKABE_DOMAIN_PATH,
+    NURIKABE_PROBLEM_PATH,
+    MICONIC_NESTED_DOMAIN_PATH,
+    MICONIC_NESTED_PROBLEM_PATH,
+    MICONIC_DOMAIN_PATH,
+    MICONIC_TRAJECTORY_PATH,
+    SATELLITE_PROBLEM_WITH_MISSING_FUNCTIONS,
+)
 
 TEST_LIFTED_SIGNATURE_ITEMS = ["?s", "?d", "?i", "?m"]
 TEST_GROUNDED_ACTION_CALL = ["s1", "test_direction", "test_instrument", "test_mode"]
@@ -126,8 +145,9 @@ def spider_action_precondition(spider_domain: Domain, spider_conditional_action:
 
 
 @fixture()
-def miconic_stop_action_precondition(miconic_nested_domain: Domain,
-                                     miconic_stop_action: Action) -> GroundedPrecondition:
+def miconic_stop_action_precondition(
+    miconic_nested_domain: Domain, miconic_stop_action: Action
+) -> GroundedPrecondition:
     return GroundedPrecondition(miconic_stop_action.preconditions, miconic_nested_domain, miconic_stop_action)
 
 
@@ -140,30 +160,46 @@ def complete_state_predicates(satellite_domain: Domain) -> Dict[str, Set[Grounde
     pointing_predicate = satellite_domain.predicates["pointing"]
     return {
         "(calibrated ?i)": {
-            GroundedPredicate(name="calibrated", signature=calibrated_predicate.signature,
-                              object_mapping={"?i": "test_instrument"})},
+            GroundedPredicate(
+                name="calibrated", signature=calibrated_predicate.signature, object_mapping={"?i": "test_instrument"}
+            )
+        },
         "(on_board ?i ?s)": [
-            GroundedPredicate(name="on_board", signature=on_board_predicate.signature,
-                              object_mapping={"?i": "test_instrument", "?s": "s1"})],
+            GroundedPredicate(
+                name="on_board",
+                signature=on_board_predicate.signature,
+                object_mapping={"?i": "test_instrument", "?s": "s1"},
+            )
+        ],
         "(supports ?i ?m)": {
-            GroundedPredicate(name="supports", signature=supports_predicate.signature,
-                              object_mapping={"?i": "test_instrument", "?m": "test_mode"})},
+            GroundedPredicate(
+                name="supports",
+                signature=supports_predicate.signature,
+                object_mapping={"?i": "test_instrument", "?m": "test_mode"},
+            )
+        },
         "(power_on ?i)": {
-            GroundedPredicate(name="power_on", signature=power_on_predicate.signature,
-                              object_mapping={"?i": "test_instrument"})},
+            GroundedPredicate(
+                name="power_on", signature=power_on_predicate.signature, object_mapping={"?i": "test_instrument"}
+            )
+        },
         "(pointing ?s ?d)": {
-            GroundedPredicate(name="pointing", signature=pointing_predicate.signature,
-                              object_mapping={"?s": "s1", "?d": "test_direction"})},
+            GroundedPredicate(
+                name="pointing",
+                signature=pointing_predicate.signature,
+                object_mapping={"?s": "s1", "?d": "test_direction"},
+            )
+        },
     }
 
 
 @fixture()
 def numeric_state_variables(satellite_domain: Domain) -> Dict[str, PDDLFunction]:
     data_capacity_function = PDDLFunction(name="data_capacity", signature={"s1": satellite_domain.types["satellite"]})
-    data_function = PDDLFunction(name="data", signature={
-        "test_direction": satellite_domain.types["direction"],
-        "test_mode": satellite_domain.types["mode"]
-    })
+    data_function = PDDLFunction(
+        name="data",
+        signature={"test_direction": satellite_domain.types["direction"], "test_mode": satellite_domain.types["mode"]},
+    )
     return {
         data_capacity_function.untyped_representation: data_capacity_function,
         data_function.untyped_representation: data_function,
@@ -171,13 +207,15 @@ def numeric_state_variables(satellite_domain: Domain) -> Dict[str, PDDLFunction]
 
 
 @fixture()
-def previous_state_with_missing_numeric_fluent(satellite_domain: Domain,
-                                               complete_state_predicates: Dict[str, Set[GroundedPredicate]],
-                                               numeric_state_variables: Dict[str, PDDLFunction]):
-    data_function = PDDLFunction(name="data", signature={
-        "test_direction": satellite_domain.types["direction"],
-        "test_mode": satellite_domain.types["mode"]
-    })
+def previous_state_with_missing_numeric_fluent(
+    satellite_domain: Domain,
+    complete_state_predicates: Dict[str, Set[GroundedPredicate]],
+    numeric_state_variables: Dict[str, PDDLFunction],
+):
+    data_function = PDDLFunction(
+        name="data",
+        signature={"test_direction": satellite_domain.types["direction"], "test_mode": satellite_domain.types["mode"]},
+    )
     data_capacity_function = PDDLFunction(name="data_capacity", signature={"s1": satellite_domain.types["satellite"]})
     numeric_state_variables[data_capacity_function.untyped_representation].set_value(18.3)
     numeric_state_variables[data_function.untyped_representation].set_value(5.3)
@@ -185,22 +223,24 @@ def previous_state_with_missing_numeric_fluent(satellite_domain: Domain,
 
 
 @fixture()
-def valid_previous_state(satellite_domain: Domain,
-                         complete_state_predicates: Dict[str, Set[GroundedPredicate]],
-                         numeric_state_variables: Dict[str, PDDLFunction]):
-    data_function = PDDLFunction(name="data", signature={
-        "test_direction": satellite_domain.types["direction"],
-        "test_mode": satellite_domain.types["mode"]
-    })
+def valid_previous_state(
+    satellite_domain: Domain,
+    complete_state_predicates: Dict[str, Set[GroundedPredicate]],
+    numeric_state_variables: Dict[str, PDDLFunction],
+):
+    data_function = PDDLFunction(
+        name="data",
+        signature={"test_direction": satellite_domain.types["direction"], "test_mode": satellite_domain.types["mode"]},
+    )
     data_capacity_function = PDDLFunction(name="data_capacity", signature={"s1": satellite_domain.types["satellite"]})
     data_stored_function = PDDLFunction(name="data-stored", signature={})
     data_stored_function.set_value(10)
     numeric_state_variables[data_capacity_function.untyped_representation].set_value(18.3)
     numeric_state_variables[data_function.untyped_representation].set_value(5.3)
-    return State(predicates=complete_state_predicates, fluents={
-        **numeric_state_variables,
-        data_stored_function.untyped_representation: data_stored_function
-    })
+    return State(
+        predicates=complete_state_predicates,
+        fluents={**numeric_state_variables, data_stored_function.untyped_representation: data_stored_function},
+    )
 
 
 @fixture()
@@ -234,81 +274,92 @@ def test_equality_holds_when_objects_equal_returns_true(satellite_action_precond
 
 
 def test_ground_preconditions_creates_grounded_version_of_lifted_predicates_with_object_names_in_the_parameters(
-        satellite_action_precondition: GroundedPrecondition):
+    satellite_action_precondition: GroundedPrecondition,
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition.ground_preconditions(test_parameters_map)
     grounded_preconditions = satellite_action_precondition._grounded_precondition
-    expected_grounded_preconditions = ['(on_board test_instrument s1)',
-                                       '(power_on test_instrument)',
-                                       '(pointing s1 test_direction)',
-                                       '(calibrated test_instrument)',
-                                       '(supports test_instrument test_mode)']
+    expected_grounded_preconditions = [
+        "(on_board test_instrument s1)",
+        "(power_on test_instrument)",
+        "(pointing s1 test_direction)",
+        "(calibrated test_instrument)",
+        "(supports test_instrument test_mode)",
+    ]
     for precondition in expected_grounded_preconditions:
         assert precondition in str(grounded_preconditions)
     print(grounded_preconditions)
 
 
 def test_ground_preconditions_creates_grounded_version_of_lifted_functions_with_correct_operators(
-        satellite_action_precondition: GroundedPrecondition):
+    satellite_action_precondition: GroundedPrecondition,
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition.ground_preconditions(test_parameters_map)
     grounded_preconditions = satellite_action_precondition._grounded_precondition
-    expected_grounded_numeric_preconditions = ['(>= (data_capacity s1) (data test_direction test_mode))']
+    expected_grounded_numeric_preconditions = ["(>= (data_capacity s1) (data test_direction test_mode))"]
     for precondition in expected_grounded_numeric_preconditions:
         assert precondition in str(grounded_preconditions)
 
 
 def test_ground_preconditions_when_domain_contains_constants_grounds_action_correctly(
-        agricola_action_precondition: GroundedPrecondition):
+    agricola_action_precondition: GroundedPrecondition,
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            AGRICOLA_LIFTED_SIGNATURE_ITEMS, AGRICOLA_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(AGRICOLA_LIFTED_SIGNATURE_ITEMS, AGRICOLA_GROUNDED_ACTION_CALL)
     }
     agricola_action_precondition.ground_preconditions(test_parameters_map)
     grounded_preconditions = agricola_action_precondition._grounded_precondition
-    expected_grounded_preconditions = ['(available_action act_labor)',
-                                       '(current_worker noworker)',
-                                       '(next_worker noworker w1)',
-                                       '(max_worker w2)',
-                                       '(current_round round1)',
-                                       '(num_food n1)',
-                                       '(next_num n1 n2)']
+    expected_grounded_preconditions = [
+        "(available_action act_labor)",
+        "(current_worker noworker)",
+        "(next_worker noworker w1)",
+        "(max_worker w2)",
+        "(current_round round1)",
+        "(num_food n1)",
+        "(next_num n1 n2)",
+    ]
     for precondition in expected_grounded_preconditions:
         assert precondition in str(grounded_preconditions)
     print(grounded_preconditions)
 
 
 def test_ground_preconditions_when_domain_contains_constants_grounds_action_correctly(
-        agricola_action_precondition: GroundedPrecondition):
+    agricola_action_precondition: GroundedPrecondition,
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            AGRICOLA_LIFTED_SIGNATURE_ITEMS, AGRICOLA_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(AGRICOLA_LIFTED_SIGNATURE_ITEMS, AGRICOLA_GROUNDED_ACTION_CALL)
     }
     agricola_action_precondition.ground_preconditions(test_parameters_map)
     grounded_preconditions = agricola_action_precondition._grounded_precondition
-    expected_grounded_preconditions = ['(available_action act_labor)',
-                                       '(current_worker noworker)',
-                                       '(next_worker noworker w1)',
-                                       '(max_worker w2)',
-                                       '(current_round round1)',
-                                       '(num_food n1)',
-                                       '(next_num n1 n2)']
+    expected_grounded_preconditions = [
+        "(available_action act_labor)",
+        "(current_worker noworker)",
+        "(next_worker noworker w1)",
+        "(max_worker w2)",
+        "(current_round round1)",
+        "(num_food n1)",
+        "(next_num n1 n2)",
+    ]
     for precondition in expected_grounded_preconditions:
         assert precondition in str(grounded_preconditions)
     print(grounded_preconditions)
 
 
 def test_grounded_numeric_fluents_returns_correct_numeric_fluents_for_the_grounded_action_preconditions(
-        satellite_action_precondition: GroundedPrecondition):
+    satellite_action_precondition: GroundedPrecondition,
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition.ground_preconditions(test_parameters_map)
     grounded_numeric_fluents = satellite_action_precondition.grounded_numeric_fluents
@@ -316,10 +367,11 @@ def test_grounded_numeric_fluents_returns_correct_numeric_fluents_for_the_ground
 
 
 def test_ground_preconditions_grounds_precondition_with_equality_conditions_correctly(
-        satellite_action_precondition: GroundedPrecondition):
+    satellite_action_precondition: GroundedPrecondition,
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition._lifted_precondition.root.equality_preconditions = {("?i", "?s")}
     satellite_action_precondition.ground_preconditions(test_parameters_map)
@@ -330,10 +382,11 @@ def test_ground_preconditions_grounds_precondition_with_equality_conditions_corr
 
 
 def test_ground_preconditions_grounds_precondition_with_inequality_conditions_correctly(
-        satellite_action_precondition: GroundedPrecondition):
+    satellite_action_precondition: GroundedPrecondition,
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition._lifted_precondition.root.inequality_preconditions = {("?i", "?s")}
     satellite_action_precondition.ground_preconditions(test_parameters_map)
@@ -344,10 +397,11 @@ def test_ground_preconditions_grounds_precondition_with_inequality_conditions_co
 
 
 def test_ground_preconditions_grounds_positive_preconditions_with_correct_objects(
-        satellite_action_precondition: GroundedPrecondition):
+    satellite_action_precondition: GroundedPrecondition,
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition.ground_preconditions(test_parameters_map)
     grounded_predicates = []
@@ -355,22 +409,24 @@ def test_ground_preconditions_grounds_positive_preconditions_with_correct_object
         if isinstance(grounded_precondition, GroundedPredicate):
             grounded_predicates.append(grounded_precondition)
 
-    expected_grounded_preconditions = ['(on_board test_instrument s1)',
-                                       '(power_on test_instrument)',
-                                       '(pointing s1 test_direction)',
-                                       '(calibrated test_instrument)',
-                                       '(supports test_instrument test_mode)']
+    expected_grounded_preconditions = [
+        "(on_board test_instrument s1)",
+        "(power_on test_instrument)",
+        "(pointing s1 test_direction)",
+        "(calibrated test_instrument)",
+        "(supports test_instrument test_mode)",
+    ]
 
     assert len(grounded_predicates) == len(expected_grounded_preconditions)
-    assert sorted([p.untyped_representation for p in grounded_predicates]) == sorted(
-        expected_grounded_preconditions)
+    assert sorted([p.untyped_representation for p in grounded_predicates]) == sorted(expected_grounded_preconditions)
 
 
 def test_ground_preconditions_grounds_negative_preconditions_with_correct_objects(
-        spider_action_precondition: GroundedPrecondition, spider_conditional_action: Action):
+    spider_action_precondition: GroundedPrecondition, spider_conditional_action: Action
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            spider_conditional_action.signature.keys(), SPIDER_DEAL_CARD_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(spider_conditional_action.signature.keys(), SPIDER_DEAL_CARD_CALL)
     }
     spider_action_precondition.ground_preconditions(test_parameters_map)
     grounded_predicates = []
@@ -378,21 +434,23 @@ def test_ground_preconditions_grounds_negative_preconditions_with_correct_object
         if isinstance(grounded_precondition, GroundedPredicate) and not grounded_precondition.is_positive:
             grounded_predicates.append(grounded_precondition)
 
-    expected_grounded_preconditions = ["(not (currently-updating-movable ))",
-                                       "(not (currently-updating-unmovable ))",
-                                       "(not (currently-updating-part-of-tableau ))",
-                                       "(not (currently-collecting-deck ))"]
+    expected_grounded_preconditions = [
+        "(not (currently-updating-movable ))",
+        "(not (currently-updating-unmovable ))",
+        "(not (currently-updating-part-of-tableau ))",
+        "(not (currently-collecting-deck ))",
+    ]
 
     assert len(grounded_predicates) == len(expected_grounded_preconditions)
-    assert sorted([p.untyped_representation for p in grounded_predicates]) == sorted(
-        expected_grounded_preconditions)
+    assert sorted([p.untyped_representation for p in grounded_predicates]) == sorted(expected_grounded_preconditions)
 
 
 def test_ground_preconditions_grounds_numeric_preconditions_with_correct_objects(
-        satellite_action_precondition: GroundedPrecondition):
+    satellite_action_precondition: GroundedPrecondition,
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition.ground_preconditions(test_parameters_map)
     grounded_expression = []
@@ -408,12 +466,14 @@ def test_ground_preconditions_grounds_numeric_preconditions_with_correct_objects
 
 
 def test_is_applicable_return_false_when_one_predicate_missing_in_state_predicates(
-        satellite_action_precondition: GroundedPrecondition, satellite_domain: Domain,
-        complete_state_predicates: Dict[str, List[GroundedPredicate]],
-        numeric_state_variables: Dict[str, PDDLFunction]):
+    satellite_action_precondition: GroundedPrecondition,
+    satellite_domain: Domain,
+    complete_state_predicates: Dict[str, List[GroundedPredicate]],
+    numeric_state_variables: Dict[str, PDDLFunction],
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition.ground_preconditions(test_parameters_map)
 
@@ -428,12 +488,14 @@ def test_is_applicable_return_false_when_one_predicate_missing_in_state_predicat
 
 
 def test_is_applicable_return_true_when_all_predicates_are_present_in_the_state(
-        satellite_action_precondition: GroundedPrecondition, satellite_domain: Domain,
-        complete_state_predicates: Dict[str, Set[GroundedPredicate]],
-        numeric_state_variables: Dict[str, PDDLFunction]):
+    satellite_action_precondition: GroundedPrecondition,
+    satellite_domain: Domain,
+    complete_state_predicates: Dict[str, Set[GroundedPredicate]],
+    numeric_state_variables: Dict[str, PDDLFunction],
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition.ground_preconditions(test_parameters_map)
     data_capacity_function = PDDLFunction(name="data_capacity", signature={"s1": satellite_domain.types["satellite"]})
@@ -443,18 +505,20 @@ def test_is_applicable_return_true_when_all_predicates_are_present_in_the_state(
 
 
 def test_is_applicable_return_false_when_numeric_fluents_dont_correspond_preconditions_requirements(
-        satellite_action_precondition: GroundedPrecondition, satellite_domain: Domain,
-        complete_state_predicates: Dict[str, Set[GroundedPredicate]],
-        numeric_state_variables: Dict[str, PDDLFunction]):
+    satellite_action_precondition: GroundedPrecondition,
+    satellite_domain: Domain,
+    complete_state_predicates: Dict[str, Set[GroundedPredicate]],
+    numeric_state_variables: Dict[str, PDDLFunction],
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition.ground_preconditions(test_parameters_map)
-    data_function = PDDLFunction(name="data", signature={
-        "test_direction": satellite_domain.types["direction"],
-        "test_mode": satellite_domain.types["mode"]
-    })
+    data_function = PDDLFunction(
+        name="data",
+        signature={"test_direction": satellite_domain.types["direction"], "test_mode": satellite_domain.types["mode"]},
+    )
     data_capacity_function = PDDLFunction(name="data_capacity", signature={"s1": satellite_domain.types["satellite"]})
     numeric_state_variables[data_capacity_function.untyped_representation].set_value(5.3)
     numeric_state_variables[data_function.untyped_representation].set_value(18.7)
@@ -463,19 +527,21 @@ def test_is_applicable_return_false_when_numeric_fluents_dont_correspond_precond
 
 
 def test_is_applicable_return_true_when_numeric_fluents_are_equal(
-        satellite_action_precondition: GroundedPrecondition, satellite_domain: Domain,
-        complete_state_predicates: Dict[str, Set[GroundedPredicate]],
-        numeric_state_variables: Dict[str, PDDLFunction]):
+    satellite_action_precondition: GroundedPrecondition,
+    satellite_domain: Domain,
+    complete_state_predicates: Dict[str, Set[GroundedPredicate]],
+    numeric_state_variables: Dict[str, PDDLFunction],
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition.ground_preconditions(test_parameters_map)
 
-    data_function = PDDLFunction(name="data", signature={
-        "test_direction": satellite_domain.types["direction"],
-        "test_mode": satellite_domain.types["mode"]
-    })
+    data_function = PDDLFunction(
+        name="data",
+        signature={"test_direction": satellite_domain.types["direction"], "test_mode": satellite_domain.types["mode"]},
+    )
     data_capacity_function = PDDLFunction(name="data_capacity", signature={"s1": satellite_domain.types["satellite"]})
     numeric_state_variables[data_capacity_function.untyped_representation].set_value(5.3)
     numeric_state_variables[data_function.untyped_representation].set_value(5.3)
@@ -484,19 +550,21 @@ def test_is_applicable_return_true_when_numeric_fluents_are_equal(
 
 
 def test_is_applicable_return_true_when_given_correct_fluents_with_negative_values(
-        satellite_action_precondition: GroundedPrecondition, satellite_domain: Domain,
-        complete_state_predicates: Dict[str, Set[GroundedPredicate]],
-        numeric_state_variables: Dict[str, PDDLFunction]):
+    satellite_action_precondition: GroundedPrecondition,
+    satellite_domain: Domain,
+    complete_state_predicates: Dict[str, Set[GroundedPredicate]],
+    numeric_state_variables: Dict[str, PDDLFunction],
+):
     test_parameters_map = {
-        lifted_param: grounded_object for lifted_param, grounded_object in zip(
-            TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
+        lifted_param: grounded_object
+        for lifted_param, grounded_object in zip(TEST_LIFTED_SIGNATURE_ITEMS, TEST_GROUNDED_ACTION_CALL)
     }
     satellite_action_precondition.ground_preconditions(test_parameters_map)
 
-    data_function = PDDLFunction(name="data", signature={
-        "test_direction": satellite_domain.types["direction"],
-        "test_mode": satellite_domain.types["mode"]
-    })
+    data_function = PDDLFunction(
+        name="data",
+        signature={"test_direction": satellite_domain.types["direction"], "test_mode": satellite_domain.types["mode"]},
+    )
     data_capacity_function = PDDLFunction(name="data_capacity", signature={"s1": satellite_domain.types["satellite"]})
     numeric_state_variables[data_capacity_function.untyped_representation].set_value(-5.3)
     numeric_state_variables[data_function.untyped_representation].set_value(-15.32)
@@ -523,12 +591,11 @@ def test_is_applicable_with_disjunctive_action_operator_does_not_fail(valid_prev
     domain_parser = DomainParser(TEST_HARD_NUMERIC_DOMAIN)
     domain = domain_parser.parse_domain()
     action_tokens = PDDLTokenizer(pddl_str=test_action_str).parse()
-    action = domain_parser.parse_action(action_tokens, domain.types, domain.functions, domain.predicates,
-                                        domain.constants)
+    action = domain_parser.parse_action(
+        action_tokens, domain.types, domain.functions, domain.predicates, domain.constants
+    )
     grounded_precondition = GroundedPrecondition(action.preconditions, domain, action)
-    test_parameter_map = {
-        param: obj for param, obj in zip(action.signature.keys(), TEST_GROUNDED_ACTION_CALL)
-    }
+    test_parameter_map = {param: obj for param, obj in zip(action.signature.keys(), TEST_GROUNDED_ACTION_CALL)}
     grounded_precondition.ground_preconditions(test_parameter_map)
     try:
         grounded_precondition.is_applicable(valid_previous_state)
@@ -538,10 +605,28 @@ def test_is_applicable_with_disjunctive_action_operator_does_not_fail(valid_prev
 
 
 def test_is_applicable_returns_true_when_the_action_has_nested_universal_precondition_but_is_logically_the_same_as_the_original_action(
-        miconic_nested_domain: Domain, miconic_nested_problem: Problem,
-        miconic_stop_action_precondition: GroundedPrecondition, miconic_observation: Observation):
+    miconic_nested_domain: Domain,
+    miconic_nested_problem: Problem,
+    miconic_stop_action_precondition: GroundedPrecondition,
+    miconic_observation: Observation,
+):
     miconic_stop_action_comp = miconic_observation.components[1]
     miconic_previous_state = miconic_stop_action_comp.previous_state
     test_parameters_map = {"?f": "f1"}
     miconic_stop_action_precondition.ground_preconditions(test_parameters_map)
     assert miconic_stop_action_precondition.is_applicable(miconic_previous_state)
+
+
+def test_is_applicable_returns_false_when_the_action_is_applied_in_a_state_where_some_of_the_numeric_functions_do_not_exist():
+    domain = DomainParser(TEST_HARD_NUMERIC_DOMAIN).parse_domain()
+    problem = ProblemParser(problem_path=SATELLITE_PROBLEM_WITH_MISSING_FUNCTIONS, domain=domain).parse_problem()
+    take_image_action = domain.actions["take_image"]
+    initial_state = State(
+        predicates=problem.initial_state_predicates,
+        fluents=problem.initial_state_fluents,
+    )
+    grounded_precondition = GroundedPrecondition(take_image_action.preconditions, domain, take_image_action)
+    parameters = ["satellite1", "Star0", "instrument2", "image1"]
+    test_parameter_map = {param: obj for param, obj in zip(take_image_action.signature.keys(), parameters)}
+    grounded_precondition.ground_preconditions(test_parameter_map)
+    assert not grounded_precondition.is_applicable(initial_state)

@@ -5,6 +5,7 @@ CWD = os.getcwd()
 TEST_NUMERIC_PROBLEM = Path(CWD, "test_agricola_problem.pddl")
 TEST_NUMERIC_DOMAIN = Path(CWD, "test_agricola_domain.pddl")
 TEST_HARD_NUMERIC_DOMAIN = Path(CWD, "satellite_numeric_domain.pddl")
+SATELLITE_PROBLEM_WITH_MISSING_FUNCTIONS = Path(CWD, "satellite_problem_with_missing_functions.pddl")
 
 SPIDER_DOMAIN_PATH = Path(CWD, "domain_spider.pddl")
 SPIDER_PROBLEM_PATH = Path(CWD, "pfile04.pddl")
@@ -28,4 +29,3 @@ HARD_DRIVERLOG_PROBLEM_PATH = Path(CWD, "pfile558.pddl")
 HARD_TEST_NUMERIC_DOMAIN = Path(CWD, "test_domain.pddl")
 DOMAIN_TO_TEST_INEQUALITY_REMOVAL = Path(CWD, "domain_to_test_linear_inequality_removal.pddl")
 DOMAIN_TO_TEST_BOTH_TYPES_OF_INEQUALITY = Path(CWD, "zenotravel_test_domain.pddl")
-
