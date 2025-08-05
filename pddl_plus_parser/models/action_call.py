@@ -18,6 +18,10 @@ class ActionCall:
         called_objects = " ".join(self.parameters)
         return f"({self.name} {called_objects})"
 
+    def copy(self) -> "ActionCall":
+        """Creates a copy of the action call."""
+        return ActionCall(self.name, self.parameters.copy())
+
 
 class JointActionCall:
     """An object representing a single action call."""
