@@ -93,4 +93,5 @@
 * version 3.14.3 - Added the support for extended functionality in the Domain and Action classes.
 * version 3.15.0 - Added the ability to parse trajectories with transition statuses.
 * version 3.15.1 - Added the ability to parse trajectories from strings as well as from files.
-* version 3.15.2 - Fixed bug that was caused when some numeric functions were missing from the state. 
+* version 3.15.2 - Fixed bug that was caused when some numeric functions were missing from the state.
+* version 3.15.3 - Added the __eq__ operator to the ActionCall class.

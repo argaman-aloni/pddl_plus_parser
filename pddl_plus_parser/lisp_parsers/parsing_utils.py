@@ -1,4 +1,5 @@
 """Module containing utility functionality for the parsing process."""
+
 from typing import Dict, Iterator, List
 
 from pddl_plus_parser.lisp_parsers import PDDLTokenizer
@@ -18,14 +19,12 @@ FORALL_OPERATOR = "forall"
 ASSIGNMENT_OPS = ["assign", "increase", "decrease"]
 WHEN_OPERATOR = "when"
 
-NOT_PREFIX = "(not"
+NOT_PREFIX = "(not "
 
 PARAMETERS_INVALID_SYNTAX_ERROR = "The parameters should start with a question mark."
 
 
-def parse_signature(
-    parameters: Iterator[str], domain_types: Dict[str, PDDLType]
-) -> SignatureType:
+def parse_signature(parameters: Iterator[str], domain_types: Dict[str, PDDLType]) -> SignatureType:
     """Parse the signature of a statement.
 
     :param parameters: the parameters that appear in the signature.
@@ -77,23 +76,16 @@ def parse_untyped_predicate(
     """
     predicate_name = untyped_predicate[0]
     possible_signed_objects = {key: val for key, val in action_signature.items()}
-    possible_signed_objects.update(
-        {const_name: const.type for const_name, const in domain_constants.items()}
-    )
+    possible_signed_objects.update({const_name: const.type for const_name, const in domain_constants.items()})
     # Since we assume that the order in maintained in the predicates we can match the signatures.
     signed_signature = {
-        parameter_name: possible_signed_objects[parameter_name]
-        for parameter_name in untyped_predicate[1:]
+        parameter_name: possible_signed_objects[parameter_name] for parameter_name in untyped_predicate[1:]
     }
 
-    return Predicate(
-        name=predicate_name, signature=signed_signature, is_positive=is_positive
-    )
+    return Predicate(name=predicate_name, signature=signed_signature, is_positive=is_positive)
 
 
-def parse_predicate_from_string(
-    predicate_str: str, types_map: Dict[str, PDDLType]
-) -> Predicate:
+def parse_predicate_from_string(predicate_str: str, types_map: Dict[str, PDDLType]) -> Predicate:
     """Creates a predicate object from a string representation.
 
     Notice: currently supporting predicates string in the form:
@@ -105,16 +97,12 @@ def parse_predicate_from_string(
     """
     is_positive = not predicate_str.startswith(NOT_PREFIX)
     predicate_data = (
-        predicate_str.replace(f"{NOT_PREFIX} ", "")[:-1]
-        if predicate_str.startswith(NOT_PREFIX)
-        else predicate_str
+        predicate_str.replace(f"{NOT_PREFIX}", "")[:-1] if predicate_str.startswith(NOT_PREFIX) else predicate_str
     )
     tokenizer = PDDLTokenizer(pddl_str=predicate_data)
     expression = tokenizer.parse()
     predicate_name = expression[0]
     signature_items = iter(expression[1:])
     predicate_signature = parse_signature(signature_items, types_map)
-    extracted_predicate = Predicate(
-        name=predicate_name, signature=predicate_signature, is_positive=is_positive
-    )
+    extracted_predicate = Predicate(name=predicate_name, signature=predicate_signature, is_positive=is_positive)
     return extracted_predicate

@@ -630,3 +630,18 @@ def test_is_applicable_returns_false_when_the_action_is_applied_in_a_state_where
     test_parameter_map = {param: obj for param, obj in zip(take_image_action.signature.keys(), parameters)}
     grounded_precondition.ground_preconditions(test_parameter_map)
     assert not grounded_precondition.is_applicable(initial_state)
+
+
+def test_is_applicable_returns_true_when_the_action_is_applied_in_a_state_where_some_of_the_numeric_functions_do_not_exist_but_relevant_functions_exist():
+    domain = DomainParser(TEST_HARD_NUMERIC_DOMAIN).parse_domain()
+    problem = ProblemParser(problem_path=SATELLITE_PROBLEM_WITH_MISSING_FUNCTIONS, domain=domain).parse_problem()
+    take_image_action = domain.actions["take_image"]
+    initial_state = State(
+        predicates=problem.initial_state_predicates,
+        fluents=problem.initial_state_fluents,
+    )
+    grounded_precondition = GroundedPrecondition(take_image_action.preconditions, domain, take_image_action)
+    parameters = ["satellite1", "star2", "instrument2", "image1"]
+    test_parameter_map = {param: obj for param, obj in zip(take_image_action.signature.keys(), parameters)}
+    grounded_precondition.ground_preconditions(test_parameter_map)
+    assert grounded_precondition.is_applicable(initial_state)

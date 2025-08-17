@@ -1,4 +1,5 @@
 """Module to contain all different types of action calls."""
+
 from typing import List
 
 NOP_ACTION = "nop"
@@ -18,6 +19,9 @@ class ActionCall:
         called_objects = " ".join(self.parameters)
         return f"({self.name} {called_objects})"
 
+    def __eq__(self, other: "ActionCall") -> bool:
+        return self.name == other.name and self.parameters == other.parameters
+
 
 class JointActionCall:
     """An object representing a single action call."""
@@ -26,6 +30,9 @@ class JointActionCall:
 
     def __init__(self, actions: List[ActionCall]):
         self.actions = actions
+
+    def __eq__(self, other: "JointActionCall") -> bool:
+        return self.actions == other.actions
 
     def __str__(self) -> str:
         return f"[{','.join([str(action) for action in self.actions])}]"
