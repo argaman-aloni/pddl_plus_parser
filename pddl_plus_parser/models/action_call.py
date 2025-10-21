@@ -19,6 +19,9 @@ class ActionCall:
         called_objects = " ".join(self.parameters)
         return f"({self.name} {called_objects})"
 
+    def __hash__(self):
+        return hash((self.name, tuple(self.parameters)))
+
     def __eq__(self, other: "ActionCall") -> bool:
         return self.name == other.name and self.parameters == other.parameters
 

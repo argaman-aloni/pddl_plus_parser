@@ -1,4 +1,5 @@
 """Module that represents a PDDL+ action."""
+
 from typing import Set, List, Dict
 
 from .conditional_effect import ConditionalEffect, UniversalEffect
@@ -19,7 +20,9 @@ class Action:
     universal_effects: Set[UniversalEffect]
     numeric_effects: Set[NumericalExpressionTree]
 
-    def __init__(self):
+    def __init__(self, name: str = None, signature: SignatureType = None):
+        self.name = name if name is not None else ""
+        self.signature = signature if signature is not None else {}
         self.discrete_effects = set()
         self.numeric_effects = set()
         self.conditional_effects = set()
@@ -55,9 +58,7 @@ class Action:
 
         :return: the PDDL format of the effects.
         """
-        simple_effects = "\n\t\t".join(
-            sorted([effect.untyped_representation for effect in self.discrete_effects])
-        )
+        simple_effects = "\n\t\t".join(sorted([effect.untyped_representation for effect in self.discrete_effects]))
 
         conditional_effects = "\n\t\t"
         conditional_effects += "\t\t\n".join(
@@ -65,14 +66,10 @@ class Action:
         )
 
         universal_effects = "\n\t\t"
-        universal_effects += "\t\t\n".join(
-            [str(universal_effect) for universal_effect in self.universal_effects]
-        )
+        universal_effects += "\t\t\n".join([str(universal_effect) for universal_effect in self.universal_effects])
 
         if len(self.numeric_effects) > 0:
-            numeric_effects = "\t\t\n".join(
-                [effect.to_pddl() for effect in self.numeric_effects]
-            )
+            numeric_effects = "\t\t\n".join([effect.to_pddl() for effect in self.numeric_effects])
             return (
                 f"(and {simple_effects}\n"
                 f"\t\t{conditional_effects}\n"
@@ -113,9 +110,7 @@ class Action:
             f"\t:precondition {self.preconditions.print(decimal_digits=decimal_digits)}\n"
             f"\t:effect {self.effects_to_pddl()})"
         )
-        formatted_string = "\n".join(
-            [line for line in action_string.split("\n") if line.strip()]
-        )
+        formatted_string = "\n".join([line for line in action_string.split("\n") if line.strip()])
         return f"{formatted_string}\n"
 
         # for effect in self.conditional_effects:
