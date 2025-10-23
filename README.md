@@ -94,4 +94,5 @@
 * version 3.15.0 - Added the ability to parse trajectories with transition statuses.
 * version 3.15.1 - Added the ability to parse trajectories from strings as well as from files.
 * version 3.15.2 - Fixed bug that was caused when some numeric functions were missing from the state.
-* version 3.15.3 - Added the __eq__ operator to the ActionCall class.
+* version 3.15.6 - Added the __eq__ operator to the ActionCall class.
+* version 3.16.0 - Added the vocabulary creator class to provide the functionality across different applications.

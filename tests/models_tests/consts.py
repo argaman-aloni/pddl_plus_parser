@@ -29,3 +29,13 @@ HARD_DRIVERLOG_PROBLEM_PATH = Path(CWD, "pfile558.pddl")
 HARD_TEST_NUMERIC_DOMAIN = Path(CWD, "test_domain.pddl")
 DOMAIN_TO_TEST_INEQUALITY_REMOVAL = Path(CWD, "domain_to_test_linear_inequality_removal.pddl")
 DOMAIN_TO_TEST_BOTH_TYPES_OF_INEQUALITY = Path(CWD, "zenotravel_test_domain.pddl")
+
+
+ELEVATORS_DOMAIN_PATH = Path(CWD) / "elevators_domain.pddl"
+ELEVATORS_PROBLEM_PATH = Path(CWD) / "elevators_p03.pddl"
+
+WOODWORKING_DOMAIN_PATH = Path(CWD) / "woodworking-domain.pddl"
+WOODWORKING_PROBLEM_PATH = Path(CWD) / "woodworking_problem.pddl"
+
+DEPOTS_NUMERIC_DOMAIN_PATH = Path(CWD) / "depot_numeric.pddl"
+DEPOTS_NUMERIC_PROBLEM_PATH = Path(CWD) / "depot_pfile1.pddl"

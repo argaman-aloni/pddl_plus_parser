@@ -23,3 +23,4 @@ from .pddl_predicate import SignatureType, Predicate, GroundedPredicate
 from .pddl_problem import Problem
 from .pddl_state import State
 from .pddl_type import PDDLType, ObjectType, create_type_hierarchy_graph
+from .vocabulary_creator import VocabularyCreator
