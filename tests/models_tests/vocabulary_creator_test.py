@@ -43,8 +43,8 @@ def depot_domain() -> Domain:
 
 
 @fixture()
-def depot_problem(woodworking_domain: Domain) -> Problem:
-    return ProblemParser(problem_path=DEPOTS_NUMERIC_PROBLEM_PATH, domain=woodworking_domain).parse_problem()
+def depot_problem(depot_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=DEPOTS_NUMERIC_PROBLEM_PATH, domain=depot_domain).parse_problem()
 
 
 @fixture()
