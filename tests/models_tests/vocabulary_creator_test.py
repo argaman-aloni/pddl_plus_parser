@@ -11,6 +11,8 @@ from tests.models_tests.consts import (
     WOODWORKING_PROBLEM_PATH,
     DEPOTS_NUMERIC_DOMAIN_PATH,
     DEPOTS_NUMERIC_PROBLEM_PATH,
+    MINECRAFT_LARGE_DOMAIN_PATH,
+    MINECRAFT_LARGE_PROBLEM_PATH,
 )
 
 
@@ -43,6 +45,17 @@ def depot_domain() -> Domain:
 @fixture()
 def depot_problem(woodworking_domain: Domain) -> Problem:
     return ProblemParser(problem_path=DEPOTS_NUMERIC_PROBLEM_PATH, domain=woodworking_domain).parse_problem()
+
+
+@fixture()
+def minecraft_large_domain() -> Domain:
+    domain_parser = DomainParser(MINECRAFT_LARGE_DOMAIN_PATH, partial_parsing=True)
+    return domain_parser.parse_domain()
+
+
+@fixture()
+def minecraft_large_problem(minecraft_large_domain: Domain) -> Problem:
+    return ProblemParser(problem_path=MINECRAFT_LARGE_PROBLEM_PATH, domain=minecraft_large_domain).parse_problem()
 
 
 @fixture()
@@ -131,12 +144,12 @@ def test_create_grounded_actions_vocabulary_creates_only_unique_actions(
     print([str(action) for action in vocabulary_actions])
 
 
-# def test_create_grounded_actions_vocabulary_creates_actions_that_are_applicable_in_the_state(
-#     minecraft_large_domain: Domain, vocabulary_creator: VocabularyCreator, minecraft_large_problem: Problem
-# ):
-#     observed_objects = minecraft_large_problem.objects
-#     vocabulary_actions = vocabulary_creator.create_grounded_actions_vocabulary(
-#         domain=minecraft_large_domain, observed_objects=observed_objects
-#     )
-#     action_signatures = {str(action) for action in vocabulary_actions}
-#     assert "(tp_to cell15 cell0)" in action_signatures
+def test_create_grounded_actions_vocabulary_creates_actions_that_are_applicable_in_the_state(
+    minecraft_large_domain: Domain, vocabulary_creator: VocabularyCreator, minecraft_large_problem: Problem
+):
+    observed_objects = minecraft_large_problem.objects
+    vocabulary_actions = vocabulary_creator.create_grounded_actions_vocabulary(
+        domain=minecraft_large_domain, observed_objects=observed_objects
+    )
+    action_signatures = {str(action) for action in vocabulary_actions}
+    assert "(tp_to cell15 cell0)" in action_signatures
