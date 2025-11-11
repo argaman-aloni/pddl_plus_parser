@@ -76,6 +76,11 @@ def parse_untyped_predicate(
     """
     predicate_name = untyped_predicate[0]
     possible_signed_objects = {key: val for key, val in action_signature.items()}
+    if len(possible_signed_objects.keys()) != len(untyped_predicate[1:]):
+        raise SyntaxError(
+            f"The predicate includes non-injective parameters which is not supported in the infrastructure."
+        )
+
     possible_signed_objects.update({const_name: const.type for const_name, const in domain_constants.items()})
     # Since we assume that the order in maintained in the predicates we can match the signatures.
     signed_signature = {

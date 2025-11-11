@@ -18,6 +18,7 @@ from tests.lisp_parsers_tests.consts import (
     TEST_BLOCKS_DOMAIN_NO_TYPES_PATH,
     TEST_DOMAIN_WITH_COMBINED_TYPED_PARAMS,
 )
+from tests.models_tests.vocabulary_creator_test import depot_domain
 
 test_types_with_no_parent = [
     "acolour",
@@ -985,3 +986,53 @@ def test_parse_domain_when_parsing_domain_from_string_data_works_successfully():
     assert len(domain.functions) == 2
     assert len(domain.types) == 2
     assert len(domain.actions) == 2
+
+
+def test_parse_domain_when_there_is_non_injective_predicate_does_not_corrupt_resulting_domain():
+    depot_domain_str = """(define (domain depot)
+(:requirements :negative-preconditions :fluents :equality :typing)
+(:types 	place locatable - object
+	depot distributor - place
+	truck hoist surface - locatable
+	pallet crate - surface
+)
+
+(:predicates (at ?x - locatable ?y - place)
+	(on ?x - crate ?y - surface)
+	(in ?x - crate ?y - truck)
+	(lifting ?x - hoist ?y - crate)
+	(available ?x - hoist)
+	(clear ?x - surface)
+)
+
+(:functions (load_limit ?t - truck)
+	(current_load ?t - truck)
+	(weight ?c - crate)
+	(fuel-cost )
+)
+
+(:action lift
+	:parameters (?x - hoist ?y - crate ?z - surface ?p - place)
+	:precondition (and (at ?x ?p)
+	(at ?y ?p)
+	(at ?z ?p)
+	(available ?x)
+	(clear ?y)
+	(on ?y ?z)
+	(on ?y ?y))
+	:effect (and (clear ?z)
+		(lifting ?x ?y)
+		(not (at ?y ?p))
+		(not (available ?x))
+		(not (clear ?y))
+		(not (on ?y ?z))
+(increase (fuel-cost ) 1)))
+
+)
+    """
+    domain_parser = DomainParser(domain_str=depot_domain_str)
+    try:
+        domain_parser.parse_domain()
+        raise fail("Parsing domain with non-injective predicate should have raised SyntaxError.")
+    except SyntaxError:
+        pass
