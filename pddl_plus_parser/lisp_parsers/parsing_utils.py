@@ -76,7 +76,7 @@ def parse_untyped_predicate(
     """
     predicate_name = untyped_predicate[0]
     possible_signed_objects = {key: val for key, val in action_signature.items()}
-    if len(possible_signed_objects.keys()) != len(untyped_predicate[1:]):
+    if len(set(untyped_predicate[1:])) != len(untyped_predicate[1:]):
         raise SyntaxError(
             f"The predicate includes non-injective parameters which is not supported in the infrastructure."
         )

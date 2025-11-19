@@ -1,4 +1,5 @@
 """Module that contains the definition of PDDL+ types"""
+
 from typing import Optional, Dict
 
 import networkx as nx
@@ -23,6 +24,9 @@ class PDDLType:
 
     def __eq__(self, other: "PDDLType"):
         return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
 
     def copy(self) -> "PDDLType":
         return PDDLType(self.name, self.parent)

@@ -1,4 +1,5 @@
 """Module representing the objects and constants of PDDL files."""
+
 from .pddl_type import PDDLType
 
 
@@ -15,6 +16,17 @@ class PDDLObject:
 
     def copy(self) -> "PDDLObject":
         return PDDLObject(self.name, self.type)
+
+    def __eq__(self, other: "PDDLObject") -> bool:
+        if self.name == other.name and self.type != other.type:
+            raise ValueError(
+                f"Trying to compare two objects with the same name but different types: {self} and {other}"
+            )
+
+        return self.name == other.name
+
+    def __hash__(self) -> int:
+        return hash(self.name)
 
 
 PDDLConstant = PDDLObject

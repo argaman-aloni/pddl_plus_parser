@@ -1,9 +1,10 @@
 """Module that represents a state definition in a PDDL trajectory."""
+
 from typing import Dict, Set
 
 from anytree import AnyNode
 
-from . import NumericalExpressionTree
+from .numerical_expression import NumericalExpressionTree
 from .pddl_function import PDDLFunction
 from .pddl_object import PDDLObject
 from .pddl_predicate import GroundedPredicate
@@ -42,14 +43,8 @@ class State:
         if my_predicates != other_predicates:
             return False
 
-        my_numeric_expressions = {
-            expression.state_representation
-            for expression in self.state_fluents.values()
-        }
-        other_numeric_expressions = {
-            expression.state_representation
-            for expression in other.state_fluents.values()
-        }
+        my_numeric_expressions = {expression.state_representation for expression in self.state_fluents.values()}
+        other_numeric_expressions = {expression.state_representation for expression in other.state_fluents.values()}
 
         return my_numeric_expressions == other_numeric_expressions
 
@@ -58,9 +53,7 @@ class State:
 
         :return: the string representing the assigned grounded fluents.
         """
-        return " ".join(
-            fluent.state_representation for fluent in self.state_fluents.values()
-        )
+        return " ".join(fluent.state_representation for fluent in self.state_fluents.values())
 
     def _serialize_predicates(self) -> str:
         """Serialize the predicates the constitute the state's facts.
@@ -70,9 +63,7 @@ class State:
         predicates_str = ""
         for grounded_predicates in self.state_predicates.values():
             predicates_str += " "
-            predicates_str += " ".join(
-                predicate.untyped_representation for predicate in grounded_predicates
-            )
+            predicates_str += " ".join(predicate.untyped_representation for predicate in grounded_predicates)
 
         return predicates_str
 
@@ -84,9 +75,7 @@ class State:
         typed_predicates_str = ""
         for grounded_predicates in self.state_predicates.values():
             typed_predicates_str += " "
-            typed_predicates_str += " ".join(
-                str(predicate) for predicate in grounded_predicates
-            )
+            typed_predicates_str += " ".join(str(predicate) for predicate in grounded_predicates)
 
         return (
             f"({' '.join(fluent.state_typed_representation for fluent in self.state_fluents.values())}"
@@ -100,9 +89,7 @@ class State:
             for grounded_predicate in grounded_predicates_set:
                 for param_name, obj_type in grounded_predicate.signature.items():
                     object_name = grounded_predicate.object_mapping[param_name]
-                    state_objects[object_name] = PDDLObject(
-                        name=object_name, type=obj_type
-                    )
+                    state_objects[object_name] = PDDLObject(name=object_name, type=obj_type)
 
         for grounded_function in self.state_fluents.values():
             for obj_name, obj_type in grounded_function.signature.items():
@@ -137,8 +124,5 @@ class State:
             predicate_name: {predicate.copy() for predicate in predicates}
             for predicate_name, predicates in self.state_predicates.items()
         }
-        copied_fluents = {
-            fluent_name: fluent.copy()
-            for fluent_name, fluent in self.state_fluents.items()
-        }
+        copied_fluents = {fluent_name: fluent.copy() for fluent_name, fluent in self.state_fluents.items()}
         return State(copied_predicates, copied_fluents, is_init=self.is_init)
