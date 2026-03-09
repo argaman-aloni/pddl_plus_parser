@@ -3,6 +3,7 @@
 from typing import Dict, Set, List
 
 from pytest import fixture, fail
+from unittest.mock import MagicMock
 
 from pddl_plus_parser.lisp_parsers import DomainParser, ProblemParser, PDDLTokenizer, TrajectoryParser
 from pddl_plus_parser.models import (
@@ -16,7 +17,8 @@ from pddl_plus_parser.models import (
     NumericalExpressionTree,
     Observation,
 )
-from pddl_plus_parser.models.grounded_precondition import GroundedPrecondition
+from pddl_plus_parser.models.pddl_predicate import GroundedPredicate
+from pddl_plus_parser.models.grounded_precondition import GroundedPrecondition, CompoundPrecondition
 from tests.lisp_parsers_tests.consts import SPIDER_PROBLEM_PATH
 from tests.models_tests.consts import (
     TEST_HARD_NUMERIC_DOMAIN,
@@ -645,3 +647,86 @@ def test_is_applicable_returns_true_when_the_action_is_applied_in_a_state_where_
     test_parameter_map = {param: obj for param, obj in zip(take_image_action.signature.keys(), parameters)}
     grounded_precondition.ground_preconditions(test_parameter_map)
     assert grounded_precondition.is_applicable(initial_state)
+
+def test_is_condition_applicable_when_and_or_combination_then_short_circuits_correctly():
+    domain = MagicMock()
+    action = MagicMock()
+
+    pred_true = GroundedPredicate(name="p1", signature={}, object_mapping={})
+    pred_should_not_run = GroundedPredicate(name="p2", signature={}, object_mapping={})
+    pred_after_or = GroundedPredicate(name="p3", signature={}, object_mapping={})
+
+    inner_or = Precondition("or")
+    inner_or.add_condition(pred_true)
+    inner_or.add_condition(pred_should_not_run)
+
+    outer_and = Precondition("and")
+    outer_and.add_condition(inner_or)
+    outer_and.add_condition(pred_after_or)
+
+    compound = CompoundPrecondition()
+    compound.root = outer_and
+
+    gp = GroundedPrecondition(compound, domain, action)
+    gp._grounded_precondition = compound
+
+    state = MagicMock()
+    state.serialize.return_value = {pred_true.untyped_representation}
+
+    assert gp.is_applicable(state) is False
+
+
+def test_is_condition_applicable_when_or_and_combination_then_short_circuits_correctly():
+    domain = MagicMock()
+    action = MagicMock()
+
+    pred_false = GroundedPredicate(name="p1", signature={}, object_mapping={})
+    pred_should_not_run = GroundedPredicate(name="p2", signature={}, object_mapping={})
+    pred_true = GroundedPredicate(name="p3", signature={}, object_mapping={})
+
+    inner_and = Precondition("and")
+    inner_and.add_condition(pred_false)
+    inner_and.add_condition(pred_should_not_run)
+
+    outer_or = Precondition("or")
+    outer_or.add_condition(inner_and)
+    outer_or.add_condition(pred_true)
+
+    compound = CompoundPrecondition()
+    compound.root = outer_or
+
+    gp = GroundedPrecondition(compound, domain, action)
+    gp._grounded_precondition = compound
+
+    state = MagicMock()
+    state.serialize.return_value = {pred_true.untyped_representation}
+
+    assert gp.is_applicable(state) is True
+
+
+def test_is_condition_applicable_when_nested_and_or_conditions_then_short_circuits_correctly():
+    domain = MagicMock()
+    action = MagicMock()
+
+    pred_true = GroundedPredicate(name="p1", signature={}, object_mapping={})
+    pred_unused = GroundedPredicate(name="p2", signature={}, object_mapping={})
+    pred_false = GroundedPredicate(name="p3", signature={}, object_mapping={})
+
+    inner_or = Precondition("or")
+    inner_or.add_condition(pred_true)
+    inner_or.add_condition(pred_unused)
+
+    outer_and = Precondition("and")
+    outer_and.add_condition(inner_or)
+    outer_and.add_condition(pred_false)
+
+    compound = CompoundPrecondition()
+    compound.root = outer_and
+
+    gp = GroundedPrecondition(compound, domain, action)
+    gp._grounded_precondition = compound
+
+    state = MagicMock()
+    state.serialize.return_value = {pred_true.untyped_representation}
+
+    assert gp.is_applicable(state) is False

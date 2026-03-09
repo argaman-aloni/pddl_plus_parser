@@ -282,6 +282,7 @@ class GroundedPrecondition:
 
             if preconditions.binary_operator == "and" and not is_applicable:
                 return False
+            
             if preconditions.binary_operator == "or" and is_applicable:
                 return True
             
