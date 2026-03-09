@@ -280,6 +280,11 @@ class GroundedPrecondition:
             else:
                 raise ValueError(f"Unknown precondition type: {type(condition)}")
 
+            if preconditions.binary_operator == "and" and not is_applicable:
+                return False
+            if preconditions.binary_operator == "or" and is_applicable:
+                return True
+            
         return is_applicable
 
     def ground_preconditions(self, parameters_map: Dict[str, str]) -> None:
