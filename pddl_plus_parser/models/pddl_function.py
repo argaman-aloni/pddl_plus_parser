@@ -1,4 +1,6 @@
 """Module that represents a numerical in a PDDL+ model."""
+
+import os
 from typing import Optional, Dict
 
 from .pddl_predicate import SignatureType
@@ -56,9 +58,7 @@ class PDDLFunction:
 
     def copy(self) -> "PDDLFunction":
         """Creates a copy of the function."""
-        copied_function = PDDLFunction(
-            self.name, self.signature, self.repeating_variables
-        )
+        copied_function = PDDLFunction(self.name, self.signature, self.repeating_variables)
         copied_function.stored_value = self.stored_value
         return copied_function
 
@@ -71,6 +71,10 @@ class PDDLFunction:
 
         :param value: the value to set to the function.
         """
+        if "NUMERIC_PRECISION" in os.environ:
+            precision = int(os.environ["NUMERIC_PRECISION"])
+            value = round(value, precision)
+
         self.stored_value = value
 
     @property
@@ -79,9 +83,7 @@ class PDDLFunction:
         function_variables = []
         for repeating_variable, num_repeats in self.repeating_variables.items():
             function_variables.extend([repeating_variable] * num_repeats)
-        function_variables.extend(
-            param for param in self.signature if param not in self.repeating_variables
-        )
+        function_variables.extend(param for param in self.signature if param not in self.repeating_variables)
 
         untyped_signature_str = " ".join(function_variables)
         return f"(= ({self.name} {untyped_signature_str}) {self.value})"
@@ -92,13 +94,10 @@ class PDDLFunction:
         function_variables = []
         for repeating_variable, num_repeats in self.repeating_variables.items():
             function_variables.extend([repeating_variable] * num_repeats)
-        function_variables.extend(
-            param for param in self.signature if param not in self.repeating_variables
-        )
+        function_variables.extend(param for param in self.signature if param not in self.repeating_variables)
 
         signature_str_items = [
-            f"{parameter_name} - {str(self.signature[parameter_name])}"
-            for parameter_name in function_variables
+            f"{parameter_name} - {str(self.signature[parameter_name])}" for parameter_name in function_variables
         ]
         return f"(= ({self.name} {' '.join(signature_str_items)}) {self.value})"
 

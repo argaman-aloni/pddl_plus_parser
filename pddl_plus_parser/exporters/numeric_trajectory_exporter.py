@@ -1,4 +1,5 @@
 """Module that encapsulates the numeric trajectory functionalities."""
+
 import logging
 from pathlib import Path
 from typing import List, Optional, Dict
@@ -59,7 +60,7 @@ class TrajectoryExporter:
     def _read_plan(self, plan_file_path: Path) -> List[str]:
         """Read the plan file and exports the lines with the actions.
 
-        :param plan_path: the path to the plan file.
+        :param plan_file_path: the path to the plan file.
         :return: the action sequence.
         """
         self.logger.debug(f"Reading the plan in the path {plan_file_path}")
@@ -79,9 +80,7 @@ class TrajectoryExporter:
         :param problem_objects: the objects of the problem.
         :return: the new triplet containing (s,a,s').
         """
-        self.logger.info(
-            f"Trying to apply the action - {action_call} on the state - {previous_state.serialize()}"
-        )
+        self.logger.info(f"Trying to apply the action - {action_call} on the state - {previous_state.serialize()}")
         action_descriptor = parse_action_call(action_call)
         operator = Operator(
             action=self.domain.actions[action_descriptor.name],
@@ -89,24 +88,8 @@ class TrajectoryExporter:
             grounded_action_call=action_descriptor.parameters,
             problem_objects=problem_objects,
         )
-        try:
-            next_state = operator.apply(
-                previous_state, allow_inapplicable_actions=self.allow_invalid_actions
-            )
-
-        except ValueError:
-            self.logger.debug(
-                "In case an action is inapplicable, the state remains unchanged."
-            )
-            next_state = State(
-                predicates=previous_state.state_predicates,
-                fluents=previous_state.state_fluents,
-                is_init=False,
-            )
-
-        return TrajectoryTriplet(
-            previous_state=previous_state, op=operator, next_state=next_state
-        )
+        next_state = operator.apply(previous_state, allow_inapplicable_actions=self.allow_invalid_actions)
+        return TrajectoryTriplet(previous_state=previous_state, op=operator, next_state=next_state)
 
     def parse_plan(
         self,
@@ -119,11 +102,7 @@ class TrajectoryExporter:
         :return: the list of triplets that was generated using the plan.
         """
         self.logger.info("Parsing the plan to extract the grounded operators.")
-        plan_actions = (
-            action_sequence
-            if action_sequence is not None
-            else self._read_plan(plan_path)
-        )
+        plan_actions = action_sequence if action_sequence is not None else self._read_plan(plan_path)
         initial_state_predicates = problem.initial_state_predicates
         initial_state_numeric_fluents = problem.initial_state_fluents
         previous_state = State(
@@ -134,9 +113,7 @@ class TrajectoryExporter:
         triplets = []
         self.logger.debug("Starting to create the trajectory triplets.")
         for grounded_action_call in plan_actions:
-            triplet = self.create_single_triplet(
-                previous_state, grounded_action_call, problem.objects
-            )
+            triplet = self.create_single_triplet(previous_state, grounded_action_call, problem.objects)
             triplets.append(triplet)
             previous_state = triplet.next_state
 
@@ -160,9 +137,7 @@ class TrajectoryExporter:
         serialized_trajectory[-1] = f"{serialized_trajectory[-1]})"
         return serialized_trajectory
 
-    def export_to_file(
-        self, triplets: List[TrajectoryTriplet], output_path: Path
-    ) -> None:
+    def export_to_file(self, triplets: List[TrajectoryTriplet], output_path: Path) -> None:
         """Export the trajectory to a file.
 
         :param triplets: the trajectory triples.

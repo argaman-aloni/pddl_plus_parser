@@ -96,3 +96,4 @@
 * version 3.15.2 - Fixed bug that was caused when some numeric functions were missing from the state.
 * version 3.15.6 - Added the __eq__ operator to the ActionCall class.
 * version 3.16.0 - Added the vocabulary creator class to provide the functionality across different applications.
+* version 3.17.0 - Optimized the applicability checks using short-circuiting.

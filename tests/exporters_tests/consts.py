@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-CWD = os.getcwd()
+CWD = Path(os.getcwd()) / "tests" / "exporters_tests"
 TEST_DISCRETE_DOMAIN_PATH = Path(CWD, "elevators_domain.pddl")
 TEST_DISCRETE_PROBLEM_PATH = Path(CWD, "elevators_p03.pddl")
 TEST_DISCRETE_PLAN_PATH = Path(CWD, "elevators_p03_plan.solution")
